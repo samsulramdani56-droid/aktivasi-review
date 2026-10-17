@@ -9,6 +9,7 @@
   <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    /* Animasi halus untuk pop-up modal */
     @keyframes modalFadeIn {
       from { opacity: 0; transform: scale(0.95); }
       to { opacity: 1; transform: scale(1); }
@@ -25,7 +26,7 @@
     <div class="flex items-center gap-2">
       <div class="bg-red-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">R</div>
       <span class="font-bold text-gray-800 text-lg">Aktivasi Review</span>
-      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v1.0</span>
+      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v4.3</span>
     </div>
     <div class="bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full flex gap-2">
       <button class="bg-white text-blue-600 px-2 rounded">ID</button>
@@ -39,7 +40,7 @@
   </main>
 
   <footer class="mt-8 text-center text-xs text-gray-400">
-    © 2026 Render Project.
+    © 2026 Render Project. Hak cipta dilindungi.
   </footer>
 
   <!-- MODAL NOTIFIKASI KUSTOM -->
@@ -78,6 +79,7 @@
       return cleanUrl;
     }
 
+    // FUNGSI NOTIFIKASI KUSTOM
     function showNotification(title, message, type = 'info', onConfirm = null) {
       const modal = document.getElementById('custom-modal');
       const iconEl = document.getElementById('modal-icon');
@@ -110,6 +112,7 @@
       }
     }
 
+    // INISIALISASI APLIKASI
     async function initApp() {
       if (cardCodeParam) {
         const cleanCode = cardCodeParam.trim().toUpperCase();
@@ -127,7 +130,7 @@
 
         if (card) {
           if (card.is_activated) {
-            window.location.href = formatUrl(card.google_review_url);
+            renderActiveCardStatus(card);
             return;
           } else {
             renderActivationForm(card.card_code);
@@ -151,7 +154,7 @@
         </p>
         
         <input id="cardInput" type="text" placeholder="MASUKKAN KODE KARTU" class="w-full border rounded-xl p-3 text-center uppercase tracking-wider mb-3 focus:outline-blue-500 text-sm">
-        <button onclick="handleCheckCard()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl mb-4 hover:bg-blue-700">Lanjut →</button>
+        <button onclick="handleCheckCard()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl mb-4 hover:bg-blue-700 transition">Lanjut →</button>
         
         <div class="relative flex py-2 items-center mb-4">
             <div class="flex-grow border-t border-gray-200"></div>
@@ -163,13 +166,44 @@
 
         <div class="border-t pt-4">
           <p class="text-xs font-semibold text-gray-700 mb-2">Sudah aktivasi kartu?</p>
-          <button onclick="renderManage()" class="w-full bg-gray-100 text-gray-700 py-2.5 rounded-xl text-sm font-medium">⚙️ Kelola kartu Anda di sini.</button>
+          <button onclick="renderManage()" class="w-full bg-gray-100 text-gray-700 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-200 transition">⚙️ Kelola kartu Anda di sini.</button>
         </div>
       `;
     }
 
-    // 2. TAMPILAN KELOLA KARTU
-    function renderManage() {
+    // 2. TAMPILAN KARTU AKTIF (Sesuai dengan gambar tujuannya)
+    function renderActiveCardStatus(card) {
+      const reviewUrl = formatUrl(card.google_review_url);
+      document.getElementById('app-content').innerHTML = `
+        <div class="flex items-center justify-center w-12 h-12 bg-blue-50 text-blue-600 rounded-full mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        
+        <h1 class="text-xl font-bold text-gray-900 mb-2">Kartu aktif!</h1>
+        <p class="text-gray-500 text-xs mb-6 leading-relaxed">
+          Pengaturan selesai—kartu <span class="font-semibold text-gray-700">${card.card_code}</span> kini membuka halaman ulasan Google untuk <span class="font-bold text-gray-900">${card.business_name || 'Bisnis Anda'}</span>.
+        </p>
+
+        <a href="${reviewUrl}" target="_blank" class="block w-full bg-blue-600 text-white font-semibold py-3 rounded-xl text-center mb-3 hover:bg-blue-700 transition">
+          Buka halaman review
+        </a>
+
+        <button onclick="renderManageWithCode('${card.card_code}')" class="w-full bg-gray-100 text-gray-700 font-semibold py-3 rounded-xl text-center mb-6 hover:bg-gray-200 transition">
+          Edit Info Kartu
+        </button>
+
+        <div class="bg-gray-50 p-3 rounded-xl text-center">
+          <p class="text-[11px] text-gray-400 leading-normal">
+            Simpan halaman ini bila perlu. PIN yang Anda buat sebelumnya akan diminta saat membuka halaman edit.
+          </p>
+        </div>
+      `;
+    }
+
+    // 3. TAMPILAN KELOLA / EDIT KARTU
+    function renderManage(defaultCode = '') {
       document.getElementById('app-content').innerHTML = `
         <h1 class="text-2xl font-bold text-gray-900 mb-2">Kelola Kartu</h1>
         <p class="text-gray-500 text-sm mb-6">
@@ -177,17 +211,21 @@
         </p>
         
         <label class="block text-xs font-semibold text-gray-700 mb-1">Kode Kartu</label>
-        <input id="manageCode" type="text" placeholder="Contoh: CARD001" class="w-full border rounded-xl p-3 mb-3 text-sm uppercase">
+        <input id="manageCode" type="text" value="${defaultCode}" placeholder="Contoh: CARD001" class="w-full border rounded-xl p-3 mb-3 text-sm uppercase">
         
         <label class="block text-xs font-semibold text-gray-700 mb-1">PIN (4 Digit Angka)</label>
         <input id="managePin" type="password" maxlength="4" placeholder="****" class="w-full border rounded-xl p-3 mb-4 text-sm">
 
-        <button onclick="handleManageLogin()" class="w-full bg-blue-500 text-white font-semibold py-3 rounded-xl mb-3 hover:bg-blue-600">🔓 Buka Kartu</button>
+        <button onclick="handleManageLogin()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl mb-3 hover:bg-blue-700 transition">🔓 Buka Kartu</button>
         <button onclick="renderHome()" class="w-full text-gray-600 text-sm py-2">Kembali</button>
       `;
     }
 
-    // 3. TAMPILAN FORM AKTIVASI KARTU
+    function renderManageWithCode(code) {
+      renderManage(code);
+    }
+
+    // 4. TAMPILAN FORM AKTIVASI KARTU
     function renderActivationForm(code) {
       document.getElementById('app-content').innerHTML = `
         <h1 class="text-2xl font-bold text-gray-900 mb-2">Aktivasi Kartu</h1>
@@ -204,7 +242,7 @@
         <label class="block text-xs font-semibold text-gray-700 mb-1">Buat PIN (4 Digit Angka)</label>
         <input id="bizPin" type="password" maxlength="4" placeholder="****" class="w-full border rounded-xl p-3 mb-6 text-sm">
 
-        <button onclick="submitActivation('${code}')" class="w-full bg-blue-500 text-white font-semibold py-3 rounded-xl mb-3 hover:bg-blue-600">Aktifkan Kartu</button>
+        <button onclick="submitActivation('${code}')" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl mb-3 hover:bg-blue-700 transition">Aktifkan Kartu</button>
         <button onclick="renderHome()" class="w-full text-gray-600 text-sm py-2">Kembali</button>
       `;
     }
@@ -230,7 +268,7 @@
 
       if (card) {
         if (card.is_activated) {
-          window.location.href = formatUrl(card.google_review_url);
+          renderActiveCardStatus(card);
         } else {
           renderActivationForm(card.card_code);
         }
@@ -264,14 +302,15 @@
 
       if (!error) {
         showNotification('Aktivasi Berhasil!', 'Kartu Anda telah aktif.', 'success', () => {
-          window.location.href = formattedUrl;
+          // Ambil data terbaru untuk menampilkan kartu aktif
+          initApp();
         });
       } else {
         showNotification('Gagal', 'Gagal mengaktifkan kartu: ' + error.message, 'error');
       }
     }
 
-    // LOGIKA: Kelola Kartu
+    // LOGIKA: Kelola Kartu (Login)
     async function handleManageLogin() {
       const code = document.getElementById('manageCode').value.trim().toUpperCase();
       const pin = document.getElementById('managePin').value.trim();
@@ -289,9 +328,85 @@
         .maybeSingle();
 
       if (card) {
-        showNotification('Berhasil Masuk', `Bisnis: ${card.business_name}\nLink: ${card.google_review_url}`, 'success');
+        // Tampilkan Form Edit Data
+        renderEditForm(card);
       } else {
         showNotification('Akses Ditolak', 'Kode Kartu atau PIN salah!', 'error');
+      }
+    }
+
+    // FORM EDIT DATA KARTU (Setelah PIN benar)
+    function renderEditForm(card) {
+      document.getElementById('app-content').innerHTML = `
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Edit Info Kartu</h1>
+        <p class="text-gray-500 text-xs mb-6">
+          Memperbarui data untuk kartu <span class="font-bold text-black">${card.card_code}</span>.
+        </p>
+
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Nama Bisnis</label>
+        <input id="editName" type="text" value="${card.business_name || ''}" class="w-full border rounded-xl p-3 mb-4 text-sm">
+
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Link Google Review</label>
+        <input id="editUrl" type="url" value="${card.google_review_url || ''}" class="w-full border rounded-xl p-3 mb-4 text-sm">
+
+        <label class="block text-xs font-semibold text-gray-700 mb-1">PIN Baru (Kosongkan jika tidak diganti)</label>
+        <input id="editPin" type="password" maxlength="4" placeholder="****" class="w-full border rounded-xl p-3 mb-6 text-sm">
+
+        <button onclick="submitEdit('${card.card_code}', '${card.pin}')" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl mb-3 hover:bg-blue-700 transition">Simpan Perubahan</button>
+        <button onclick="renderActiveCardStatusByCode('${card.card_code}')" class="w-full text-gray-600 text-sm py-2">Batal</button>
+      `;
+    }
+
+    async function submitEdit(code, currentPin) {
+      const name = document.getElementById('editName').value.trim();
+      const rawUrl = document.getElementById('editUrl').value.trim();
+      const newPin = document.getElementById('editPin').value.trim();
+
+      if (!name || !rawUrl) {
+        showNotification('Perhatian', 'Nama Bisnis dan Link Review tidak boleh kosong.', 'info');
+        return;
+      }
+
+      let finalPin = currentPin;
+      if (newPin) {
+        if (newPin.length !== 4) {
+          showNotification('Perhatian', 'PIN baru harus berjumlah 4 digit angka.', 'info');
+          return;
+        }
+        finalPin = newPin;
+      }
+
+      const formattedUrl = formatUrl(rawUrl);
+
+      const { error } = await supabaseClient
+        .from('cards')
+        .update({
+          business_name: name,
+          google_review_url: formattedUrl,
+          pin: finalPin
+        })
+        .eq('card_code', code);
+
+      if (!error) {
+        showNotification('Berhasil', 'Data kartu berhasil diperbarui.', 'success', () => {
+          window.location.href = window.location.pathname + '?code=' + code;
+        });
+      } else {
+        showNotification('Gagal', 'Gagal memperbarui kartu: ' + error.message, 'error');
+      }
+    }
+
+    async function renderActiveCardStatusByCode(code) {
+      const { data: card } = await supabaseClient
+        .from('cards')
+        .select('*')
+        .eq('card_code', code)
+        .maybeSingle();
+
+      if (card) {
+        renderActiveCardStatus(card);
+      } else {
+        renderHome();
       }
     }
 
