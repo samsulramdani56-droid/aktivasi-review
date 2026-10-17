@@ -26,7 +26,7 @@
     <div class="flex items-center gap-2">
       <div class="bg-red-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">R</div>
       <span class="font-bold text-gray-800 text-lg" data-i18n="brandTitle">Aktivasi Review</span>
-      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v1.0</span>
+      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v5.0</span>
     </div>
     <!-- Tombol Bahasa Interaktif -->
     <div class="bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full flex gap-1 cursor-pointer">
@@ -41,7 +41,7 @@
   </main>
 
   <footer class="mt-8 text-center text-xs text-gray-400" data-i18n="footerText">
-    © 2026 Create Render Project.
+    © 2026 Render Project. Hak cipta dilindungi.
   </footer>
 
   <!-- MODAL NOTIFIKASI KUSTOM -->
@@ -102,7 +102,7 @@
         newPinLabel: "PIN Baru (Kosongkan jika tidak diganti)",
         saveChangesBtn: "Simpan Perubahan",
         cancelBtn: "Batal",
-        footerText: "© 2026 Create Render Project.",
+        footerText: "© 2026 Render Project. Hak cipta dilindungi.",
         modalBtn: "Mengerti"
       },
       en: {
@@ -144,7 +144,7 @@
         newPinLabel: "New PIN (Leave blank to keep current)",
         saveChangesBtn: "Save Changes",
         cancelBtn: "Cancel",
-        footerText: "© 2026 Create Render Project.",
+        footerText: "© 2026 Render Project. All rights reserved.",
         modalBtn: "Understood"
       }
     };
@@ -180,7 +180,6 @@
     const cardCodeParam = urlParams.get('code');
 
     let modalCallback = null;
-    let cachedActiveCard = null;
 
     function formatUrl(url) {
       if (!url) return '';
@@ -263,7 +262,6 @@
         }
 
         if (card) {
-          cachedActiveCard = card;
           if (card.is_activated) {
             renderActiveCardStatus(card);
             return;
@@ -272,7 +270,8 @@
             return;
           }
         } else {
-          showNotification(currentLang === 'en' ? 'Card Not Found' : 'Kartu Tidak Ditemukan', `Code "${cleanCode}" not found.`, 'error', () => window.renderHome());
+          // CARA 2: Jika kartu belum ada di Supabase, langsung tampilkan form aktivasi otomatis
+          renderActivationForm(cleanCode);
           return;
         }
       }
@@ -398,14 +397,15 @@
       }
 
       if (card) {
-        cachedActiveCard = card;
         if (card.is_activated) { renderActiveCardStatus(card); } 
         else { renderActivationForm(card.card_code); }
       } else {
-        showNotification('Not Found', `Card "${code}" not found.`, 'error');
+        // CARA 2: Langsung arahkan ke form aktivasi jika di database belum ada
+        renderActivationForm(code);
       }
     }
 
+    // UPSERT: Otomatis buat baris baru di Supabase jika kodenya belum ada saat diaktifkan
     window.submitActivation = async function(code) {
       const name = document.getElementById('bizName').value.trim();
       const rawUrl = document.getElementById('bizUrl').value.trim();
@@ -417,13 +417,21 @@
       }
 
       const formattedUrl = formatUrl(rawUrl);
+
       const { error } = await supabaseClient
         .from('cards')
-        .update({ business_name: name, google_review_url: formattedUrl, pin: pin, is_activated: true })
-        .eq('card_code', code);
+        .upsert({ 
+          card_code: code,
+          business_name: name, 
+          google_review_url: formattedUrl, 
+          pin: pin, 
+          is_activated: true 
+        }, { onConflict: 'card_code' });
 
       if (!error) {
-        showNotification('Success!', currentLang === 'en' ? 'Card activated.' : 'Kartu aktif.', 'success', () => initApp());
+        showNotification('Success!', currentLang === 'en' ? 'Card activated.' : 'Kartu berhasil diaktifkan.', 'success', () => {
+          window.location.href = window.location.pathname + '?code=' + code;
+        });
       } else {
         showNotification('Error', error.message, 'error');
       }
