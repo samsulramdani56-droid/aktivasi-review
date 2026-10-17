@@ -16,7 +16,7 @@
     <div class="flex items-center gap-2">
       <div class="bg-red-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">R</div>
       <span class="font-bold text-gray-800 text-lg">Aktivasi Review</span>
-      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v4.0</span>
+      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v4.1</span>
     </div>
     <div class="bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full flex gap-2">
       <button class="bg-white text-blue-600 px-2 rounded">ID</button>
@@ -24,7 +24,7 @@
     </div>
   </header>
 
-  <!-- Konten Utama (Akan Berubah Sesuai Halaman) -->
+  <!-- Konten Utama -->
   <main id="app-content" class="w-full max-w-md bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
     <!-- Diisi otomatis oleh JavaScript -->
   </main>
@@ -35,10 +35,10 @@
 
   <script>
     // ========================================================
-    // PASTE KUNCI SUPABASE ANDA DI SINI
+    // KUNCI SUPABASE ANDA
     // ========================================================
-    const SUPABASE_URL = 'https://lzudrzpcahjyeqdvkyto.supabase.co/rest/v1/';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6dWRyenBjYWhqeWVxZHZreXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDYyODcsImV4cCI6MjEwNzgyMjI4N30.nI_84CyPRp-sv6_VJvpUB1bk7XWN0NCtSotwztl_lEY'; 
+    const SUPABASE_URL = 'https://lzudrzpcahjyeqdvkyto.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6dWRyenBjYWhqeWVxZHZreXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDYyODcsImV4cCI6MjEwNzgyMjI4N30.nI_84CyPRp-sv6_VJvpUB1bk7XWN0NCtSotwztl_lEY'; // Ganti jika diperlukan dengan anon key Anda yang sebenarnya
     
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -48,31 +48,37 @@
 
     async function initApp() {
       if (cardCodeParam) {
-        // Cek data kartu di Supabase
+        const cleanCode = cardCodeParam.trim().toUpperCase();
+
         const { data: card, error } = await supabaseClient
           .from('cards')
           .select('*')
-          .eq('card_code', cardCodeParam.toUpperCase())
+          .eq('card_code', cleanCode)
           .single();
+
+        if (error) {
+          alert('Error Database: ' + error.message);
+          renderHome();
+          return;
+        }
 
         if (card) {
           if (card.is_activated) {
-            // JIKA SUDAH AKTIF -> Langsung Lempar/Redirect ke Link Google Review Bisnis
             window.location.href = card.google_review_url;
             return;
           } else {
-            // JIKA BELUM AKTIF -> Tampilkan Form Aktivasi Kartu
             renderActivationForm(card.card_code);
             return;
           }
+        } else {
+          alert('Kode kartu "' + cleanCode + '" tidak ditemukan!');
         }
       }
       
-      // Jika tidak ada kode di URL -> Tampilkan Halaman Utama
       renderHome();
     }
 
-    // 1. TAMPILAN BERANDA UTAMA (Sesuai Gambar 1)
+    // 1. TAMPILAN BERANDA UTAMA
     function renderHome() {
       document.getElementById('app-content').innerHTML = `
         <h1 class="text-2xl font-bold text-gray-900 mb-2">Kartu Review</h1>
@@ -91,16 +97,6 @@
 
         <button onclick="alert('Gunakan kamera bawaan HP Anda untuk memindai QR')" class="w-full bg-gray-50 text-gray-700 text-sm py-3 rounded-xl font-medium border mb-4">📷 Scan QR kartu</button>
 
-        <div class="bg-gray-50 p-3 rounded-2xl mb-3 flex gap-3 text-xs text-gray-500 border border-gray-100">
-          <div>💡</div>
-          <div>Kalau scan QR atau tap NFC tidak jalan, ketik saja kode kartu Anda secara manual.</div>
-        </div>
-
-        <div class="bg-gray-50 p-3 rounded-2xl mb-6 flex gap-3 text-xs text-gray-500 border border-gray-100">
-          <div>📲</div>
-          <div>Cara paling gampang: tempelkan kartu NFC ke bagian belakang Handphone, link langsung terbuka tanpa ketik kode.</div>
-        </div>
-
         <div class="border-t pt-4">
           <p class="text-xs font-semibold text-gray-700 mb-2">Sudah aktivasi kartu?</p>
           <button onclick="renderManage()" class="w-full bg-gray-100 text-gray-700 py-2.5 rounded-xl text-sm font-medium">⚙️ Kelola kartu Anda di sini.</button>
@@ -108,28 +104,26 @@
       `;
     }
 
-    // 2. TAMPILAN KELOLA KARTU (Sesuai Gambar 2)
+    // 2. TAMPILAN KELOLA KARTU
     function renderManage() {
       document.getElementById('app-content').innerHTML = `
         <h1 class="text-2xl font-bold text-gray-900 mb-2">Kelola Kartu</h1>
         <p class="text-gray-500 text-sm mb-6">
-          Buka data kartu lewat pemindai QR atau kode unik, lalu perbarui tujuan ulasan, informasi bisnis, maupun PIN.
+          Buka data kartu lewat kode unik dan PIN Anda.
         </p>
         
         <label class="block text-xs font-semibold text-gray-700 mb-1">Kode Kartu</label>
         <input id="manageCode" type="text" placeholder="Contoh: CARD001" class="w-full border rounded-xl p-3 mb-3 text-sm uppercase">
         
         <label class="block text-xs font-semibold text-gray-700 mb-1">PIN (4 Digit Angka)</label>
-        <input id="managePin" type="password" maxlength="4" placeholder="****" class="w-full border rounded-xl p-3 mb-2 text-sm">
-        
-        <a href="https://wa.me/" target="_blank" class="text-xs text-blue-600 block mb-6">Lupa PIN? Hubungi Admin</a>
+        <input id="managePin" type="password" maxlength="4" placeholder="****" class="w-full border rounded-xl p-3 mb-4 text-sm">
 
         <button onclick="handleManageLogin()" class="w-full bg-blue-500 text-white font-semibold py-3 rounded-xl mb-3 hover:bg-blue-600">🔓 Buka Kartu</button>
         <button onclick="renderHome()" class="w-full text-gray-600 text-sm py-2">Kembali</button>
       `;
     }
 
-    // 3. TAMPILAN FORM AKTIVASI KARTU (Sesuai Gambar 3)
+    // 3. TAMPILAN FORM AKTIVASI KARTU
     function renderActivationForm(code) {
       document.getElementById('app-content').innerHTML = `
         <h1 class="text-2xl font-bold text-gray-900 mb-2">Aktivasi Kartu</h1>
@@ -141,8 +135,7 @@
         <input id="bizName" type="text" placeholder="Ketik nama bisnis" class="w-full border rounded-xl p-3 mb-4 text-sm">
 
         <label class="block text-xs font-semibold text-gray-700 mb-1">Link Google Review</label>
-        <input id="bizUrl" type="url" placeholder="https://maps.app.goo.gl/..." class="w-full border rounded-xl p-3 mb-1 text-sm">
-        <p class="text-[10px] text-gray-400 mb-4">Tautan akan dibuat dari bisnis yang dipilih atau Anda dapat memasukkannya sendiri</p>
+        <input id="bizUrl" type="url" placeholder="https://maps.app.goo.gl/..." class="w-full border rounded-xl p-3 mb-4 text-sm">
 
         <label class="block text-xs font-semibold text-gray-700 mb-1">Buat PIN (4 Digit Angka)</label>
         <input id="bizPin" type="password" maxlength="4" placeholder="****" class="w-full border rounded-xl p-3 mb-6 text-sm">
@@ -150,6 +143,36 @@
         <button onclick="submitActivation('${code}')" class="w-full bg-blue-500 text-white font-semibold py-3 rounded-xl mb-3 hover:bg-blue-600">Aktifkan Kartu</button>
         <button onclick="renderHome()" class="w-full text-gray-600 text-sm py-2">Kembali</button>
       `;
+    }
+
+    // LOGIKA: Tombol Lanjut di Beranda
+    async function handleCheckCard() {
+      const code = document.getElementById('cardInput').value.trim().toUpperCase();
+      if (!code) {
+        alert('Masukkan kode kartu terlebih dahulu.');
+        return;
+      }
+
+      const { data: card, error } = await supabaseClient
+        .from('cards')
+        .select('*')
+        .eq('card_code', code)
+        .single();
+
+      if (error) {
+        alert('Gagal mengecek kartu: ' + error.message);
+        return;
+      }
+
+      if (card) {
+        if (card.is_activated) {
+          window.location.href = card.google_review_url;
+        } else {
+          renderActivationForm(card.card_code);
+        }
+      } else {
+        alert('Kode kartu "' + code + '" tidak ditemukan di database!');
+      }
     }
 
     // LOGIKA: Simpan Data Aktivasi Ke Supabase
@@ -175,23 +198,13 @@
 
       if (!error) {
         alert('Aktivasi Berhasil! Kartu Anda telah aktif.');
-        window.location.href = url; // Langsung arahkan ke link ulasan Google
+        window.location.href = url;
       } else {
         alert('Gagal mengaktifkan kartu: ' + error.message);
       }
     }
 
-    // LOGIKA: Cek Kode Dari Input Manual Beranda
-    function handleCheckCard() {
-      const code = document.getElementById('cardInput').value.trim();
-      if (code) {
-        window.location.search = `?code=${code}`;
-      } else {
-        alert('Masukkan kode kartu terlebih dahulu.');
-      }
-    }
-
-    // LOGIKA: Akses Kelola Kartu Sederhana
+    // LOGIKA: Kelola Kartu
     async function handleManageLogin() {
       const code = document.getElementById('manageCode').value.trim().toUpperCase();
       const pin = document.getElementById('managePin').value.trim();
@@ -209,15 +222,15 @@
         .single();
 
       if (card) {
-        alert(`Berhasil masuk! Bisnis Anda: ${card.business_name}\nLink: ${card.google_review_url}`);
+        alert(`Berhasil masuk!\nBisnis: ${card.business_name}\nLink: ${card.google_review_url}`);
       } else {
         alert('Kode Kartu atau PIN salah!');
       }
     }
 
-    // Jalankan aplikasi
+    // Jalankan aplikasi saat halaman dimuat
     initApp();
   </script>
 </body>
-        </html>
-          
+  </html>
+  
