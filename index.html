@@ -8,6 +8,15 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-modal {
+      animation: modalFadeIn 0.2s ease-out forwards;
+    }
+  </style>
 </head>
 <body class="bg-slate-100 min-h-screen flex flex-col items-center p-4">
 
@@ -16,7 +25,7 @@
     <div class="flex items-center gap-2">
       <div class="bg-red-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">R</div>
       <span class="font-bold text-gray-800 text-lg">Aktivasi Review</span>
-      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v4.1</span>
+      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v4.2</span>
     </div>
     <div class="bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full flex gap-2">
       <button class="bg-white text-blue-600 px-2 rounded">ID</button>
@@ -33,18 +42,63 @@
     © 2026 Render Project.
   </footer>
 
+  <!-- MODAL NOTIFIKASI KUSTOM -->
+  <div id="custom-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl text-center animate-modal">
+      <div id="modal-icon" class="w-12 h-12 rounded-full mx-auto flex items-center justify-center text-xl mb-3"></div>
+      <h3 id="modal-title" class="font-bold text-gray-900 text-lg mb-1">Pemberitahuan</h3>
+      <p id="modal-message" class="text-sm text-gray-600 mb-6 leading-relaxed"></p>
+      <button id="modal-btn" onclick="closeCustomModal()" class="w-full bg-blue-600 text-white font-medium py-2.5 rounded-xl text-sm hover:bg-blue-700 transition">
+        Mengerti
+      </button>
+    </div>
+  </div>
+
   <script>
     // ========================================================
     // KUNCI SUPABASE ANDA
     // ========================================================
     const SUPABASE_URL = 'https://lzudrzpcahjyeqdvkyto.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6dWRyenBjYWhqeWVxZHZreXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDYyODcsImV4cCI6MjEwNzgyMjI4N30.nI_84CyPRp-sv6_VJvpUB1bk7XWN0NCtSotwztl_lEY'; // Ganti jika diperlukan dengan anon key Anda yang sebenarnya
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6dWRyenBjYWhqeWVxZHZreXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDYyODcsImV4cCI6MjEwNzgyMjI4N30.nI_84CyPRp-sv6_VJvpUB1bk7XWN0NCtSotwztl_lEY';
     
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Ambil Parameter URL (contoh: domain.com/?code=CARD001)
     const urlParams = new URLSearchParams(window.location.search);
     const cardCodeParam = urlParams.get('code');
+
+    let modalCallback = null;
+
+    function showNotification(title, message, type = 'info', onConfirm = null) {
+      const modal = document.getElementById('custom-modal');
+      const iconEl = document.getElementById('modal-icon');
+      const titleEl = document.getElementById('modal-title');
+      const msgEl = document.getElementById('modal-message');
+
+      titleEl.innerText = title;
+      msgEl.innerText = message;
+      modalCallback = onConfirm;
+
+      if (type === 'success') {
+        iconEl.className = 'w-12 h-12 rounded-full mx-auto flex items-center justify-center text-xl mb-3 bg-green-100 text-green-600';
+        iconEl.innerText = '✓';
+      } else if (type === 'error') {
+        iconEl.className = 'w-12 h-12 rounded-full mx-auto flex items-center justify-center text-xl mb-3 bg-red-100 text-red-600';
+        iconEl.innerText = '✕';
+      } else {
+        iconEl.className = 'w-12 h-12 rounded-full mx-auto flex items-center justify-center text-xl mb-3 bg-blue-100 text-blue-600';
+        iconEl.innerText = 'ℹ';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeCustomModal() {
+      document.getElementById('custom-modal').classList.add('hidden');
+      if (modalCallback) {
+        modalCallback();
+        modalCallback = null;
+      }
+    }
 
     async function initApp() {
       if (cardCodeParam) {
@@ -57,8 +111,7 @@
           .single();
 
         if (error) {
-          alert('Error Database: ' + error.message);
-          renderHome();
+          showNotification('Error Database', error.message, 'error', () => renderHome());
           return;
         }
 
@@ -71,7 +124,8 @@
             return;
           }
         } else {
-          alert('Kode kartu "' + cleanCode + '" tidak ditemukan!');
+          showNotification('Tidak Ditemukan', `Kode kartu "${cleanCode}" tidak ditemukan!`, 'error', () => renderHome());
+          return;
         }
       }
       
@@ -95,7 +149,7 @@
             <div class="flex-grow border-t border-gray-200"></div>
         </div>
 
-        <button onclick="alert('Gunakan kamera bawaan HP Anda untuk memindai QR')" class="w-full bg-gray-50 text-gray-700 text-sm py-3 rounded-xl font-medium border mb-4">📷 Scan QR kartu</button>
+        <button onclick="showNotification('Scan QR', 'Gunakan kamera bawaan HP Anda untuk memindai QR', 'info')" class="w-full bg-gray-50 text-gray-700 text-sm py-3 rounded-xl font-medium border mb-4">📷 Scan QR kartu</button>
 
         <div class="border-t pt-4">
           <p class="text-xs font-semibold text-gray-700 mb-2">Sudah aktivasi kartu?</p>
@@ -149,7 +203,7 @@
     async function handleCheckCard() {
       const code = document.getElementById('cardInput').value.trim().toUpperCase();
       if (!code) {
-        alert('Masukkan kode kartu terlebih dahulu.');
+        showNotification('Perhatian', 'Masukkan kode kartu terlebih dahulu.', 'info');
         return;
       }
 
@@ -160,7 +214,7 @@
         .single();
 
       if (error) {
-        alert('Gagal mengecek kartu: ' + error.message);
+        showNotification('Gagal', 'Gagal mengecek kartu: ' + error.message, 'error');
         return;
       }
 
@@ -171,7 +225,7 @@
           renderActivationForm(card.card_code);
         }
       } else {
-        alert('Kode kartu "' + code + '" tidak ditemukan di database!');
+        showNotification('Tidak Ditemukan', `Kode kartu "${code}" tidak ditemukan di database!`, 'error');
       }
     }
 
@@ -182,7 +236,7 @@
       const pin = document.getElementById('bizPin').value.trim();
 
       if (!name || !url || pin.length !== 4) {
-        alert('Mohon lengkapi semua data dan pastikan PIN berjumlah 4 digit.');
+        showNotification('Perhatian', 'Mohon lengkapi semua data dan pastikan PIN berjumlah 4 digit.', 'info');
         return;
       }
 
@@ -197,10 +251,11 @@
         .eq('card_code', code);
 
       if (!error) {
-        alert('Aktivasi Berhasil! Kartu Anda telah aktif.');
-        window.location.href = url;
+        showNotification('Aktivasi Berhasil!', 'Kartu Anda telah aktif.', 'success', () => {
+          window.location.href = url;
+        });
       } else {
-        alert('Gagal mengaktifkan kartu: ' + error.message);
+        showNotification('Gagal', 'Gagal mengaktifkan kartu: ' + error.message, 'error');
       }
     }
 
@@ -210,7 +265,7 @@
       const pin = document.getElementById('managePin').value.trim();
 
       if (!code || !pin) {
-        alert('Masukkan kode kartu dan PIN Anda.');
+        showNotification('Perhatian', 'Masukkan kode kartu dan PIN Anda.', 'info');
         return;
       }
 
@@ -222,15 +277,14 @@
         .single();
 
       if (card) {
-        alert(`Berhasil masuk!\nBisnis: ${card.business_name}\nLink: ${card.google_review_url}`);
+        showNotification('Berhasil Masuk', `Bisnis: ${card.business_name}\nLink: ${card.google_review_url}`, 'success');
       } else {
-        alert('Kode Kartu atau PIN salah!');
+        showNotification('Akses Ditolak', 'Kode Kartu atau PIN salah!', 'error');
       }
     }
 
-    // Jalankan aplikasi saat halaman dimuat
     initApp();
   </script>
 </body>
-  </html>
+        </html>
   
