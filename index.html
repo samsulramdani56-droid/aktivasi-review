@@ -41,7 +41,7 @@
   </main>
 
   <footer class="mt-8 text-center text-xs text-gray-400" data-i18n="footerText">
-    © 2026 Render Project. Hak cipta dilindungi.
+    © 2026 Create Render Project.
   </footer>
 
   <!-- MODAL NOTIFIKASI KUSTOM -->
@@ -102,7 +102,7 @@
         newPinLabel: "PIN Baru (Kosongkan jika tidak diganti)",
         saveChangesBtn: "Simpan Perubahan",
         cancelBtn: "Batal",
-        footerText: "© 2026 Render Project. Hak cipta dilindungi.",
+        footerText: "© 2026 Create Render Project.",
         modalBtn: "Mengerti"
       },
       en: {
@@ -144,7 +144,7 @@
         newPinLabel: "New PIN (Leave blank to keep current)",
         saveChangesBtn: "Save Changes",
         cancelBtn: "Cancel",
-        footerText: "© 2026 Render Project. All rights reserved.",
+        footerText: "© 2026 Create Render Project.",
         modalBtn: "Understood"
       }
     };
@@ -180,6 +180,7 @@
     const cardCodeParam = urlParams.get('code');
 
     let modalCallback = null;
+    let cachedActiveCard = null;
 
     function formatUrl(url) {
       if (!url) return '';
@@ -262,6 +263,7 @@
         }
 
         if (card) {
+          cachedActiveCard = card;
           if (card.is_activated) {
             renderActiveCardStatus(card);
             return;
@@ -270,7 +272,7 @@
             return;
           }
         } else {
-          // CARA 2: Jika kartu belum ada di Supabase, langsung tampilkan form aktivasi otomatis
+          // HANYA jika diakses lewat link scan QR/NFC asli, sistem otomatis buatkan baris data baru
           renderActivationForm(cleanCode);
           return;
         }
@@ -378,6 +380,7 @@
       `;
     }
 
+    // VALIDASI KETIK MANUAL DI BERANDA (Mencegah Pembuatan Data Sampah)
     window.handleCheckCard = async function() {
       const code = document.getElementById('cardInput').value.trim().toUpperCase();
       if (!code) {
@@ -397,15 +400,22 @@
       }
 
       if (card) {
-        if (card.is_activated) { renderActiveCardStatus(card); } 
-        else { renderActivationForm(card.card_code); }
+        if (card.is_activated) { 
+          renderActiveCardStatus(card); 
+        } else { 
+          renderActivationForm(card.card_code); 
+        }
       } else {
-        // CARA 2: Langsung arahkan ke form aktivasi jika di database belum ada
-        renderActivationForm(code);
+        // JIKA DIKETIK MANUAL DAN BELUM ADA DI DATABASE: TOLAK! (Tidak auto-create untuk input manual)
+        showNotification(
+          currentLang === 'en' ? 'Card Not Found' : 'Kartu Tidak Ditemukan', 
+          currentLang === 'en' ? `Code "${code}" is not registered in the system.` : `Kode kartu "${code}" tidak terdaftar di sistem. Pastikan kode benar atau gunakan scan QR/NFC pada kartu fisik.`, 
+          'error'
+        );
       }
     }
 
-    // UPSERT: Otomatis buat baris baru di Supabase jika kodenya belum ada saat diaktifkan
+    // UPSERT: Hanya tereksekusi jika diakses lewat scan QR/NFC asli via parameter URL (?code=)
     window.submitActivation = async function(code) {
       const name = document.getElementById('bizName').value.trim();
       const rawUrl = document.getElementById('bizUrl').value.trim();
@@ -477,7 +487,7 @@
       `;
     }
 
-    window.submitEdit = async function(code, currentPin) {
+    window.submitEdit = async function(cardCode, currentPin) {
       const name = document.getElementById('editName').value.trim();
       const rawUrl = document.getElementById('editUrl').value.trim();
       const newPin = document.getElementById('editPin').value.trim();
@@ -497,11 +507,11 @@
       const { error } = await supabaseClient
         .from('cards')
         .update({ business_name: name, google_review_url: formattedUrl, pin: finalPin })
-        .eq('card_code', code);
+        .eq('card_code', cardCode);
 
       if (!error) {
         showNotification('Success', 'Updated.', 'success', () => {
-          window.location.href = window.location.pathname + '?code=' + code;
+          window.location.href = window.location.pathname + '?code=' + cardCode;
         });
       } else {
         showNotification('Error', error.message, 'error');
