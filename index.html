@@ -188,16 +188,25 @@
 
     let modalCallback = null;
 
+    // FUNGSI PINTAR: Mengekstrak Place ID jika ada, atau mengonversi link/nama bisnis ke link review Google langsung
     function generateReviewUrl(inputUrl, businessName) {
       if (!inputUrl) return '';
       let clean = inputUrl.trim();
 
+      // Jika sudah berupa link direct review Google, langsung gunakan
       if (clean.includes('search.google.com') || clean.includes('writereview')) {
         return clean;
       }
 
-      const encodedQuery = encodeURIComponent(businessName ? businessName + " review" : clean);
-      return `https://www.google.com/search?q=${encodedQuery}`;
+      // Deteksi jika link memiliki parameter Place ID (placeid / ftid)
+      const placeIdMatch = clean.match(/(?:placeid=|ftid=)(ChI[a-zA-Z0-9_-]+)/);
+      if (placeIdMatch && placeIdMatch[1]) {
+        return `https://search.google.com/local/writereview?placeid=${placeIdMatch[1]}`;
+      }
+
+      // Jika tidak ada Place ID eksplisit, gunakan query nama bisnis + keyword review untuk membuka ulasan langsung
+      const queryText = businessName ? `${businessName} review` : clean;
+      return `https://www.google.com/search?q=${encodeURIComponent(queryText)}`;
     }
 
     function formatUrl(url) {
@@ -486,7 +495,6 @@
 
       if (!error) {
         showNotification('Success!', currentLang === 'en' ? 'Card activated.' : 'Kartu berhasil diaktifkan.', 'success', () => {
-          // Pertama kali aktivasi: Tampilkan status ringkasan kartu
           window.renderActiveCardStatusByCode(code);
         });
       } else {
@@ -535,7 +543,7 @@
       `;
     }
 
-    // PERBAIKAN: Setelah simpan perubahan, kembalikan ke Halaman Status Kartu (BUKAN ke Google Review)
+    // Setelah simpan perubahan, kembalikan ke Halaman Status Kartu Ringkasan
     window.submitEdit = async function(cardCode, currentPin) {
       const name = document.getElementById('editName').value.trim();
       const rawUrl = document.getElementById('editUrl').value.trim();
@@ -560,7 +568,6 @@
 
       if (!error) {
         showNotification('Success', currentLang === 'en' ? 'Data updated successfully.' : 'Data berhasil diperbarui.', 'success', () => {
-          // Buka Halaman Ringkasan Kartu Aktif
           window.renderActiveCardStatusByCode(cardCode);
         });
       } else {
