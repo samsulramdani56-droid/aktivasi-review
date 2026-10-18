@@ -26,7 +26,7 @@
     <div class="flex items-center gap-2">
       <div class="bg-red-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">R</div>
       <span class="font-bold text-gray-800 text-lg" data-i18n="brandTitle">Render Project Card</span>
-      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v1.0</span>
+      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v5.6</span>
     </div>
     <!-- Tombol Bahasa Interaktif -->
     <div class="bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full flex gap-1 cursor-pointer">
@@ -79,9 +79,9 @@
         alreadyActiveTitle: "Sudah aktivasi kartu?",
         manageBtn: "⚙️ Kelola kartu Anda di sini.",
         
-        activeTitle: "Mengalihkan ke Google Review...",
-        activeDesc: (code, name) => `Kartu <span class="font-semibold text-gray-700">${code}</span> (${name}) aktif. Mohon tunggu sebentar...`,
-        openReviewBtn: "Buka halaman review secara manual",
+        activeTitle: "Kartu Aktif!",
+        activeDesc: (code, name) => `Pengaturan selesai—kartu <span class="font-semibold text-gray-700">${code}</span> kini terhubung dengan ulasan Google untuk <span class="font-bold text-gray-900">${name}</span>.`,
+        openReviewBtn: "Tes Buka Halaman Review",
         editCardBtn: "Edit Info Kartu",
         saveInfoText: "Simpan halaman ini bila perlu. PIN yang Anda buat sebelumnya akan diminta saat membuka halaman edit.",
         copyLinkBtn: "📋 Salin Link Halaman Ini",
@@ -124,9 +124,9 @@
         alreadyActiveTitle: "Already activated a card?",
         manageBtn: "⚙️ Manage your card here.",
 
-        activeTitle: "Redirecting to Google Review...",
-        activeDesc: (code, name) => `Card <span class="font-semibold text-gray-700">${code}</span> (${name}) is active. Please wait...`,
-        openReviewBtn: "Open review page manually",
+        activeTitle: "Card Active!",
+        activeDesc: (code, name) => `Setup complete—card <span class="font-semibold text-gray-700">${code}</span> is now linked to Google review for <span class="font-bold text-gray-900">${name}</span>.`,
+        openReviewBtn: "Test Open Review Page",
         editCardBtn: "Edit Card Info",
         saveInfoText: "Save this page if needed. Your previously created PIN will be required when opening the edit page.",
         copyLinkBtn: "📋 Copy This Page Link",
@@ -187,9 +187,7 @@
     const cardCodeParam = urlParams.get('code');
 
     let modalCallback = null;
-    let cachedActiveCard = null;
 
-    // FUNGSI PINTAR: Mengubah Link Maps / Nama Bisnis menjadi Link Review Google
     function generateReviewUrl(inputUrl, businessName) {
       if (!inputUrl) return '';
       let clean = inputUrl.trim();
@@ -283,9 +281,8 @@
         }
 
         if (card) {
-          cachedActiveCard = card;
           if (card.is_activated) {
-            // AUTO REDIRECT LANGSUNG KE GOOGLE REVIEW JIKA KARTU SUDAH AKTIF
+            // JIKA DIBUKA LEWAT SCAN NFC/QR LANGSUNG -> REDIRECT KE GOOGLE REVIEW!
             const reviewUrl = formatUrl(card.google_review_url);
             if (reviewUrl) {
               window.location.href = reviewUrl;
@@ -331,7 +328,7 @@
       `;
     }
 
-    // 2. KARTU AKTIF (Fallback jika redirect gagal)
+    // 2. KARTU AKTIF (Halaman Ringkasan Pemilik Kartu)
     function renderActiveCardStatus(card) {
       const t = translations[currentLang];
       const reviewUrl = formatUrl(card.google_review_url);
@@ -410,7 +407,7 @@
 
     window.renderManageWithCode = function(code) { window.renderManage(code); }
 
-    // 4. FORM AKTIVASI (Dilengkapi Bantuan Generate Link Maps)
+    // 4. FORM AKTIVASI
     function renderActivationForm(code) {
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
@@ -452,11 +449,6 @@
 
       if (card) {
         if (card.is_activated) { 
-          const reviewUrl = formatUrl(card.google_review_url);
-          if (reviewUrl) {
-            window.location.href = reviewUrl;
-            return;
-          }
           renderActiveCardStatus(card); 
         } else { 
           renderActivationForm(card.card_code); 
@@ -494,7 +486,8 @@
 
       if (!error) {
         showNotification('Success!', currentLang === 'en' ? 'Card activated.' : 'Kartu berhasil diaktifkan.', 'success', () => {
-          window.location.href = generatedReviewUrl;
+          // Pertama kali aktivasi: Tampilkan status ringkasan kartu
+          window.renderActiveCardStatusByCode(code);
         });
       } else {
         showNotification('Error', error.message, 'error');
@@ -542,6 +535,7 @@
       `;
     }
 
+    // PERBAIKAN: Setelah simpan perubahan, kembalikan ke Halaman Status Kartu (BUKAN ke Google Review)
     window.submitEdit = async function(cardCode, currentPin) {
       const name = document.getElementById('editName').value.trim();
       const rawUrl = document.getElementById('editUrl').value.trim();
@@ -565,8 +559,9 @@
         .eq('card_code', cardCode);
 
       if (!error) {
-        showNotification('Success', 'Updated.', 'success', () => {
-          window.location.href = generatedReviewUrl;
+        showNotification('Success', currentLang === 'en' ? 'Data updated successfully.' : 'Data berhasil diperbarui.', 'success', () => {
+          // Buka Halaman Ringkasan Kartu Aktif
+          window.renderActiveCardStatusByCode(cardCode);
         });
       } else {
         showNotification('Error', error.message, 'error');
