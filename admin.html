@@ -43,7 +43,7 @@
           <div class="bg-red-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">R</div>
           <h1 class="text-2xl font-bold text-gray-900">Dashboard Super Admin</h1>
         </div>
-        <p class="text-xs text-gray-500 mt-1">Kelola seluruh kartu review, reset PIN, dan buat kartu baru.</p>
+        <p class="text-xs text-gray-500 mt-1">Kelola seluruh kartu review, reset PIN, dan buat kartu baru secara massal.</p>
       </div>
       <button onclick="logoutAdmin()" class="bg-gray-200 text-gray-700 text-xs font-semibold px-4 py-2 rounded-xl hover:bg-gray-300 transition">Logout</button>
     </header>
@@ -68,9 +68,15 @@
     <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-8">
       <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6">
         <input id="searchInput" type="text" oninput="filterCards()" placeholder="Cari Kode Kartu atau Nama Bisnis..." class="border rounded-xl px-4 py-2.5 text-sm w-full md:w-80 focus:outline-blue-500">
-        <button onclick="openAddModal()" class="bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-blue-700 transition flex items-center justify-center gap-1.5">
-          + Tambah Kartu Baru
-        </button>
+        
+        <div class="flex gap-2">
+          <button onclick="openBatchModal()" class="bg-emerald-600 text-white font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-emerald-700 transition flex items-center justify-center gap-1.5">
+            ⚡ Generate Massal
+          </button>
+          <button onclick="openAddModal()" class="bg-blue-600 text-white font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-blue-700 transition flex items-center justify-center gap-1.5">
+            + Tambah Single
+          </button>
+        </div>
       </div>
 
       <!-- Data Table -->
@@ -93,22 +99,52 @@
     </div>
   </div>
 
-  <!-- MODAL EDIT / TAMBAH KARTU -->
+  <!-- MODAL BATCH GENERATE (MASSAL) -->
+  <div id="batch-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl animate-modal">
+      <h3 class="font-bold text-gray-900 text-lg mb-1">⚡ Generate Kartu Massal</h3>
+      <p class="text-xs text-gray-500 mb-4">Buat puluhan kode kartu sekaligus secara otomatis.</p>
+      
+      <label class="block text-xs font-semibold text-gray-700 mb-1">Prefix Kode Kartu</label>
+      <input id="batchPrefix" type="text" value="CARD" placeholder="Contoh: CARD" class="w-full border rounded-xl p-3 mb-3 text-sm uppercase">
+
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Angka Awal</label>
+          <input id="batchStart" type="number" value="1" min="1" class="w-full border rounded-xl p-3 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Jumlah Kartu</label>
+          <input id="batchCount" type="number" value="10" min="1" max="100" class="w-full border rounded-xl p-3 text-sm">
+        </div>
+      </div>
+
+      <label class="block text-xs font-semibold text-gray-700 mb-1">PIN Default (4 Digit)</label>
+      <input id="batchPin" type="text" maxlength="4" value="1234" class="w-full border rounded-xl p-3 mb-6 text-sm">
+
+      <div class="flex gap-2">
+        <button onclick="closeBatchModal()" class="w-1/2 border text-gray-600 font-semibold py-2.5 rounded-xl text-sm">Batal</button>
+        <button onclick="submitBatchGenerate()" class="w-1/2 bg-emerald-600 text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-emerald-700 transition">Proses Massal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL SINGLE EDIT / TAMBAH KARTU -->
   <div id="card-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl animate-modal">
       <h3 id="modalFormTitle" class="font-bold text-gray-900 text-lg mb-4">Tambah Kartu Baru</h3>
       
       <label class="block text-xs font-semibold text-gray-700 mb-1">Kode Kartu (Unik)</label>
-      <input id="formCardCode" type="text" placeholder="Isi kode kartu" class="w-full border rounded-xl p-3 mb-3 text-sm uppercase">
+      <input id="formCardCode" type="text" placeholder="" class="w-full border rounded-xl p-3 mb-3 text-sm uppercase">
 
       <label class="block text-xs font-semibold text-gray-700 mb-1">Nama Bisnis (Opsional jika belum aktif)</label>
-      <input id="formBizName" type="text" placeholder="Opsional" class="w-full border rounded-xl p-3 mb-3 text-sm">
+      <input id="formBizName" type="text" placeholder="" class="w-full border rounded-xl p-3 mb-3 text-sm">
 
       <label class="block text-xs font-semibold text-gray-700 mb-1">Link Review / Place ID</label>
-      <input id="formReviewUrl" type="text" placeholder="opsional" class="w-full border rounded-xl p-3 mb-3 text-sm">
+      <input id="formReviewUrl" type="text" placeholder="" class="w-full border rounded-xl p-3 mb-3 text-sm">
 
       <label class="block text-xs font-semibold text-gray-700 mb-1">PIN (4 Digit)</label>
-      <input id="formPin" type="text" maxlength="4" placeholder="Masukan Pin" class="w-full border rounded-xl p-3 mb-6 text-sm">
+      <input id="formPin" type="text" maxlength="4" placeholder="" class="w-full border rounded-xl p-3 mb-6 text-sm">
 
       <div class="flex gap-2">
         <button onclick="closeModal()" class="w-1/2 border text-gray-600 font-semibold py-2.5 rounded-xl text-sm">Batal</button>
@@ -121,14 +157,13 @@
     // ========================================================
     // KONFIGURASI SUPER ADMIN PIN & SUPABASE
     // ========================================================
-    const MASTER_ADMIN_PIN = "1406"; // Ganti dengan PIN Super Admin rahasia Anda
+    const MASTER_ADMIN_PIN = "140806"; 
 
     const SUPABASE_URL = 'https://lzudrzpcahjyeqdvkyto.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6dWRyenBjYWhqeWVxZHZreXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDYyODcsImV4cCI6MjEwNzgyMjI4N30.nI_84CyPRp-sv6_VJvpUB1bk7XWN0NCtSotwztl_lEY';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let allCardsData = [];
-    let isEditingMode = false;
 
     function handleAdminLogin() {
       const pin = document.getElementById('adminPinInput').value.trim();
@@ -201,19 +236,65 @@
       renderTable(filtered);
     }
 
+    // ========================================================
+    // LOGIK BATCH GENERATE (MASSAL)
+    // ========================================================
+    function openBatchModal() {
+      document.getElementById('batch-modal').classList.remove('hidden');
+    }
+
+    function closeBatchModal() {
+      document.getElementById('batch-modal').classList.add('hidden');
+    }
+
+    async function submitBatchGenerate() {
+      const prefix = document.getElementById('batchPrefix').value.trim().toUpperCase() || 'CARD';
+      const startNum = parseInt(document.getElementById('batchStart').value) || 1;
+      const count = parseInt(document.getElementById('batchCount').value) || 1;
+      const defaultPin = document.getElementById('batchPin').value.trim() || '1406';
+
+      if (count > 100) {
+        alert("Maksimal 100 kartu sekali generate!");
+        return;
+      }
+
+      const batchPayload = [];
+      for (let i = 0; i < count; i++) {
+        const currentNum = startNum + i;
+        // Format digit angka agar rapi (misal CARD001, CARD002)
+        const paddedNum = String(currentNum).padStart(3, '0');
+        const code = `${prefix}${paddedNum}`;
+
+        batchPayload.push({
+          card_code: code,
+          pin: defaultPin,
+          is_activated: false
+        });
+      }
+
+      const { error } = await supabaseClient.from('cards').upsert(batchPayload, { onConflict: 'card_code' });
+
+      if (!error) {
+        alert(`Berhasil membuat ${count} kartu baru!`);
+        closeBatchModal();
+        fetchCards();
+      } else {
+        alert("Gagal generate massal: " + error.message);
+      }
+    }
+
+    // SINGLE MODAL LOGIC
     function openAddModal() {
-      isEditingMode = false;
       document.getElementById('modalFormTitle').innerText = "Tambah Kartu Baru";
       document.getElementById('formCardCode').value = '';
       document.getElementById('formCardCode').disabled = false;
       document.getElementById('formBizName').value = '';
       document.getElementById('formReviewUrl').value = '';
-      document.getElementById('formPin').value = '1406';
+      document.getElementById('formPin').value = '';
       document.getElementById('card-modal').classList.remove('hidden');
     }
 
     function openEditModal(code) {
-      isEditingMode = true;
       const card = allCardsData.find(c => c.card_code === code);
       if (!card) return;
 
