@@ -316,7 +316,7 @@
       const reviewUrl = formatUrl(card.google_review_url);
       
       // Pesan WhatsApp otomatis menyertakan Kode Kartu
-      const waMessage = encodeURIComponent(`Halo Owner, saya ingin bertanya/bantuan terkait kartu dengan Kode Kartu: ${card.card_code}`);
+      const waMessage = encodeURIComponent(`Halo Kak Render, saya ingin bertanya/bantuan terkait kartu dengan Kode Kartu: ${card.card_code}`);
       const waOwnerUrl = `https://wa.me/${OWNER_WHATSAPP}?text=${waMessage}`;
 
       document.getElementById('app-content').innerHTML = `
