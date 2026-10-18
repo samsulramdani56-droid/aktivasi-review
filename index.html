@@ -374,7 +374,7 @@
       const forgotAnchor = document.getElementById('forgotPinAnchor');
       if (!codeInput || !forgotAnchor) return;
 
-      const codeVal = codeInput.value.trim() || '[Owner WhatsApp]';
+      const codeVal = codeInput.value.trim() || '[Belum Diisi]';
       const msg = encodeURIComponent(`Halo Kak Render, saya lupa PIN untuk Kelola Kartu dengan Kode Kartu: ${codeVal}`);
       forgotAnchor.href = `https://wa.me/${OWNER_WHATSAPP}?text=${msg}`;
     }
