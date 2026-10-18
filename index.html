@@ -60,7 +60,7 @@
     // ========================================================
     // KONFIGURASI NOMOR WHATSAPP OWNER
     // ========================================================
-    const OWNER_WHATSAPP = "628xxxxxxxxxx"; // Ganti dengan nomor WhatsApp Owner (format: 628...)
+    const OWNER_WHATSAPP = "6283150929548"; // Ganti dengan nomor WhatsApp Owner (format: 628...)
 
     // ========================================================
     // KAMUS TERJEMAHAN (ID & EN)
@@ -374,7 +374,7 @@
       const forgotAnchor = document.getElementById('forgotPinAnchor');
       if (!codeInput || !forgotAnchor) return;
 
-      const codeVal = codeInput.value.trim() || '[6283150929548]';
+      const codeVal = codeInput.value.trim() || '[Owner WhatsApp]';
       const msg = encodeURIComponent(`Halo Kak Render, saya lupa PIN untuk Kelola Kartu dengan Kode Kartu: ${codeVal}`);
       forgotAnchor.href = `https://wa.me/${OWNER_WHATSAPP}?text=${msg}`;
     }
