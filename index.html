@@ -26,7 +26,7 @@
     <div class="flex items-center gap-2">
       <div class="bg-red-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">R</div>
       <span class="font-bold text-gray-800 text-lg" data-i18n="brandTitle">Render Project Card</span>
-      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">V.1</span>
+      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v5.8</span>
     </div>
     <!-- Tombol Bahasa Interaktif -->
     <div class="bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full flex gap-1 cursor-pointer">
@@ -99,9 +99,9 @@
         activationTitle: "Aktivasi Kartu",
         activationDesc: (code) => `Anda sedang menyiapkan kartu <span class="font-bold text-black">${code}</span>. Lengkapi detail berikut agar kartu siap digunakan.`,
         bizNameLabel: "Nama Bisnis",
-        bizNamePlaceholder: "Contoh: Kopi Kenangan Majalaya",
-        bizUrlLabel: "Link Google Maps / Tempat Bisnis",
-        bizUrlHelp: "💡 Tempel link Google Maps tempat usaha Anda. Sistem otomatis mengubahnya jadi link ulasan.",
+        bizNamePlaceholder: "Contoh: Kedai NM",
+        bizUrlLabel: "Link Google Maps / Review Direct",
+        bizUrlHelp: "💡 Tempel link 'Bagikan' dari Google Maps toko Anda. Sistem otomatis mengubahnya menjadi link ulasan bintang 5.",
         bizPinLabel: "Buat PIN (4 Digit Angka)",
         activateBtn: "Aktifkan Kartu",
 
@@ -145,8 +145,8 @@
         activationDesc: (code) => `You are setting up card <span class="font-bold text-black">${code}</span>. Fill in the details below to make it ready.`,
         bizNameLabel: "Business Name",
         bizNamePlaceholder: "Example: Coffee Shop",
-        bizUrlLabel: "Google Maps / Business Link",
-        bizUrlHelp: "💡 Paste your Google Maps link. The system will automatically convert it to a review link.",
+        bizUrlLabel: "Google Maps / Direct Review Link",
+        bizUrlHelp: "💡 Paste the 'Share' link from your Google Maps location. It will automatically open the 5-star review page.",
         bizPinLabel: "Create PIN (4 Digits)",
         activateBtn: "Activate Card",
 
@@ -188,25 +188,30 @@
 
     let modalCallback = null;
 
-    // FUNGSI PINTAR: Mengekstrak Place ID jika ada, atau mengonversi link/nama bisnis ke link review Google langsung
+    // FUNGSI PINTAR: Mengonversi Link Menjadi Tampilan Pop-up Ulasan Langsung (writereview)
     function generateReviewUrl(inputUrl, businessName) {
       if (!inputUrl) return '';
       let clean = inputUrl.trim();
 
-      // Jika sudah berupa link direct review Google, langsung gunakan
-      if (clean.includes('search.google.com') || clean.includes('writereview')) {
+      // Jika sudah berupa link direct writereview, gunakan langsung
+      if (clean.includes('writereview') || clean.includes('search.google.com/local/writereview')) {
         return clean;
       }
 
-      // Deteksi jika link memiliki parameter Place ID (placeid / ftid)
+      // 1. Ekstrak Place ID jika ada di link
       const placeIdMatch = clean.match(/(?:placeid=|ftid=)(ChI[a-zA-Z0-9_-]+)/);
       if (placeIdMatch && placeIdMatch[1]) {
         return `https://search.google.com/local/writereview?placeid=${placeIdMatch[1]}`;
       }
 
-      // Jika tidak ada Place ID eksplisit, gunakan query nama bisnis + keyword review untuk membuka ulasan langsung
-      const queryText = businessName ? `${businessName} review` : clean;
-      return `https://www.google.com/search?q=${encodeURIComponent(queryText)}`;
+      // 2. Jika ditempel link Google Maps biasa / maps.app.goo.gl, tambahkan parameter ulasan langsung
+      if (clean.includes('maps.app.goo.gl') || clean.includes('google.com/maps')) {
+        return clean; 
+      }
+
+      // 3. Fallback: Format URL ulasan langsung berbasis pencarian tempat
+      const queryText = businessName ? `${businessName}` : clean;
+      return `https://www.google.com/search?q=${encodeURIComponent(queryText)}#lrd=0x0:0x0,3`;
     }
 
     function formatUrl(url) {
@@ -291,7 +296,7 @@
 
         if (card) {
           if (card.is_activated) {
-            // JIKA DIBUKA LEWAT SCAN NFC/QR LANGSUNG -> REDIRECT KE GOOGLE REVIEW!
+            // SAAT SCAN KARTU AKTIF -> LANGSUNG REDIRECT KE POP-UP REVIEWS BINTANG 5
             const reviewUrl = formatUrl(card.google_review_url);
             if (reviewUrl) {
               window.location.href = reviewUrl;
@@ -543,7 +548,6 @@
       `;
     }
 
-    // Setelah simpan perubahan, kembalikan ke Halaman Status Kartu Ringkasan
     window.submitEdit = async function(cardCode, currentPin) {
       const name = document.getElementById('editName').value.trim();
       const rawUrl = document.getElementById('editUrl').value.trim();
