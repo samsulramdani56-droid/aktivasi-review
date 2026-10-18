@@ -58,6 +58,11 @@
 
   <script>
     // ========================================================
+    // KONFIGURASI NOMOR WHATSAPP OWNER
+    // ========================================================
+    const OWNER_WHATSAPP = "628xxxxxxxxxx"; // Ganti dengan nomor WhatsApp Owner (format: 628...)
+
+    // ========================================================
     // KAMUS TERJEMAHAN (ID & EN)
     // ========================================================
     let currentLang = localStorage.getItem('app_lang') || 'id';
@@ -86,6 +91,7 @@
         cardCodeLabel: "Kode Kartu",
         cardCodePlaceholder: "Contoh: CARD001",
         pinLabel: "PIN (4 Digit Angka)",
+        forgotPinText: "Lupa PIN?",
         openCardBtn: "🔓 Buka Kartu",
         backBtn: "Kembali",
 
@@ -128,6 +134,7 @@
         cardCodeLabel: "Card Code",
         cardCodePlaceholder: "Example: CARD001",
         pinLabel: "PIN (4 Digits)",
+        forgotPinText: "Forgot PIN?",
         openCardBtn: "🔓 Open Card",
         backBtn: "Back",
 
@@ -272,7 +279,6 @@
             return;
           }
         } else {
-          // HANYA jika diakses lewat link scan QR/NFC asli, sistem otomatis buatkan baris data baru
           renderActivationForm(cleanCode);
           return;
         }
@@ -339,7 +345,7 @@
       `;
     }
 
-    // 3. KELOLA KARTU
+    // 3. KELOLA KARTU (Dilengkapi Update Dinamis Link WhatsApp "Lupa PIN?")
     window.renderManage = function(defaultCode = '') {
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
@@ -347,14 +353,30 @@
         <p class="text-gray-500 text-sm mb-6">${t.manageCardDesc}</p>
         
         <label class="block text-xs font-semibold text-gray-700 mb-1">${t.cardCodeLabel}</label>
-        <input id="manageCode" type="text" value="${defaultCode}" placeholder="${t.cardCodePlaceholder}" class="w-full border rounded-xl p-3 mb-3 text-sm uppercase">
+        <input id="manageCode" type="text" value="${defaultCode}" placeholder="${t.cardCodePlaceholder}" oninput="updateForgotPinLink()" class="w-full border rounded-xl p-3 mb-3 text-sm uppercase">
         
-        <label class="block text-xs font-semibold text-gray-700 mb-1">${t.pinLabel}</label>
+        <div class="flex justify-between items-center mb-1">
+          <label class="block text-xs font-semibold text-gray-700">${t.pinLabel}</label>
+          <a id="forgotPinAnchor" href="#" target="_blank" class="text-xs text-blue-600 font-medium hover:underline">${t.forgotPinText}</a>
+        </div>
         <input id="managePin" type="password" maxlength="4" placeholder="****" class="w-full border rounded-xl p-3 mb-4 text-sm">
 
         <button onclick="window.handleManageLogin()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl mb-3 hover:bg-blue-700 transition">${t.openCardBtn}</button>
         <button onclick="window.renderHome()" class="w-full text-gray-600 text-sm py-2">${t.backBtn}</button>
       `;
+      // Jalankan sekali untuk set link awal berdasarkan defaultCode
+      updateForgotPinLink();
+    }
+
+    // Fungsi otomatis memperbarui tujuan link WhatsApp berdasarkan input Kode Kartu
+    window.updateForgotPinLink = function() {
+      const codeInput = document.getElementById('manageCode');
+      const forgotAnchor = document.getElementById('forgotPinAnchor');
+      if (!codeInput || !forgotAnchor) return;
+
+      const codeVal = codeInput.value.trim() || '[6283150929548]';
+      const msg = encodeURIComponent(`Halo Kak Render, saya lupa PIN untuk Kelola Kartu dengan Kode Kartu: ${codeVal}`);
+      forgotAnchor.href = `https://wa.me/${OWNER_WHATSAPP}?text=${msg}`;
     }
 
     window.renderManageWithCode = function(code) { window.renderManage(code); }
@@ -380,7 +402,7 @@
       `;
     }
 
-    // VALIDASI KETIK MANUAL DI BERANDA (Mencegah Pembuatan Data Sampah)
+    // VALIDASI KETIK MANUAL DI BERANDA
     window.handleCheckCard = async function() {
       const code = document.getElementById('cardInput').value.trim().toUpperCase();
       if (!code) {
@@ -406,7 +428,6 @@
           renderActivationForm(card.card_code); 
         }
       } else {
-        // JIKA DIKETIK MANUAL DAN BELUM ADA DI DATABASE: TOLAK! (Tidak auto-create untuk input manual)
         showNotification(
           currentLang === 'en' ? 'Card Not Found' : 'Kartu Tidak Ditemukan', 
           currentLang === 'en' ? `Code "${code}" is not registered in the system.` : `Kode kartu "${code}" tidak terdaftar di sistem. Pastikan kode benar atau gunakan scan QR/NFC pada kartu fisik.`, 
@@ -415,7 +436,6 @@
       }
     }
 
-    // UPSERT: Hanya tereksekusi jika diakses lewat scan QR/NFC asli via parameter URL (?code=)
     window.submitActivation = async function(code) {
       const name = document.getElementById('bizName').value.trim();
       const rawUrl = document.getElementById('bizUrl').value.trim();
