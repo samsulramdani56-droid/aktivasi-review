@@ -8,6 +8,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Html5Qrcode Scanner CDN -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     /* Animasi halus untuk pop-up modal */
     @keyframes modalFadeIn {
@@ -43,6 +45,21 @@
   <footer class="mt-8 text-center text-xs text-gray-400" data-i18n="footerText">
     © 2026 Create Render Project.
   </footer>
+
+  <!-- MODAL / KOTAK PEMINDAI KAMERA QR -->
+  <div id="qr-reader-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-xl text-center animate-modal">
+      <h3 class="font-bold text-gray-900 text-lg mb-2">Scan QR Kartu</h3>
+      <p class="text-xs text-gray-500 mb-4">Arahkan kamera ke QR Code pada kartu fisik.</p>
+      
+      <!-- Area Kamera -->
+      <div id="reader" class="w-full rounded-2xl overflow-hidden mb-4 bg-black"></div>
+      
+      <button onclick="closeQrScanner()" class="w-full bg-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-300 transition">
+        Tutup Kamera
+      </button>
+    </div>
+  </div>
 
   <!-- MODAL NOTIFIKASI KUSTOM -->
   <div id="custom-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -187,6 +204,7 @@
     const cardCodeParam = urlParams.get('code');
 
     let modalCallback = null;
+    let html5QrCode = null;
 
     // FUNGSI PINTAR UNTUK MENGUBAH PLACE ID / LINK MENJADI DIRECT REVIEW LINK
     function formatReviewUrl(input) {
@@ -204,6 +222,66 @@
       }
 
       return clean;
+    }
+
+    // FUNGSI SCANNER QR KAMERA
+    window.startQrScanner = function() {
+      const modal = document.getElementById('qr-reader-modal');
+      modal.classList.remove('hidden');
+
+      html5QrCode = new Html5Qrcode("reader");
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+      
+      html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        (decodedText) => {
+          stopQrScanner();
+          try {
+            const urlObj = new URL(decodedText);
+            const scannedCode = urlObj.searchParams.get('code');
+            if (scannedCode) {
+              document.getElementById('cardInput').value = scannedCode;
+              window.handleCheckCard();
+            } else {
+              showNotification('Format Salah', 'QR Code ini tidak memiliki parameter kode kartu yang valid.', 'error');
+            }
+          } catch (e) {
+            document.getElementById('cardInput').value = decodedText.trim();
+            window.handleCheckCard();
+          }
+        },
+        (errorMessage) => {
+          // Frame error diabaikan saat scanning berjalan
+        }
+      ).catch((err) => {
+        showNotification('Akses Kamera Ditolak', 'Pastikan Anda memberikan izin akses kamera pada browser.', 'error');
+        closeQrScanner();
+      });
+    };
+
+    window.closeQrScanner = function() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          document.getElementById('qr-reader-modal').classList.add('hidden');
+        }).catch(err => {
+          document.getElementById('qr-reader-modal').classList.add('hidden');
+        });
+      } else {
+        document.getElementById('qr-reader-modal').classList.add('hidden');
+      }
+    };
+
+    function stopQrScanner() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          document.getElementById('qr-reader-modal').classList.add('hidden');
+        }).catch(err => {
+          document.getElementById('qr-reader-modal').classList.add('hidden');
+        });
+      }
     }
 
     window.copyPageLink = function() {
@@ -316,7 +394,7 @@
             <div class="flex-grow border-t border-gray-200"></div>
         </div>
 
-        <button onclick="showNotification('Scan QR', currentLang === 'en' ? 'Use your phone camera to scan the QR code.' : 'Gunakan kamera HP Anda untuk memindai QR.', 'info')" class="w-full bg-gray-50 text-gray-700 text-sm py-3 rounded-xl font-medium border mb-4">${t.scanBtn}</button>
+        <button onclick="window.startQrScanner()" class="w-full bg-gray-50 text-gray-700 text-sm py-3 rounded-xl font-medium border mb-4 hover:bg-gray-100 transition">${t.scanBtn}</button>
 
         <div class="border-t pt-4">
           <p class="text-xs font-semibold text-gray-700 mb-2">${t.alreadyActiveTitle}</p>
