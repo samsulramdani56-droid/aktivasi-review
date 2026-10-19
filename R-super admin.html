@@ -1,169 +1,223 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Super Admin Dashboard - Render Project Card</title>
+  <title>Super Admin Dashboard | Render Project</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- QRCode.js CDN untuk Preview QR Instant -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     @keyframes modalFadeIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
-    .animate-modal { animation: modalFadeIn 0.2s ease-out forwards; }
+    .animate-modal {
+      animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
   </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800">
+<body class="bg-gradient-to-br from-slate-50 via-slate-100 to-blue-50/30 min-h-full font-sans text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
 
   <!-- LOGIN CONTAINER -->
   <div id="login-section" class="min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-md border border-gray-100">
-      <div class="flex items-center gap-2 mb-4 justify-center">
-        <div class="bg-red-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">R</div>
-        <span class="font-bold text-gray-800 text-lg">Super Admin Panel</span>
+    <div class="bg-white/90 backdrop-blur-xl w-full max-w-sm rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-200/60 animate-modal text-center">
+      <div class="bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-bold rounded-2xl w-14 h-14 mx-auto flex items-center justify-center shadow-md shadow-blue-500/20 text-xl tracking-wider mb-4">R</div>
+      <h2 class="font-extrabold text-slate-900 text-xl tracking-tight mb-1">Super Admin Panel</h2>
+      <p class="text-xs text-slate-500 mb-6 leading-relaxed">Masukkan PIN Master Super Admin untuk mengelola seluruh ekosistem kartu review.</p>
+      
+      <div class="text-left mb-4">
+        <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Super Admin</label>
+        <input id="adminPinInput" type="password" maxlength="6" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl p-3.5 text-center tracking-widest text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
       </div>
-      <p class="text-xs text-center text-gray-500 mb-6">Masukkan PIN Master Super Admin untuk mengelola seluruh data kartu.</p>
       
-      <label class="block text-xs font-semibold text-gray-700 mb-1">PIN Super Admin</label>
-      <input id="adminPinInput" type="password" placeholder="****" class="w-full border rounded-xl p-3 mb-4 text-center tracking-widest text-lg focus:outline-blue-500">
-      
-      <button onclick="handleAdminLogin()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition">Masuk Dashboard</button>
+      <button onclick="handleAdminLogin()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm">
+        Masuk Dashboard
+      </button>
     </div>
   </div>
 
   <!-- DASHBOARD CONTAINER (Hidden by Default) -->
-  <div id="dashboard-section" class="hidden min-h-screen p-4 md:p-8 max-w-6xl mx-auto">
-    <!-- Top Header -->
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-      <div>
-        <div class="flex items-center gap-2">
-          <div class="bg-red-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">R</div>
-          <h1 class="text-2xl font-bold text-gray-900">Dashboard Super Admin</h1>
+  <div id="dashboard-section" class="hidden min-h-screen p-4 sm:p-6 md:p-8 max-w-6xl mx-auto flex flex-col justify-between">
+    <div>
+      <!-- Top Header -->
+      <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-white/80 backdrop-blur-md p-4 sm:p-6 rounded-3xl border border-slate-200/60 shadow-sm">
+        <div class="flex items-center gap-3">
+          <div class="bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-bold rounded-2xl w-11 h-11 flex items-center justify-center shadow-md shadow-blue-500/20 text-lg">R</div>
+          <div>
+            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Dashboard Super Admin</h1>
+            <p class="text-xs text-slate-500">Kelola kartu, cetak massal QR/NFC, dan kelola PIN klien.</p>
+          </div>
         </div>
-        <p class="text-xs text-gray-500 mt-1">Kelola seluruh kartu review, reset PIN, dan buat kartu baru secara massal.</p>
-      </div>
-      <button onclick="logoutAdmin()" class="bg-gray-200 text-gray-700 text-xs font-semibold px-4 py-2 rounded-xl hover:bg-gray-300 transition">Logout</button>
-    </header>
+        <button onclick="logoutAdmin()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all">
+          Logout
+        </button>
+      </header>
 
-    <!-- Stat Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-      <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-        <p class="text-xs font-semibold text-gray-400 mb-1">TOTAL KARTU</p>
-        <h2 id="statTotal" class="text-3xl font-bold text-gray-900">0</h2>
-      </div>
-      <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-        <p class="text-xs font-semibold text-emerald-500 mb-1">KARTU AKTIF</p>
-        <h2 id="statActive" class="text-3xl font-bold text-emerald-600">0</h2>
-      </div>
-      <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-        <p class="text-xs font-semibold text-amber-500 mb-1">BELUM AKTIF (BLANK)</p>
-        <h2 id="statInactive" class="text-3xl font-bold text-amber-600">0</h2>
-      </div>
-    </div>
-
-    <!-- Action & Table Bar -->
-    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-8">
-      <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6">
-        <input id="searchInput" type="text" oninput="filterCards()" placeholder="Cari Kode Kartu atau Nama Bisnis..." class="border rounded-xl px-4 py-2.5 text-sm w-full md:w-80 focus:outline-blue-500">
-        
-        <div class="flex gap-2">
-          <button onclick="openBatchModal()" class="bg-emerald-600 text-white font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-emerald-700 transition flex items-center justify-center gap-1.5">
-            ⚡ Generate Massal
-          </button>
-          <button onclick="openAddModal()" class="bg-blue-600 text-white font-semibold px-4 py-2.5 rounded-xl text-sm hover:bg-blue-700 transition flex items-center justify-center gap-1.5">
-            + Tambah Single
-          </button>
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div class="bg-white/90 backdrop-blur-xl p-5 rounded-3xl border border-slate-200/60 shadow-sm">
+          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Kartu</p>
+          <h2 id="statTotal" class="text-3xl font-extrabold text-slate-900 tracking-tight">0</h2>
+        </div>
+        <div class="bg-white/90 backdrop-blur-xl p-5 rounded-3xl border border-slate-200/60 shadow-sm">
+          <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Kartu Aktif</p>
+          <h2 id="statActive" class="text-3xl font-extrabold text-emerald-600 tracking-tight">0</h2>
+        </div>
+        <div class="bg-white/90 backdrop-blur-xl p-5 rounded-3xl border border-slate-200/60 shadow-sm">
+          <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider mb-1">Belum Aktif (Blank)</p>
+          <h2 id="statInactive" class="text-3xl font-extrabold text-amber-600 tracking-tight">0</h2>
         </div>
       </div>
 
-      <!-- Data Table -->
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead>
-            <tr class="border-b text-xs text-gray-400 uppercase tracking-wider">
-              <th class="pb-3 px-2">Kode Kartu</th>
-              <th class="pb-3 px-2">Nama Bisnis</th>
-              <th class="pb-3 px-2">Status</th>
-              <th class="pb-3 px-2">PIN Klien</th>
-              <th class="pb-3 px-2 text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="cardsTableBody" class="divide-y divide-gray-100">
-            <!-- Diisi otomatis oleh JS -->
-          </tbody>
-        </table>
+      <!-- Action & Table Bar -->
+      <div class="bg-white/90 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-200/50 border border-slate-200/60 mb-8">
+        <!-- Controls Header -->
+        <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 mb-6">
+          <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+            <input id="searchInput" type="text" oninput="filterCards()" placeholder="Cari Kode Kartu / Bisnis..." class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+            
+            <!-- Filter Tabs Status -->
+            <div class="bg-slate-100 p-1 rounded-2xl flex gap-1 text-xs font-semibold">
+              <button id="filter-all" onclick="setFilterStatus('all')" class="flex-1 px-3 py-1.5 rounded-xl bg-white text-slate-800 shadow-sm transition-all">Semua</button>
+              <button id="filter-active" onclick="setFilterStatus('active')" class="flex-1 px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all">Aktif</button>
+              <button id="filter-inactive" onclick="setFilterStatus('inactive')" class="flex-1 px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all">Blank</button>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="flex flex-wrap gap-2">
+            <button onclick="exportToCSV()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm">
+              📥 Export CSV
+            </button>
+            <button onclick="openBatchModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20">
+              ⚡ Generate Massal
+            </button>
+            <button onclick="openAddModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20">
+              + Tambah Single
+            </button>
+          </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="overflow-x-auto rounded-2xl border border-slate-100">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                <th class="py-3.5 px-4">Kode Kartu</th>
+                <th class="py-3.5 px-4">Nama Bisnis</th>
+                <th class="py-3.5 px-4">Status</th>
+                <th class="py-3.5 px-4">PIN Klien</th>
+                <th class="py-3.5 px-4 text-right">Aksi & Print</th>
+              </tr>
+            </thead>
+            <tbody id="cardsTableBody" class="divide-y divide-slate-100 bg-white">
+              <!-- Diisi otomatis oleh JS -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
+
+    <footer class="py-4 text-center text-xs text-slate-400 font-medium">
+      © 2026 Create Render Project. Super Admin System.
+    </footer>
   </div>
 
   <!-- MODAL BATCH GENERATE (MASSAL) -->
-  <div id="batch-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl animate-modal">
-      <h3 class="font-bold text-gray-900 text-lg mb-1">⚡ Generate Kartu Massal</h3>
-      <p class="text-xs text-gray-500 mb-4">Buat puluhan kode kartu sekaligus secara otomatis.</p>
+  <div id="batch-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
+      <h3 class="font-extrabold text-slate-900 text-lg mb-1">⚡ Generate Kartu Massal</h3>
+      <p class="text-xs text-slate-500 mb-6">Buat puluhan kode kartu sekaligus untuk dicetak ke fisik kartu.</p>
       
-      <label class="block text-xs font-semibold text-gray-700 mb-1">Prefix Kode Kartu</label>
-      <input id="batchPrefix" type="text" value="CARD" placeholder="Contoh: CARD" class="w-full border rounded-xl p-3 mb-3 text-sm uppercase">
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Prefix Kode Kartu</label>
+      <input id="batchPrefix" type="text" value="CARD" placeholder="Contoh: CARD" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
 
-      <div class="grid grid-cols-2 gap-3 mb-3">
+      <div class="grid grid-cols-2 gap-3 mb-4">
         <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Angka Awal</label>
-          <input id="batchStart" type="number" value="1" min="1" class="w-full border rounded-xl p-3 text-sm">
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Angka Awal</label>
+          <input id="batchStart" type="number" value="1" min="1" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm">
         </div>
         <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Jumlah Kartu</label>
-          <input id="batchCount" type="number" value="10" min="1" max="100" class="w-full border rounded-xl p-3 text-sm">
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Jumlah Kartu</label>
+          <input id="batchCount" type="number" value="10" min="1" max="100" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm">
         </div>
       </div>
 
-      <label class="block text-xs font-semibold text-gray-700 mb-1">PIN Default (4 Digit)</label>
-      <input id="batchPin" type="text" maxlength="4" value="1234" class="w-full border rounded-xl p-3 mb-6 text-sm">
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Default (4 Digit)</label>
+      <input id="batchPin" type="text" maxlength="4" value="1234" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-6 text-sm">
 
       <div class="flex gap-2">
-        <button onclick="closeBatchModal()" class="w-1/2 border text-gray-600 font-semibold py-2.5 rounded-xl text-sm">Batal</button>
-        <button onclick="submitBatchGenerate()" class="w-1/2 bg-emerald-600 text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-emerald-700 transition">Proses Massal</button>
+        <button onclick="closeBatchModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm hover:bg-slate-200 transition-all">Batal</button>
+        <button onclick="submitBatchGenerate()" class="w-1/2 bg-emerald-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20">Proses Massal</button>
       </div>
     </div>
   </div>
 
   <!-- MODAL SINGLE EDIT / TAMBAH KARTU -->
-  <div id="card-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl animate-modal">
-      <h3 id="modalFormTitle" class="font-bold text-gray-900 text-lg mb-4">Tambah Kartu Baru</h3>
+  <div id="card-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
+      <h3 id="modalFormTitle" class="font-extrabold text-slate-900 text-lg mb-4">Tambah Kartu Baru</h3>
       
-      <label class="block text-xs font-semibold text-gray-700 mb-1">Kode Kartu (Unik)</label>
-      <input id="formCardCode" type="text" placeholder="" class="w-full border rounded-xl p-3 mb-3 text-sm uppercase">
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kode Kartu (Unik)</label>
+      <input id="formCardCode" type="text" placeholder="Contoh: CARD001" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
 
-      <label class="block text-xs font-semibold text-gray-700 mb-1">Nama Bisnis (Opsional jika belum aktif)</label>
-      <input id="formBizName" type="text" placeholder="" class="w-full border rounded-xl p-3 mb-3 text-sm">
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Bisnis (Opsional jika belum aktif)</label>
+      <input id="formBizName" type="text" placeholder="Nama Bisnis" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
 
-      <label class="block text-xs font-semibold text-gray-700 mb-1">Link Review / Place ID</label>
-      <input id="formReviewUrl" type="text" placeholder="" class="w-full border rounded-xl p-3 mb-3 text-sm">
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Link Review / Place ID</label>
+      <input id="formReviewUrl" type="text" placeholder="ChIJXanaDyrDaC4RTkdVD1FTIyc" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
 
-      <label class="block text-xs font-semibold text-gray-700 mb-1">PIN (4 Digit)</label>
-      <input id="formPin" type="text" maxlength="4" placeholder="" class="w-full border rounded-xl p-3 mb-6 text-sm">
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Klien (4 Digit)</label>
+      <input id="formPin" type="text" maxlength="4" placeholder="1234" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-6 text-sm">
 
       <div class="flex gap-2">
-        <button onclick="closeModal()" class="w-1/2 border text-gray-600 font-semibold py-2.5 rounded-xl text-sm">Batal</button>
-        <button onclick="saveCardData()" class="w-1/2 bg-blue-600 text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-blue-700 transition">Simpan</button>
+        <button onclick="closeModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm hover:bg-slate-200 transition-all">Batal</button>
+        <button onclick="saveCardData()" class="w-1/2 bg-blue-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PREVIEW QR CODE -->
+  <div id="qr-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <h3 id="qrModalTitle" class="font-extrabold text-slate-900 text-lg mb-1">QR Code Kartu</h3>
+      <p id="qrModalSub" class="text-xs text-slate-500 mb-4 font-mono"></p>
+
+      <div id="qrcode-container" class="bg-white p-4 rounded-2xl border border-slate-200 inline-block mb-4 shadow-sm"></div>
+
+      <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4">
+        <p class="text-[10px] text-slate-400 font-semibold uppercase mb-1">Link URL NFC & QR</p>
+        <p id="qrModalUrl" class="text-xs font-mono text-blue-600 break-all select-all"></p>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="copyQrUrl()" class="w-1/2 bg-blue-50 text-blue-600 font-semibold py-2.5 rounded-xl text-xs hover:bg-blue-100 transition-all">📋 Copy Link</button>
+        <button onclick="closeQrModal()" class="w-1/2 bg-slate-100 text-slate-700 font-semibold py-2.5 rounded-xl text-xs hover:bg-slate-200 transition-all">Tutup</button>
       </div>
     </div>
   </div>
 
   <script>
     // ========================================================
-    // KONFIGURASI SUPER ADMIN PIN & SUPABASE
+    // KONFIGURASI MASTER ADMIN PIN & SUPABASE
     // ========================================================
     const MASTER_ADMIN_PIN = "140806"; 
+    const DOMAIN_BASE = window.location.origin;
 
     const SUPABASE_URL = 'https://lzudrzpcahjyeqdvkyto.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6dWRyenBjYWhqeWVxZHZreXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDYyODcsImV4cCI6MjEwNzgyMjI4N30.nI_84CyPRp-sv6_VJvpUB1bk7XWN0NCtSotwztl_lEY';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let allCardsData = [];
+    let currentFilter = 'all';
+    let currentQrUrl = '';
 
     function handleAdminLogin() {
       const pin = document.getElementById('adminPinInput').value.trim();
@@ -187,7 +241,7 @@
       if (!error && cards) {
         allCardsData = cards;
         updateStats();
-        renderTable(allCardsData);
+        filterCards();
       }
     }
 
@@ -198,70 +252,140 @@
       document.getElementById('statInactive').innerText = allCardsData.length - activeCount;
     }
 
+    function setFilterStatus(status) {
+      currentFilter = status;
+      ['all', 'active', 'inactive'].forEach(s => {
+        const btn = document.getElementById(`filter-${s}`);
+        if (s === status) {
+          btn.className = "flex-1 px-3 py-1.5 rounded-xl bg-white text-slate-800 shadow-sm transition-all font-bold";
+        } else {
+          btn.className = "flex-1 px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all font-semibold";
+        }
+      });
+      filterCards();
+    }
+
+    function filterCards() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      let filtered = allCardsData.filter(c => 
+        c.card_code.toLowerCase().includes(q) || 
+        (c.business_name && c.business_name.toLowerCase().includes(q))
+      );
+
+      if (currentFilter === 'active') {
+        filtered = filtered.filter(c => c.is_activated);
+      } else if (currentFilter === 'inactive') {
+        filtered = filtered.filter(c => !c.is_activated);
+      }
+
+      renderTable(filtered);
+    }
+
     function renderTable(data) {
       const tbody = document.getElementById('cardsTableBody');
       tbody.innerHTML = '';
 
       if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-400">Belum ada data kartu.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu.</td></tr>`;
         return;
       }
 
       data.forEach(card => {
         const badge = card.is_activated 
-          ? `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[11px] font-semibold">Aktif</span>`
-          : `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[11px] font-semibold">Belum Aktif</span>`;
+          ? `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">🟢 Aktif</span>`
+          : `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">🟡 Blank</span>`;
 
         tbody.innerHTML += `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="py-3.5 px-2 font-bold text-gray-900">${card.card_code}</td>
-            <td class="py-3.5 px-2 font-medium text-gray-700">${card.business_name || '-'}</td>
-            <td class="py-3.5 px-2">${badge}</td>
-            <td class="py-3.5 px-2 font-mono text-xs bg-slate-100 px-2 rounded text-gray-600">${card.pin || '-'}</td>
-            <td class="py-3.5 px-2 text-right">
-              <button onclick="openEditModal('${card.card_code}')" class="text-xs bg-blue-50 text-blue-600 font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-100 transition mr-1">Edit</button>
-              <button onclick="deleteCard('${card.card_code}')" class="text-xs bg-red-50 text-red-600 font-semibold px-3 py-1.5 rounded-lg hover:bg-red-100 transition">Hapus</button>
+          <tr class="hover:bg-slate-50/80 transition-all">
+            <td class="py-3.5 px-4 font-bold text-slate-900 font-mono">${card.card_code}</td>
+            <td class="py-3.5 px-4 font-semibold text-slate-700">${card.business_name || '-'}</td>
+            <td class="py-3.5 px-4">${badge}</td>
+            <td class="py-3.5 px-4 font-mono text-xs text-slate-600">${card.pin || '-'}</td>
+            <td class="py-3.5 px-4 text-right">
+              <button onclick="showQrModal('${card.card_code}')" class="text-xs bg-slate-100 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-slate-200 transition-all mr-1" title="Lihat QR Code">🔲 QR</button>
+              <button onclick="openEditModal('${card.card_code}')" class="text-xs bg-blue-50 text-blue-600 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-blue-100 transition-all mr-1">Edit</button>
+              <button onclick="deleteCard('${card.card_code}')" class="text-xs bg-rose-50 text-rose-600 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-rose-100 transition-all">Hapus</button>
             </td>
           </tr>
         `;
       });
     }
 
-    function filterCards() {
-      const q = document.getElementById('searchInput').value.toLowerCase().trim();
-      const filtered = allCardsData.filter(c => 
-        c.card_code.toLowerCase().includes(q) || 
-        (c.business_name && c.business_name.toLowerCase().includes(q))
-      );
-      renderTable(filtered);
+    // ========================================================
+    // EXPORT KE CSV (UNTUK CETAK KARTU / BULK NFC WRITER)
+    // ========================================================
+    function exportToCSV() {
+      if (allCardsData.length === 0) {
+        alert("Tidak ada data untuk di-export.");
+        return;
+      }
+
+      let csvContent = "data:text/csv;charset=utf-8,Kode Kartu,URL NFC dan QR,Nama Bisnis,Status,PIN\n";
+
+      allCardsData.forEach(card => {
+        const fullUrl = `${DOMAIN_BASE}/?code=${card.card_code}`;
+        const status = card.is_activated ? 'AKTIF' : 'BLANK';
+        const bizName = card.business_name ? `"${card.business_name}"` : '-';
+        csvContent += `${card.card_code},${fullUrl},${bizName},${status},${card.pin || ''}\n`;
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Data_Kartu_Review_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     // ========================================================
-    // LOGIK BATCH GENERATE (MASSAL)
+    // QR CODE PREVIEW MODAL
     // ========================================================
-    function openBatchModal() {
-      document.getElementById('batch-modal').classList.remove('hidden');
+    function showQrModal(code) {
+      currentQrUrl = `${DOMAIN_BASE}/?code=${code}`;
+      document.getElementById('qrModalTitle').innerText = `QR Code (${code})`;
+      document.getElementById('qrModalSub').innerText = code;
+      document.getElementById('qrModalUrl').innerText = currentQrUrl;
+
+      const container = document.getElementById('qrcode-container');
+      container.innerHTML = '';
+      new QRCode(container, {
+        text: currentQrUrl,
+        width: 160,
+        height: 160,
+        colorDark : "#0f172a",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+      });
+
+      document.getElementById('qr-modal').classList.remove('hidden');
     }
 
-    function closeBatchModal() {
-      document.getElementById('batch-modal').classList.add('hidden');
+    function closeQrModal() {
+      document.getElementById('qr-modal').classList.add('hidden');
     }
+
+    function copyQrUrl() {
+      navigator.clipboard.writeText(currentQrUrl).then(() => {
+        alert("Link URL berhasil disalin!");
+      });
+    }
+
+    // BATCH GENERATE LOGIC
+    function openBatchModal() { document.getElementById('batch-modal').classList.remove('hidden'); }
+    function closeBatchModal() { document.getElementById('batch-modal').classList.add('hidden'); }
 
     async function submitBatchGenerate() {
       const prefix = document.getElementById('batchPrefix').value.trim().toUpperCase() || 'CARD';
       const startNum = parseInt(document.getElementById('batchStart').value) || 1;
       const count = parseInt(document.getElementById('batchCount').value) || 1;
-      const defaultPin = document.getElementById('batchPin').value.trim() || '1406';
+      const defaultPin = document.getElementById('batchPin').value.trim() || '1234';
 
-      if (count > 100) {
-        alert("Maksimal 100 kartu sekali generate!");
-        return;
-      }
+      if (count > 100) { alert("Maksimal 100 kartu sekali generate!"); return; }
 
       const batchPayload = [];
       for (let i = 0; i < count; i++) {
         const currentNum = startNum + i;
-        // Format digit angka agar rapi (misal CARD001, CARD002)
         const paddedNum = String(currentNum).padStart(3, '0');
         const code = `${prefix}${paddedNum}`;
 
@@ -290,7 +414,7 @@
       document.getElementById('formCardCode').disabled = false;
       document.getElementById('formBizName').value = '';
       document.getElementById('formReviewUrl').value = '';
-      document.getElementById('formPin').value = '';
+      document.getElementById('formPin').value = '1234';
       document.getElementById('card-modal').classList.remove('hidden');
     }
 
@@ -307,9 +431,7 @@
       document.getElementById('card-modal').classList.remove('hidden');
     }
 
-    function closeModal() {
-      document.getElementById('card-modal').classList.add('hidden');
-    }
+    function closeModal() { document.getElementById('card-modal').classList.add('hidden'); }
 
     function formatReviewUrl(input) {
       if (!input) return '';
