@@ -184,22 +184,27 @@
     </div>
   </div>
 
-  <!-- MODAL PREVIEW QR CODE -->
+  <!-- MODAL PREVIEW & DOWNLOAD QR CODE -->
   <div id="qr-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
       <h3 id="qrModalTitle" class="font-extrabold text-slate-900 text-lg mb-1">QR Code Kartu</h3>
       <p id="qrModalSub" class="text-xs text-slate-500 mb-4 font-mono"></p>
 
-      <div id="qrcode-container" class="bg-white p-4 rounded-2xl border border-slate-200 inline-block mb-4 shadow-sm"></div>
+      <div id="qrcode-container" class="bg-white p-4 rounded-2xl border border-slate-200 inline-block mb-4 shadow-sm flex justify-center"></div>
 
       <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4">
         <p class="text-[10px] text-slate-400 font-semibold uppercase mb-1">Link URL NFC & QR</p>
         <p id="qrModalUrl" class="text-xs font-mono text-blue-600 break-all select-all"></p>
       </div>
 
-      <div class="flex gap-2">
-        <button onclick="copyQrUrl()" class="w-1/2 bg-blue-50 text-blue-600 font-semibold py-2.5 rounded-xl text-xs hover:bg-blue-100 transition-all">📋 Copy Link</button>
-        <button onclick="closeQrModal()" class="w-1/2 bg-slate-100 text-slate-700 font-semibold py-2.5 rounded-xl text-xs hover:bg-slate-200 transition-all">Tutup</button>
+      <div class="space-y-2">
+        <button onclick="downloadQrImage()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl text-xs transition-all shadow-md shadow-emerald-500/20">
+          📥 Download Gambar QR (Sesuai Nama Kartu)
+        </button>
+        <div class="flex gap-2">
+          <button onclick="copyQrUrl()" class="w-1/2 bg-blue-50 text-blue-600 font-semibold py-2.5 rounded-xl text-xs hover:bg-blue-100 transition-all">📋 Copy Link</button>
+          <button onclick="closeQrModal()" class="w-1/2 bg-slate-100 text-slate-700 font-semibold py-2.5 rounded-xl text-xs hover:bg-slate-200 transition-all">Tutup</button>
+        </div>
       </div>
     </div>
   </div>
@@ -218,6 +223,7 @@
     let allCardsData = [];
     let currentFilter = 'all';
     let currentQrUrl = '';
+    let activeCardCodeForDownload = '';
 
     function handleAdminLogin() {
       const pin = document.getElementById('adminPinInput').value.trim();
@@ -339,9 +345,10 @@
     }
 
     // ========================================================
-    // QR CODE PREVIEW MODAL
+    // QR CODE PREVIEW & DOWNLOAD MODAL
     // ========================================================
     function showQrModal(code) {
+      activeCardCodeForDownload = code;
       currentQrUrl = `${DOMAIN_BASE}/?code=${code}`;
       document.getElementById('qrModalTitle').innerText = `QR Code (${code})`;
       document.getElementById('qrModalSub').innerText = code;
@@ -369,6 +376,31 @@
       navigator.clipboard.writeText(currentQrUrl).then(() => {
         alert("Link URL berhasil disalin!");
       });
+    }
+
+    function downloadQrImage() {
+      const container = document.getElementById('qrcode-container');
+      const img = container.querySelector('img');
+      const canvas = container.querySelector('canvas');
+
+      let imageUrl = '';
+      if (img && img.src) {
+        imageUrl = img.src;
+      } else if (canvas) {
+        imageUrl = canvas.toDataURL("image/png");
+      }
+
+      if (!imageUrl) {
+        alert("Gambar QR belum siap, silakan coba sesaat lagi.");
+        return;
+      }
+
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = `QR_Card_${activeCardCodeForDownload}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     // BATCH GENERATE LOGIC
