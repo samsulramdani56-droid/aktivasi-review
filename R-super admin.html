@@ -10,6 +10,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- QRCode.js CDN untuk Preview QR Instant -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- JSZip untuk Download Massal ZIP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- FileSaver.js untuk Menyimpan File ZIP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
     @keyframes modalFadeIn {
       from { opacity: 0; transform: scale(0.95) translateY(10px); }
@@ -96,6 +100,9 @@
             <button onclick="exportToCSV()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm">
               📥 Export CSV
             </button>
+            <button onclick="openZipFilterModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/20">
+              📦 Download QR (Filter Range)
+            </button>
             <button onclick="openBatchModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20">
               ⚡ Generate Massal
             </button>
@@ -112,8 +119,9 @@
               <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
                 <th class="py-3.5 px-4">Kode Kartu</th>
                 <th class="py-3.5 px-4">Nama Bisnis</th>
+                <th class="py-3.5 px-4">WA Owner</th>
                 <th class="py-3.5 px-4">Status</th>
-                <th class="py-3.5 px-4">PIN Klien</th>
+                <th class="py-3.5 px-4">PIN</th>
                 <th class="py-3.5 px-4 text-right">Aksi & Print</th>
               </tr>
             </thead>
@@ -128,6 +136,30 @@
     <footer class="py-4 text-center text-xs text-slate-400 font-medium">
       © 2026 Create Render Project. Super Admin System.
     </footer>
+  </div>
+
+  <!-- MODAL FILTER DOWNLOAD ZIP (RENTANG KODE) -->
+  <div id="zip-filter-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
+      <h3 class="font-extrabold text-slate-900 text-lg mb-1">📦 Download QR Berdasarkan Range</h3>
+      <p class="text-xs text-slate-500 mb-6">Pilih rentang kode kartu tertentu yang ingin di-download ke ZIP.</p>
+      
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label>
+          <input id="zipStartCode" type="text" placeholder="Contoh: CARD001" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label>
+          <input id="zipEndCode" type="text" placeholder="Contoh: CARD020" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase">
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closeZipFilterModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm hover:bg-slate-200 transition-all">Batal</button>
+        <button onclick="processFilteredZipDownload()" class="w-1/2 bg-indigo-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-indigo-700 transition-all shadow-md shadow-indigo-500/20">Download ZIP</button>
+      </div>
+    </div>
   </div>
 
   <!-- MODAL BATCH GENERATE (MASSAL) -->
@@ -162,18 +194,21 @@
 
   <!-- MODAL SINGLE EDIT / TAMBAH KARTU -->
   <div id="card-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100 max-h-[90vh] overflow-y-auto">
       <h3 id="modalFormTitle" class="font-extrabold text-slate-900 text-lg mb-1">Tambah Kartu Baru</h3>
       <p id="modalFormSub" class="text-xs text-slate-500 mb-4"></p>
       
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kode Kartu (Unik)</label>
       <input id="formCardCode" type="text" placeholder="Contoh: CARD001" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
 
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Bisnis (Opsional jika belum aktif)</label>
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Bisnis</label>
       <input id="formBizName" type="text" placeholder="Nama Bisnis" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
 
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">Link Review / Place ID</label>
       <input id="formReviewUrl" type="text" placeholder="ChIJXanaDyrDaC4RTkdVD1FTIyc" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">No. WhatsApp Owner Bisnis</label>
+      <input id="formOwnerPhone" type="tel" placeholder="628123456789" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
 
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Klien (4 Digit)</label>
       <input id="formPin" type="text" maxlength="4" placeholder="1234" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-6 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
@@ -210,10 +245,16 @@
     </div>
   </div>
 
+  <!-- MODAL PROGRESS DOWNLOAD ZIP -->
+  <div id="zip-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-xl mb-3 animate-spin">⏳</div>
+      <h3 class="font-bold text-slate-900 text-base mb-1">Memproses ZIP...</h3>
+      <p id="zipProgressText" class="text-xs text-slate-500">Menyiapkan file QR code.</p>
+    </div>
+  </div>
+
   <script>
-    // ========================================================
-    // KONFIGURASI MASTER ADMIN PIN & SUPABASE
-    // ========================================================
     const MASTER_ADMIN_PIN = "140806"; 
     const DOMAIN_BASE = window.location.origin;
 
@@ -225,7 +266,7 @@
     let currentFilter = 'all';
     let currentQrUrl = '';
     let activeCardCodeForDownload = '';
-    let editingOriginalCode = null; // Menyimpan kode kartu lama sebelum diedit
+    let editingOriginalCode = null;
 
     function handleAdminLogin() {
       const pin = document.getElementById('adminPinInput').value.trim();
@@ -294,7 +335,7 @@
       tbody.innerHTML = '';
 
       if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu.</td></tr>`;
         return;
       }
 
@@ -307,6 +348,7 @@
           <tr class="hover:bg-slate-50/80 transition-all">
             <td class="py-3.5 px-4 font-bold text-slate-900 font-mono">${card.card_code}</td>
             <td class="py-3.5 px-4 font-semibold text-slate-700">${card.business_name || '-'}</td>
+            <td class="py-3.5 px-4 text-xs font-mono text-slate-600">${card.owner_phone || '-'}</td>
             <td class="py-3.5 px-4">${badge}</td>
             <td class="py-3.5 px-4 font-mono text-xs text-slate-600">${card.pin || '-'}</td>
             <td class="py-3.5 px-4 text-right">
@@ -319,22 +361,20 @@
       });
     }
 
-    // ========================================================
-    // EXPORT KE CSV (UNTUK CETAK KARTU / BULK NFC WRITER)
-    // ========================================================
     function exportToCSV() {
       if (allCardsData.length === 0) {
         alert("Tidak ada data untuk di-export.");
         return;
       }
 
-      let csvContent = "data:text/csv;charset=utf-8,Kode Kartu,URL NFC dan QR,Nama Bisnis,Status,PIN\n";
+      let csvContent = "data:text/csv;charset=utf-8,Kode Kartu,URL NFC dan QR,Nama Bisnis,No WA Owner,Status,PIN\n";
 
       allCardsData.forEach(card => {
         const fullUrl = `${DOMAIN_BASE}/?code=${card.card_code}`;
         const status = card.is_activated ? 'AKTIF' : 'BLANK';
         const bizName = card.business_name ? `"${card.business_name}"` : '-';
-        csvContent += `${card.card_code},${fullUrl},${bizName},${status},${card.pin || ''}\n`;
+        const ownerPhone = card.owner_phone || '';
+        csvContent += `${card.card_code},${fullUrl},${bizName},${ownerPhone},${status},${card.pin || ''}\n`;
       });
 
       const encodedUri = encodeURI(csvContent);
@@ -346,9 +386,93 @@
       document.body.removeChild(link);
     }
 
-    // ========================================================
-    // QR CODE PREVIEW & DOWNLOAD MODAL
-    // ========================================================
+    // KONTROL MODAL FILTER RANGE ZIP
+    function openZipFilterModal() {
+      document.getElementById('zipStartCode').value = allCardsData.length > 0 ? allCardsData[0].card_code : '';
+      document.getElementById('zipEndCode').value = allCardsData.length > 0 ? allCardsData[allCardsData.length - 1].card_code : '';
+      document.getElementById('zip-filter-modal').classList.remove('hidden');
+    }
+
+    function closeZipFilterModal() {
+      document.getElementById('zip-filter-modal').classList.add('hidden');
+    }
+
+    // PROSES DOWNLOAD ZIP BERDASARKAN FILTER KODE
+    async function processFilteredZipDownload() {
+      const startCode = document.getElementById('zipStartCode').value.trim().toUpperCase();
+      const endCode = document.getElementById('zipEndCode').value.trim().toUpperCase();
+
+      if (!startCode || !endCode) {
+        alert("Masukkan kode awal dan kode akhir dengan benar!");
+        return;
+      }
+
+      // Filter data kartu berdasarkan string kode (alfanumerik/range)
+      const filteredCards = allCardsData.filter(c => c.card_code >= startCode && c.card_code <= endCode);
+
+      if (filteredCards.length === 0) {
+        alert("Tidak ada kartu ditemukan dalam rentang kode tersebut.");
+        return;
+      }
+
+      closeZipFilterModal();
+      const zipModal = document.getElementById('zip-modal');
+      const progressText = document.getElementById('zipProgressText');
+      zipModal.classList.remove('hidden');
+
+      const zip = new JSZip();
+      const folder = zip.folder("QR_Codes_RenderProject");
+
+      let hiddenContainer = document.getElementById('hidden-qr-render');
+      if (!hiddenContainer) {
+        hiddenContainer = document.createElement('div');
+        hiddenContainer.id = 'hidden-qr-render';
+        hiddenContainer.style.display = 'none';
+        document.body.appendChild(hiddenContainer);
+      }
+
+      for (let i = 0; i < filteredCards.length; i++) {
+        const card = filteredCards[i];
+        progressText.innerText = `Memproses (${i + 1}/${filteredCards.length}): ${card.card_code}`;
+
+        hiddenContainer.innerHTML = '';
+        const targetUrl = `${DOMAIN_BASE}/?code=${card.card_code}`;
+
+        await new Promise((resolve) => {
+          new QRCode(hiddenContainer, {
+            text: targetUrl,
+            width: 300,
+            height: 300,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+          });
+          setTimeout(resolve, 100);
+        });
+
+        const img = hiddenContainer.querySelector('img');
+        const canvas = hiddenContainer.querySelector('canvas');
+        let dataUrl = '';
+
+        if (img && img.src) {
+          dataUrl = img.src;
+        } else if (canvas) {
+          dataUrl = canvas.toDataURL("image/png");
+        }
+
+        if (dataUrl) {
+          const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
+          folder.file(`QR_${card.card_code}.png`, base64Data, { base64: true });
+        }
+      }
+
+      progressText.innerText = "Mengompres file ke ZIP...";
+      const content = await zip.generateAsync({ type: "blob" });
+      
+      zipModal.classList.add('hidden');
+      saveAs(content, `QR_Range_${startCode}_to_${endCode}.zip`);
+    }
+
     function showQrModal(code) {
       activeCardCodeForDownload = code;
       currentQrUrl = `${DOMAIN_BASE}/?code=${code}`;
@@ -405,7 +529,18 @@
       document.body.removeChild(link);
     }
 
-    // BATCH GENERATE LOGIC
+    function formatReviewUrl(input) {
+      if (!input) return '';
+      let clean = input.trim();
+      if (clean.startsWith('ChI') && !clean.includes('http') && !clean.includes(' ')) {
+        return `https://search.google.com/local/writereview?placeid=${clean}`;
+      }
+      if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+        return 'https://' + clean;
+      }
+      return clean;
+    }
+
     function openBatchModal() { document.getElementById('batch-modal').classList.remove('hidden'); }
     function closeBatchModal() { document.getElementById('batch-modal').classList.add('hidden'); }
 
@@ -441,9 +576,8 @@
       }
     }
 
-    // SINGLE MODAL LOGIC
     function openAddModal() {
-      editingOriginalCode = null; // Mode tambah baru
+      editingOriginalCode = null;
       document.getElementById('modalFormTitle').innerText = "Tambah Kartu Baru";
       document.getElementById('modalFormSub').innerText = "Masukkan kode kartu unik baru.";
       
@@ -454,6 +588,7 @@
 
       document.getElementById('formBizName').value = '';
       document.getElementById('formReviewUrl').value = '';
+      document.getElementById('formOwnerPhone').value = '';
       document.getElementById('formPin').value = '1234';
       document.getElementById('card-modal').classList.remove('hidden');
     }
@@ -462,18 +597,16 @@
       const card = allCardsData.find(c => c.card_code === code);
       if (!card) return;
 
-      editingOriginalCode = card.card_code; // Simpan kode asli
+      editingOriginalCode = card.card_code;
       const codeInput = document.getElementById('formCardCode');
       codeInput.value = card.card_code;
 
       if (card.is_activated) {
-        // KARTU AKTIF: KODE DIKUNCI DEMI KEAMANAN KLIEN
         codeInput.disabled = true;
         codeInput.className = "w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase text-slate-500 cursor-not-allowed";
         document.getElementById('modalFormTitle').innerText = `Edit Kartu Aktif (${code})`;
         document.getElementById('modalFormSub').innerText = "🔒 Kode kartu dikunci karena kartu sudah aktif digunakan.";
       } else {
-        // KARTU BLANK: KODE BISA DIEDIT BEBAS
         codeInput.disabled = false;
         codeInput.className = "w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all";
         document.getElementById('modalFormTitle').innerText = `Edit Kartu Blank (${code})`;
@@ -482,36 +615,25 @@
 
       document.getElementById('formBizName').value = card.business_name || '';
       document.getElementById('formReviewUrl').value = card.google_review_url || '';
+      document.getElementById('formOwnerPhone').value = card.owner_phone || '';
       document.getElementById('formPin').value = card.pin || '';
       document.getElementById('card-modal').classList.remove('hidden');
     }
 
     function closeModal() { document.getElementById('card-modal').classList.add('hidden'); }
 
-    function formatReviewUrl(input) {
-      if (!input) return '';
-      let clean = input.trim();
-      if (clean.startsWith('ChI') && !clean.includes('http')) {
-        return `https://search.google.com/local/writereview?placeid=${clean}`;
-      }
-      if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
-        return 'https://' + clean;
-      }
-      return clean;
-    }
-
     async function saveCardData() {
       const newCode = document.getElementById('formCardCode').value.trim().toUpperCase();
       const name = document.getElementById('formBizName').value.trim();
       const urlInput = document.getElementById('formReviewUrl').value.trim();
+      const ownerPhone = document.getElementById('formOwnerPhone').value.trim();
       const pin = document.getElementById('formPin').value.trim();
 
       if (!newCode) { alert("Kode kartu wajib diisi!"); return; }
 
       const formattedUrl = formatReviewUrl(urlInput);
-      const isActivated = name.length > 0 || formattedUrl.length > 0;
+      const isActivated = name.length > 0 || formattedUrl.length > 0 || ownerPhone.length > 0;
 
-      // JIKA EDIT KARTU BLANK DENGAN KODE BARU, HAPUS KODE LAMA TERLEBIH DAHULU
       if (editingOriginalCode && editingOriginalCode !== newCode) {
         await supabaseClient.from('cards').delete().eq('card_code', editingOriginalCode);
       }
@@ -520,6 +642,7 @@
         card_code: newCode,
         business_name: name || null,
         google_review_url: formattedUrl || null,
+        owner_phone: ownerPhone || null,
         pin: pin || '1234',
         is_activated: isActivated
       };
