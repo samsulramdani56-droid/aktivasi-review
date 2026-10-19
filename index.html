@@ -80,13 +80,10 @@
 
   <script>
     // ========================================================
-    // KONFIGURASI NOMOR WHATSAPP OWNER
+    // KONFIGURASI PUSAT (UNTUK BANTUAN KENDALA KARTU)
     // ========================================================
-    const OWNER_WHATSAPP = "6283150929548";
+    const RENDER_SUPPORT_WHATSAPP = "6283150929548";
 
-    // ========================================================
-    // KAMUS TERJEMAHAN (ID & EN)
-    // ========================================================
     let currentLang = localStorage.getItem('app_lang') || 'id';
 
     const translations = {
@@ -107,12 +104,12 @@
         editCardBtn: "Edit Info Kartu",
         saveInfoText: "Simpan halaman ini bila perlu. PIN yang Anda buat sebelumnya akan diminta saat membuka halaman edit.",
         copyLinkBtn: "📋 Salin Link Halaman Ini",
-        contactOwnerBtn: "Ada kendala? Hubungi Owner via WhatsApp",
+        contactOwnerBtn: "Ada kendala? Hubungi Support via WhatsApp",
 
         manageCardTitle: "Kelola Kartu",
         manageCardDesc: "Buka data kartu lewat kode unik dan PIN Anda.",
         cardCodeLabel: "Kode Kartu",
-        cardCodePlaceholder: "Contoh: Kartu000",
+        cardCodePlaceholder: "Contoh: CARD001",
         pinLabel: "PIN (4 Digit Angka)",
         forgotPinText: "Lupa PIN?",
         openCardBtn: "🔓 Buka Kartu",
@@ -123,7 +120,8 @@
         bizNameLabel: "Nama Bisnis",
         bizNamePlaceholder: "Contoh: Warung Kopi",
         bizUrlLabel: "Link Google Review atau Place ID",
-        bizUrlHelp: "💡 Cukup salin Place ID (contoh: ChIJXanaDyrDaC4RTkdVD1FTIyc) atau gunakan link hasil konversi.",
+        ownerPhoneLabel: "No. WhatsApp Owner Bisnis (Penerima Laporan Bintang 1-3)",
+        ownerPhonePlaceholder: "Contoh: 628123456789 (Awali dengan 62)",
         bizPinLabel: "Buat PIN (4 Digit Angka)",
         activateBtn: "Aktifkan Kartu",
 
@@ -152,12 +150,12 @@
         editCardBtn: "Edit Card Info",
         saveInfoText: "Save this page if needed. Your previously created PIN will be required when opening the edit page.",
         copyLinkBtn: "📋 Copy This Page Link",
-        contactOwnerBtn: "problem? Contact Owner via WhatsApp",
+        contactOwnerBtn: "Problem? Contact Support via WhatsApp",
 
         manageCardTitle: "Manage Card",
         manageCardDesc: "Access your card data using your unique code and PIN.",
         cardCodeLabel: "Card Code",
-        cardCodePlaceholder: "Example: CARD000",
+        cardCodePlaceholder: "Example: CARD001",
         pinLabel: "PIN (4 Digits)",
         forgotPinText: "Forgot PIN?",
         openCardBtn: "🔓 Open Card",
@@ -168,7 +166,8 @@
         bizNameLabel: "Business Name",
         bizNamePlaceholder: "Example: Coffee Shop",
         bizUrlLabel: "Google Review Link or Place ID",
-        bizUrlHelp: "💡 Simply paste the Place ID (e.g. ChIJXanaDyrDaC4RTkdVD1FTIyc) or converted review link.",
+        ownerPhoneLabel: "Business Owner WhatsApp (For 1-3 Star Alerts)",
+        ownerPhonePlaceholder: "Example: 628123456789 (Start with 62)",
         bizPinLabel: "Create PIN (4 Digits)",
         activateBtn: "Activate Card",
 
@@ -212,25 +211,18 @@
     let html5QrCode = null;
     let selectedRating = 0;
 
-    // FUNGSI PINTAR UNTUK MENGUBAH PLACE ID / LINK MENJADI DIRECT REVIEW LINK
     function formatReviewUrl(input) {
       if (!input) return '';
       let clean = input.trim();
-
-      // Jika input hanya berupa Place ID saja (contoh: ChIJXanaDyrDaC4RTkdVD1FTIyc)
       if (clean.startsWith('ChI') && !clean.includes('http') && !clean.includes(' ')) {
         return `https://search.google.com/local/writereview?placeid=${clean}`;
       }
-
-      // Jika berupa URL biasa yang belum ada https://
       if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
         return 'https://' + clean;
       }
-
       return clean;
     }
 
-    // FUNGSI SCANNER QR KAMERA
     window.startQrScanner = function() {
       const modal = document.getElementById('qr-reader-modal');
       modal.classList.remove('hidden');
@@ -250,18 +242,16 @@
               document.getElementById('cardInput').value = scannedCode;
               window.handleCheckCard();
             } else {
-              showNotification('Format Salah', 'QR Code ini tidak memiliki parameter kode kartu yang valid.', 'error');
+              showNotification('Format Salah', 'QR Code tidak valid.', 'error');
             }
           } catch (e) {
             document.getElementById('cardInput').value = decodedText.trim();
             window.handleCheckCard();
           }
         },
-        (errorMessage) => {
-          // Frame error diabaikan saat scanning berjalan
-        }
+        (errorMessage) => {}
       ).catch((err) => {
-        showNotification('Akses Kamera Ditolak', 'Pastikan Anda memberikan izin akses kamera pada browser.', 'error');
+        showNotification('Akses Kamera Ditolak', 'Berikan izin kamera pada browser.', 'error');
         closeQrScanner();
       });
     };
@@ -284,20 +274,13 @@
         html5QrCode.stop().then(() => {
           html5QrCode.clear();
           document.getElementById('qr-reader-modal').classList.add('hidden');
-        }).catch(err => {
-          document.getElementById('qr-reader-modal').classList.add('hidden');
-        });
+        }).catch(err => {});
       }
     }
 
     window.copyPageLink = function() {
-      const currentUrl = window.location.href;
-      navigator.clipboard.writeText(currentUrl).then(() => {
-        showNotification(
-          currentLang === 'en' ? 'Copied Successfully!' : 'Berhasil Disalin!', 
-          currentLang === 'en' ? 'Page link copied to clipboard.' : 'Link halaman ini telah disalin.', 
-          'success'
-        );
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        showNotification('Berhasil Disalin!', 'Link halaman telah disalin.', 'success');
       });
     }
 
@@ -363,13 +346,10 @@
 
         if (card) {
           if (card.is_activated) {
-            // JIKA ROUTING AKTIF, TAMPILKAN HALAMAN SMART RATING
             if (card.enable_routing !== false) {
               renderSmartRatingPage(card);
               return;
             }
-
-            // JIKA ROUTING NONAKTIF, REDIRECT LANGSUNG KE GOOGLE REVIEW
             const reviewUrl = formatReviewUrl(card.google_review_url);
             if (reviewUrl) {
               window.location.href = reviewUrl;
@@ -391,7 +371,7 @@
     }
 
     // ========================================================
-    // FITUR SMART REVIEW ROUTING (BINTANG 1-5 INTERAKTIF)
+    // SMART REVIEW ROUTING HALAMAN PENILAIAN BINTANG
     // ========================================================
     function renderSmartRatingPage(card) {
       selectedRating = 0;
@@ -402,7 +382,6 @@
           <p class="text-slate-500 text-xs leading-relaxed">Bagaimana pengalaman Anda bersama kami? Berikan penilaian terbaik Anda!</p>
         </div>
 
-        <!-- Bintang Rating Interaktif -->
         <div class="flex justify-center items-center gap-2 mb-6" id="starContainer">
           ${[1, 2, 3, 4, 5].map(star => `
             <button onclick="handleSelectStar(${star}, '${card.card_code}', '${encodeURIComponent(card.google_review_url || '')}')" class="star-btn text-3xl sm:text-4xl text-slate-300 hover:scale-110 transition-all focus:outline-none">
@@ -411,7 +390,6 @@
           `).join('')}
         </div>
 
-        <!-- Form Feedback Khusus Bintang 1-3 (Hidden Default) -->
         <div id="feedbackFormContainer" class="hidden space-y-4 pt-4 border-t border-slate-100 animate-modal">
           <p class="text-xs font-bold text-amber-700 bg-amber-50 p-3 rounded-2xl border border-amber-100 text-center">
             Mohon maaf atas ketidaknyamanan Anda. Masukan Anda sangat berharga bagi kami.
@@ -432,7 +410,7 @@
             <textarea id="feedbackText" rows="3" placeholder="Tuliskan keluhan atau saran Anda di sini..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"></textarea>
           </div>
 
-          <button onclick="submitPrivateFeedback('${card.card_code}', '${card.business_name || ''}')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm">
+          <button onclick="submitPrivateFeedback('${card.card_code}', '${card.business_name || ''}', '${card.owner_phone || RENDER_SUPPORT_WHATSAPP}')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm">
             Kirim Masukan Privat
           </button>
         </div>
@@ -453,7 +431,6 @@
       });
 
       if (starCount >= 4) {
-        // BINTANG 4 & 5: LANGSUNG DIARAHKAN KE GOOGLE REVIEW
         const reviewUrl = formatReviewUrl(decodeURIComponent(encodedReviewUrl));
         if (reviewUrl) {
           window.location.href = reviewUrl;
@@ -461,13 +438,12 @@
           showNotification('Informasi', 'Link Google Review belum dikonfigurasi.', 'info');
         }
       } else {
-        // BINTANG 1, 2, 3: TAMPILKAN FORM KRITIK/SARAN INTERNAL
         const formContainer = document.getElementById('feedbackFormContainer');
         if (formContainer) formContainer.classList.remove('hidden');
       }
     }
 
-    window.submitPrivateFeedback = async function(cardCode, businessName) {
+    window.submitPrivateFeedback = async function(cardCode, businessName, ownerPhone) {
       const name = document.getElementById('feedbackName').value.trim();
       const phone = document.getElementById('feedbackPhone').value.trim();
       const text = document.getElementById('feedbackText').value.trim();
@@ -477,7 +453,6 @@
         return;
       }
 
-      // SIMPAN KRITIK/SARAN KE TABEL SUPABASE
       const { error } = await supabaseClient
         .from('review_feedbacks')
         .insert({
@@ -490,19 +465,20 @@
         });
 
       if (!error) {
-        // FORMAT PESAN AUTOMATIS KE WHATSAPP OWNER BISNIS
+        // KIRIM KE NOMOR WHATSAPP OWNER MASING-MASING BISNIS
+        const targetWa = ownerPhone ? ownerPhone.trim() : RENDER_SUPPORT_WHATSAPP;
         const waMessage = encodeURIComponent(
-          `📩 *Laporan Feedback Baru (${businessName || cardCode})*\n\n` +
+          `📩 *Laporan Feedback Pelanggan (${businessName || cardCode})*\n\n` +
           `⭐ Rating: ${selectedRating} Bintang\n` +
           `👤 Nama: ${name || 'Anonim'}\n` +
           `📞 No HP: ${phone || '-'}\n` +
           `💬 Pesan:\n"${text}"`
         );
-        const waOwnerUrl = `https://wa.me/${OWNER_WHATSAPP}?text=${waMessage}`;
+        const waOwnerUrl = `https://wa.me/${targetWa}?text=${waMessage}`;
 
         showNotification(
           'Terima Kasih!', 
-          'Masukan Anda telah berhasil terkirim secara langsung kepada pihak manajemen toko.', 
+          'Masukan Anda telah berhasil terkirim kepada manajemen toko.', 
           'success',
           () => { window.location.href = waOwnerUrl; }
         );
@@ -542,13 +518,14 @@
       `;
     }
 
-    // 2. KARTU AKTIF (Halaman Ringkasan Pemilik Kartu)
+    // 2. KARTU AKTIF
     function renderActiveCardStatus(card) {
       const t = translations[currentLang];
       const reviewUrl = formatReviewUrl(card.google_review_url);
       
-      const waMessage = encodeURIComponent(`Halo Kak Render, saya ingin bertanya/bantuan terkait kartu dengan Kode Kartu: ${card.card_code}`);
-      const waOwnerUrl = `https://wa.me/${OWNER_WHATSAPP}?text=${waMessage}`;
+      const supportWa = card.owner_phone || RENDER_SUPPORT_WHATSAPP;
+      const waMessage = encodeURIComponent(`Halo, saya ingin bertanya terkait kartu dengan Kode: ${card.card_code}`);
+      const waOwnerUrl = `https://wa.me/${supportWa}?text=${waMessage}`;
 
       document.getElementById('app-content').innerHTML = `
         <div class="flex items-center justify-center w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl mb-4 shadow-inner">
@@ -601,13 +578,12 @@
         <div class="space-y-4 mb-6">
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.cardCodeLabel}</label>
-            <input id="manageCode" type="text" value="${defaultCode}" placeholder="${t.cardCodePlaceholder}" oninput="updateForgotPinLink()" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm uppercase font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+            <input id="manageCode" type="text" value="${defaultCode}" placeholder="${t.cardCodePlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm uppercase font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
           </div>
           
           <div>
             <div class="flex justify-between items-center mb-1.5">
               <label class="block text-xs font-semibold text-slate-700">${t.pinLabel}</label>
-              <a id="forgotPinAnchor" href="#" target="_blank" class="text-xs text-blue-600 font-semibold hover:underline">${t.forgotPinText}</a>
             </div>
             <input id="managePin" type="password" maxlength="4" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
           </div>
@@ -618,22 +594,11 @@
           <button onclick="window.renderHome()" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-2.5 transition-all">${t.backBtn}</button>
         </div>
       `;
-      updateForgotPinLink();
-    }
-
-    window.updateForgotPinLink = function() {
-      const codeInput = document.getElementById('manageCode');
-      const forgotAnchor = document.getElementById('forgotPinAnchor');
-      if (!codeInput || !forgotAnchor) return;
-
-      const codeVal = codeInput.value.trim() || '[Belum diisi]';
-      const msg = encodeURIComponent(`Halo Kak Render, saya lupa PIN untuk Kelola Kartu dengan Kode Kartu: ${codeVal}`);
-      forgotAnchor.href = `https://wa.me/${OWNER_WHATSAPP}?text=${msg}`;
     }
 
     window.renderManageWithCode = function(code) { window.renderManage(code); }
 
-    // 4. FORM AKTIVASI (DIKEMAS DENGAN BANTUAN TOOL AMAN 100% GRATIS)
+    // 4. FORM AKTIVASI
     function renderActivationForm(code) {
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
@@ -651,20 +616,11 @@
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.bizUrlLabel}</label>
             <input id="bizUrl" type="text" placeholder="ChIJXanaDyrDaC4RTkdVD1FTIyc" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-            
-            <!-- BANTUAN CARI PLACE ID & CONVERTER GRATIS -->
-            <div class="mt-2 text-[11px] text-slate-500 space-y-1 bg-blue-50/60 p-3 rounded-2xl border border-blue-100">
-              <p class="font-semibold text-blue-900 mb-1">💡 Bingung cara dapatkan link ulasan?</p>
-              <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
-                  🔍 Cari Place ID Toko ↗
-                </a>
-                <span class="text-slate-300">|</span>
-                <a href="https://productmate.com/google-review-link-generator" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
-                  🔗 Convert Link Maps ↗
-                </a>
-              </div>
-            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.ownerPhoneLabel}</label>
+            <input id="ownerPhone" type="tel" placeholder="${t.ownerPhonePlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
           </div>
 
           <div>
@@ -683,7 +639,7 @@
     window.handleCheckCard = async function() {
       const code = document.getElementById('cardInput').value.trim().toUpperCase();
       if (!code) {
-        showNotification('Notice', currentLang === 'en' ? 'Please enter card code.' : 'Masukkan kode kartu.', 'info');
+        showNotification('Notice', 'Masukkan kode kartu.', 'info');
         return;
       }
 
@@ -705,21 +661,18 @@
           renderActivationForm(card.card_code); 
         }
       } else {
-        showNotification(
-          currentLang === 'en' ? 'Card Not Found' : 'Kartu Tidak Ditemukan', 
-          currentLang === 'en' ? `Code "${code}" is not registered in the system.` : `Kode kartu "${code}" tidak terdaftar di sistem. Pastikan kode benar atau gunakan scan QR/NFC pada kartu fisik.`, 
-          'error'
-        );
+        showNotification('Kartu Tidak Ditemukan', `Kode kartu "${code}" tidak terdaftar.`, 'error');
       }
     }
 
     window.submitActivation = async function(code) {
       const name = document.getElementById('bizName').value.trim();
       const rawInput = document.getElementById('bizUrl').value.trim();
+      const ownerPhone = document.getElementById('ownerPhone').value.trim();
       const pin = document.getElementById('bizPin').value.trim();
 
-      if (!name || !rawInput || pin.length !== 4) {
-        showNotification('Notice', currentLang === 'en' ? 'Complete all fields & 4-digit PIN.' : 'Lengkapi data & PIN 4 digit.', 'info');
+      if (!name || !rawInput || !ownerPhone || pin.length !== 4) {
+        showNotification('Notice', 'Lengkapi seluruh data termasuk No. WhatsApp Owner dan PIN 4 digit.', 'info');
         return;
       }
 
@@ -731,13 +684,14 @@
           card_code: code,
           business_name: name, 
           google_review_url: formattedReviewUrl, 
+          owner_phone: ownerPhone,
           pin: pin, 
           is_activated: true,
           enable_routing: true
         }, { onConflict: 'card_code' });
 
       if (!error) {
-        showNotification('Success!', currentLang === 'en' ? 'Card activated.' : 'Kartu berhasil diaktifkan.', 'success', () => {
+        showNotification('Success!', 'Kartu berhasil diaktifkan.', 'success', () => {
           window.renderActiveCardStatusByCode(code);
         });
       } else {
@@ -750,7 +704,7 @@
       const pin = document.getElementById('managePin').value.trim();
 
       if (!code || !pin) {
-        showNotification('Notice', currentLang === 'en' ? 'Enter code & PIN.' : 'Masukkan kode & PIN.', 'info');
+        showNotification('Notice', 'Masukkan kode & PIN.', 'info');
         return;
       }
 
@@ -762,7 +716,7 @@
         .maybeSingle();
 
       if (card) { renderEditForm(card); } 
-      else { showNotification('Access Denied', currentLang === 'en' ? 'Wrong Code or PIN.' : 'Kode atau PIN salah!', 'error'); }
+      else { showNotification('Access Denied', 'Kode atau PIN salah!', 'error'); }
     }
 
     function renderEditForm(card) {
@@ -782,20 +736,11 @@
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.bizUrlLabel}</label>
             <input id="editUrl" type="text" value="${card.google_review_url || ''}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-            
-            <!-- BANTUAN DI HALAMAN EDIT -->
-            <div class="mt-2 text-[11px] text-slate-500 space-y-1 bg-blue-50/60 p-3 rounded-2xl border border-blue-100">
-              <p class="font-semibold text-blue-900 mb-1">💡 Bingung mengubah link ulasan?</p>
-              <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
-                  🔍 Cari Place ID Toko ↗
-                </a>
-                <span class="text-slate-300">|</span>
-                <a href="https://productmate.com/google-review-link-generator" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
-                  🔗 Convert Link Maps ↗
-                </a>
-              </div>
-            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.ownerPhoneLabel}</label>
+            <input id="editOwnerPhone" type="tel" value="${card.owner_phone || ''}" placeholder="${t.ownerPhonePlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
           </div>
 
           <div>
@@ -814,27 +759,28 @@
     window.submitEdit = async function(cardCode, currentPin) {
       const name = document.getElementById('editName').value.trim();
       const rawInput = document.getElementById('editUrl').value.trim();
+      const ownerPhone = document.getElementById('editOwnerPhone').value.trim();
       const newPin = document.getElementById('editPin').value.trim();
 
-      if (!name || !rawInput) {
-        showNotification('Notice', 'Required fields.', 'info');
+      if (!name || !rawInput || !ownerPhone) {
+        showNotification('Notice', 'Semua kolom wajib diisi.', 'info');
         return;
       }
 
       let finalPin = currentPin;
       if (newPin) {
-        if (newPin.length !== 4) { showNotification('Notice', 'PIN must be 4 digits.', 'info'); return; }
+        if (newPin.length !== 4) { showNotification('Notice', 'PIN harus 4 digit.', 'info'); return; }
         finalPin = newPin;
       }
 
       const formattedReviewUrl = formatReviewUrl(rawInput);
       const { error } = await supabaseClient
         .from('cards')
-        .update({ business_name: name, google_review_url: formattedReviewUrl, pin: finalPin })
+        .update({ business_name: name, google_review_url: formattedReviewUrl, owner_phone: ownerPhone, pin: finalPin })
         .eq('card_code', cardCode);
 
       if (!error) {
-        showNotification('Success', currentLang === 'en' ? 'Data updated successfully.' : 'Data berhasil diperbarui.', 'success', () => {
+        showNotification('Success', 'Data berhasil diperbarui.', 'success', () => {
           window.renderActiveCardStatusByCode(cardCode);
         });
       } else {
