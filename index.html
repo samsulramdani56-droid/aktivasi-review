@@ -468,12 +468,13 @@
         // KIRIM KE NOMOR WHATSAPP OWNER MASING-MASING BISNIS
         const targetWa = ownerPhone ? ownerPhone.trim() : RENDER_SUPPORT_WHATSAPP;
         const waMessage = encodeURIComponent(
-          `📩 *Laporan Feedback Pelanggan (${businessName || cardCode})*\n\n` +
-          `⭐ Rating: ${selectedRating} Bintang\n` +
-          `👤 Nama: ${name || 'Anonim'}\n` +
-          `📞 No HP: ${phone || '-'}\n` +
-          `💬 Pesan:\n"${text}"`
-        );
+  `⚠️ *FEEDBACK PELANGGAN (${businessName || cardCode})*\n\n` +
+  `• *Bintang:* ${'⭐'.repeat(selectedRating)} (${selectedRating}/5)\n` +
+  `• *Nama:* ${name || 'Anonim'}\n` +
+  `• *Kontak:* ${phone || '-'}\n` +
+  `• *Pesan:* "${text}"\n\n` +
+  `_Mohon segera ditindaklanjuti._`
+);
         const waOwnerUrl = `https://wa.me/${targetWa}?text=${waMessage}`;
 
         showNotification(
