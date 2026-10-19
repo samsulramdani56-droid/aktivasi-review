@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,63 +11,68 @@
   <!-- Html5Qrcode Scanner CDN -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
-    /* Animasi halus untuk pop-up modal */
     @keyframes modalFadeIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
     .animate-modal {
-      animation: modalFadeIn 0.2s ease-out forwards;
+      animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
   </style>
 </head>
-<body class="bg-slate-100 min-h-screen flex flex-col items-center p-4">
+<body class="bg-gradient-to-br from-slate-50 via-slate-100 to-blue-50/30 min-h-full flex flex-col items-center justify-between p-4 sm:p-6 text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
 
   <!-- Header Website -->
-  <header class="w-full max-w-md flex justify-between items-center py-4">
-    <div class="flex items-center gap-2">
-      <div class="bg-red-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">R</div>
-      <span class="font-bold text-gray-800 text-lg" data-i18n="brandTitle">Render Project Card</span>
-      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v1.0</span>
+  <header class="w-full max-w-md flex justify-between items-center py-3 px-1">
+    <div class="flex items-center gap-3">
+      <div class="bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-bold rounded-2xl w-10 h-10 flex items-center justify-center shadow-md shadow-blue-500/20 text-base tracking-wider">R</div>
+      <div>
+        <h2 class="font-bold text-slate-900 text-base leading-tight" data-i18n="brandTitle">Render Project Card</h2>
+        <span class="text-[10px] font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md uppercase tracking-wider">v2.0 Pro</span>
+      </div>
     </div>
     <!-- Tombol Bahasa Interaktif -->
-    <div class="bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full flex gap-1 cursor-pointer">
-      <button id="btn-id" onclick="setLanguage('id')" class="px-2 py-0.5 rounded transition bg-white text-blue-600 font-bold">ID</button>
-      <button id="btn-en" onclick="setLanguage('en')" class="px-2 py-0.5 rounded transition text-white opacity-70">EN</button>
+    <div class="bg-white/80 backdrop-blur-md border border-slate-200/80 p-1 rounded-xl flex gap-1 shadow-sm cursor-pointer">
+      <button id="btn-id" onclick="setLanguage('id')" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow-sm">ID</button>
+      <button id="btn-en" onclick="setLanguage('en')" class="px-3 py-1 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">EN</button>
     </div>
   </header>
 
   <!-- Konten Utama -->
-  <main id="app-content" class="w-full max-w-md bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+  <main id="app-content" class="w-full max-w-md bg-white/90 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-200/60 my-auto transition-all">
     <!-- Diisi otomatis oleh JavaScript -->
   </main>
 
-  <footer class="mt-8 text-center text-xs text-gray-400" data-i18n="footerText">
+  <footer class="w-full max-w-md py-4 text-center text-xs text-slate-400 font-medium" data-i18n="footerText">
     © 2026 Create Render Project.
   </footer>
 
   <!-- MODAL / KOTAK PEMINDAI KAMERA QR -->
-  <div id="qr-reader-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-xl text-center animate-modal">
-      <h3 class="font-bold text-gray-900 text-lg mb-2">Scan QR Kartu</h3>
-      <p class="text-xs text-gray-500 mb-4">Arahkan kamera ke QR Code pada kartu fisik.</p>
+  <div id="qr-reader-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl mx-auto flex items-center justify-center text-xl mb-3 shadow-inner">📷</div>
+      <h3 class="font-bold text-slate-900 text-lg mb-1">Scan QR Kartu</h3>
+      <p class="text-xs text-slate-500 mb-5 leading-relaxed">Arahkan kamera ke QR Code pada kartu fisik.</p>
       
       <!-- Area Kamera -->
-      <div id="reader" class="w-full rounded-2xl overflow-hidden mb-4 bg-black"></div>
+      <div id="reader" class="w-full rounded-2xl overflow-hidden mb-5 bg-slate-900 border border-slate-200 shadow-inner"></div>
       
-      <button onclick="closeQrScanner()" class="w-full bg-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl text-sm hover:bg-gray-300 transition">
+      <button onclick="closeQrScanner()" class="w-full bg-slate-100 text-slate-700 font-semibold py-3 rounded-2xl text-sm hover:bg-slate-200 transition-all">
         Tutup Kamera
       </button>
     </div>
   </div>
 
   <!-- MODAL NOTIFIKASI KUSTOM -->
-  <div id="custom-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl text-center animate-modal">
-      <div id="modal-icon" class="w-12 h-12 rounded-full mx-auto flex items-center justify-center text-xl mb-3"></div>
-      <h3 id="modal-title" class="font-bold text-gray-900 text-lg mb-1">Pemberitahuan</h3>
-      <p id="modal-message" class="text-sm text-gray-600 mb-6 leading-relaxed"></p>
-      <button id="modal-btn" onclick="closeCustomModal()" class="w-full bg-blue-600 text-white font-medium py-2.5 rounded-xl text-sm hover:bg-blue-700 transition" data-i18n="modalBtn">
+  <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <div id="modal-icon" class="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 shadow-sm"></div>
+      <h3 id="modal-title" class="font-bold text-slate-900 text-lg mb-1.5">Pemberitahuan</h3>
+      <p id="modal-message" class="text-sm text-slate-600 mb-6 leading-relaxed"></p>
+      <button id="modal-btn" onclick="closeCustomModal()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-blue-700 shadow-lg shadow-blue-500/25 transition-all" data-i18n="modalBtn">
         Mengerti
       </button>
     </div>
@@ -86,7 +91,7 @@
 
     const translations = {
       id: {
-        brandTitle: "Aktivasi Review",
+        brandTitle: "Render Project Card",
         homeTitle: "Kartu Review",
         homeDesc: "Hubungkan kartu Anda sekali, lalu pelanggan dapat membuka ulasan Google bisnis Anda hanya dengan menempelkan kartu atau memindai QR.",
         cardPlaceholder: "MASUKKAN KODE KARTU",
@@ -97,7 +102,7 @@
         manageBtn: "⚙️ Kelola kartu Anda di sini.",
         
         activeTitle: "Kartu Aktif!",
-        activeDesc: (code, name) => `Pengaturan selesai—kartu <span class="font-semibold text-gray-700">${code}</span> kini terhubung dengan ulasan Google untuk <span class="font-bold text-gray-900">${name}</span>.`,
+        activeDesc: (code, name) => `Pengaturan selesai—kartu <span class="font-semibold text-slate-700">${code}</span> kini terhubung dengan ulasan Google untuk <span class="font-bold text-slate-900">${name}</span>.`,
         openReviewBtn: "Tes Buka Halaman Review",
         editCardBtn: "Edit Info Kartu",
         saveInfoText: "Simpan halaman ini bila perlu. PIN yang Anda buat sebelumnya akan diminta saat membuka halaman edit.",
@@ -114,7 +119,7 @@
         backBtn: "Kembali",
 
         activationTitle: "Aktivasi Kartu",
-        activationDesc: (code) => `Anda sedang menyiapkan kartu <span class="font-bold text-black">${code}</span>. Lengkapi detail berikut agar kartu siap digunakan.`,
+        activationDesc: (code) => `Anda sedang menyiapkan kartu <span class="font-bold text-slate-900">${code}</span>. Lengkapi detail berikut agar kartu siap digunakan.`,
         bizNameLabel: "Nama Bisnis",
         bizNamePlaceholder: "Contoh: Warung Kopi",
         bizUrlLabel: "Link Google Review atau Place ID",
@@ -123,7 +128,7 @@
         activateBtn: "Aktifkan Kartu",
 
         editInfoTitle: "Edit Info Kartu",
-        editInfoDesc: (code) => `Memperbarui data untuk kartu <span class="font-bold text-black">${code}</span>.`,
+        editInfoDesc: (code) => `Memperbarui data untuk kartu <span class="font-bold text-slate-900">${code}</span>.`,
         newPinLabel: "PIN Baru (Kosongkan jika tidak diganti)",
         saveChangesBtn: "Simpan Perubahan",
         cancelBtn: "Batal",
@@ -131,7 +136,7 @@
         modalBtn: "Mengerti"
       },
       en: {
-        brandTitle: "Review Activation",
+        brandTitle: "Render Project Card",
         homeTitle: "Review Card",
         homeDesc: "Connect your card once, then customers can open your Google business reviews simply by tapping the card or scanning the QR code.",
         cardPlaceholder: "ENTER CARD CODE",
@@ -142,7 +147,7 @@
         manageBtn: "⚙️ Manage your card here.",
 
         activeTitle: "Card Active!",
-        activeDesc: (code, name) => `Setup complete—card <span class="font-semibold text-gray-700">${code}</span> is now linked to Google review for <span class="font-bold text-gray-900">${name}</span>.`,
+        activeDesc: (code, name) => `Setup complete—card <span class="font-semibold text-slate-700">${code}</span> is now linked to Google review for <span class="font-bold text-slate-900">${name}</span>.`,
         openReviewBtn: "Test Open Review Page",
         editCardBtn: "Edit Card Info",
         saveInfoText: "Save this page if needed. Your previously created PIN will be required when opening the edit page.",
@@ -159,7 +164,7 @@
         backBtn: "Back",
 
         activationTitle: "Card Activation",
-        activationDesc: (code) => `You are setting up card <span class="font-bold text-black">${code}</span>. Fill in the details below to make it ready.`,
+        activationDesc: (code) => `You are setting up card <span class="font-bold text-slate-900">${code}</span>. Fill in the details below to make it ready.`,
         bizNameLabel: "Business Name",
         bizNamePlaceholder: "Example: Coffee Shop",
         bizUrlLabel: "Google Review Link or Place ID",
@@ -168,7 +173,7 @@
         activateBtn: "Activate Card",
 
         editInfoTitle: "Edit Info",
-        editInfoDesc: (code) => `Updating data for card <span class="font-bold text-black">${code}</span>.`,
+        editInfoDesc: (code) => `Updating data for card <span class="font-bold text-slate-900">${code}</span>.`,
         newPinLabel: "New PIN (Leave blank to keep current)",
         saveChangesBtn: "Save Changes",
         cancelBtn: "Cancel",
@@ -185,11 +190,11 @@
       const btnEn = document.getElementById('btn-en');
 
       if (lang === 'en') {
-        btnEn.className = "px-2 py-0.5 rounded transition bg-white text-blue-600 font-bold";
-        btnId.className = "px-2 py-0.5 rounded transition text-white opacity-70";
+        btnEn.className = "px-3 py-1 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow-sm";
+        btnId.className = "px-3 py-1 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900";
       } else {
-        btnId.className = "px-2 py-0.5 rounded transition bg-white text-blue-600 font-bold";
-        btnEn.className = "px-2 py-0.5 rounded transition text-white opacity-70";
+        btnId.className = "px-3 py-1 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow-sm";
+        btnEn.className = "px-3 py-1 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900";
       }
 
       initApp();
@@ -306,13 +311,13 @@
       modalCallback = onConfirm;
 
       if (type === 'success') {
-        iconEl.className = 'w-12 h-12 rounded-full mx-auto flex items-center justify-center text-xl mb-3 bg-green-100 text-green-600';
+        iconEl.className = 'w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 bg-emerald-50 text-emerald-600 shadow-inner';
         iconEl.innerText = '✓';
       } else if (type === 'error') {
-        iconEl.className = 'w-12 h-12 rounded-full mx-auto flex items-center justify-center text-xl mb-3 bg-red-100 text-red-600';
+        iconEl.className = 'w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 bg-rose-50 text-rose-600 shadow-inner';
         iconEl.innerText = '✕';
       } else {
-        iconEl.className = 'w-12 h-12 rounded-full mx-auto flex items-center justify-center text-xl mb-3 bg-blue-100 text-blue-600';
+        iconEl.className = 'w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 bg-blue-50 text-blue-600 shadow-inner';
         iconEl.innerText = 'ℹ';
       }
 
@@ -331,11 +336,11 @@
       const btnId = document.getElementById('btn-id');
       const btnEn = document.getElementById('btn-en');
       if (currentLang === 'en') {
-        btnEn.className = "px-2 py-0.5 rounded transition bg-white text-blue-600 font-bold";
-        btnId.className = "px-2 py-0.5 rounded transition text-white opacity-70";
+        btnEn.className = "px-3 py-1 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow-sm";
+        btnId.className = "px-3 py-1 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900";
       } else {
-        btnId.className = "px-2 py-0.5 rounded transition bg-white text-blue-600 font-bold";
-        btnEn.className = "px-2 py-0.5 rounded transition text-white opacity-70";
+        btnId.className = "px-3 py-1 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow-sm";
+        btnEn.className = "px-3 py-1 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900";
       }
 
       const footerEl = document.querySelector('[data-i18n="footerText"]');
@@ -382,23 +387,29 @@
     window.renderHome = function() {
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">${t.homeTitle}</h1>
-        <p class="text-gray-500 text-sm mb-6">${t.homeDesc}</p>
+        <div class="mb-6">
+          <h1 class="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">${t.homeTitle}</h1>
+          <p class="text-slate-500 text-sm leading-relaxed">${t.homeDesc}</p>
+        </div>
         
-        <input id="cardInput" type="text" placeholder="${t.cardPlaceholder}" class="w-full border rounded-xl p-3 text-center uppercase tracking-wider mb-3 focus:outline-blue-500 text-sm">
-        <button onclick="window.handleCheckCard()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl mb-4 hover:bg-blue-700 transition">${t.nextBtn}</button>
+        <div class="space-y-4">
+          <div>
+            <input id="cardInput" type="text" placeholder="${t.cardPlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3.5 text-center font-medium uppercase tracking-wider text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+          </div>
+          <button onclick="window.handleCheckCard()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm flex items-center justify-center gap-2">${t.nextBtn}</button>
+        </div>
         
-        <div class="relative flex py-2 items-center mb-4">
-            <div class="flex-grow border-t border-gray-200"></div>
-            <span class="flex-shrink mx-4 text-xs text-gray-400">${t.orText}</span>
-            <div class="flex-grow border-t border-gray-200"></div>
+        <div class="relative flex py-5 items-center">
+            <div class="flex-grow border-t border-slate-200"></div>
+            <span class="flex-shrink mx-4 text-xs font-medium text-slate-400 uppercase tracking-wider">${t.orText}</span>
+            <div class="flex-grow border-t border-slate-200"></div>
         </div>
 
-        <button onclick="window.startQrScanner()" class="w-full bg-gray-50 text-gray-700 text-sm py-3 rounded-xl font-medium border mb-4 hover:bg-gray-100 transition">${t.scanBtn}</button>
+        <button onclick="window.startQrScanner()" class="w-full bg-white hover:bg-slate-50 active:scale-[0.99] text-slate-700 text-sm font-semibold py-3.5 px-4 rounded-2xl border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2">${t.scanBtn}</button>
 
-        <div class="border-t pt-4">
-          <p class="text-xs font-semibold text-gray-700 mb-2">${t.alreadyActiveTitle}</p>
-          <button onclick="window.renderManage()" class="w-full bg-gray-100 text-gray-700 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-200 transition">${t.manageBtn}</button>
+        <div class="mt-6 pt-6 border-t border-slate-100">
+          <p class="text-xs font-semibold text-slate-500 mb-2.5">${t.alreadyActiveTitle}</p>
+          <button onclick="window.renderManage()" class="w-full bg-slate-100 hover:bg-slate-200/70 active:scale-[0.99] text-slate-700 py-3 px-4 rounded-2xl text-xs font-semibold transition-all flex items-center justify-center gap-2">${t.manageBtn}</button>
         </div>
       `;
     }
@@ -412,33 +423,35 @@
       const waOwnerUrl = `https://wa.me/${OWNER_WHATSAPP}?text=${waMessage}`;
 
       document.getElementById('app-content').innerHTML = `
-        <div class="flex items-center justify-center w-12 h-12 bg-blue-50 text-blue-600 rounded-full mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        <div class="flex items-center justify-center w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl mb-4 shadow-inner">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
           </svg>
         </div>
         
-        <h1 class="text-xl font-bold text-gray-900 mb-2">${t.activeTitle}</h1>
-        <p class="text-gray-500 text-xs mb-6 leading-relaxed">
+        <h1 class="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">${t.activeTitle}</h1>
+        <p class="text-slate-500 text-xs mb-6 leading-relaxed">
           ${t.activeDesc(card.card_code, card.business_name || 'Business')}
         </p>
 
-        <a href="${reviewUrl}" target="_blank" class="block w-full bg-blue-600 text-white font-semibold py-3 rounded-xl text-center mb-3 hover:bg-blue-700 transition">
-          ${t.openReviewBtn}
-        </a>
+        <div class="space-y-3 mb-6">
+          <a href="${reviewUrl}" target="_blank" class="block w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl text-center shadow-lg shadow-blue-500/25 transition-all text-sm">
+            ${t.openReviewBtn}
+          </a>
 
-        <button onclick="window.renderManageWithCode('${card.card_code}')" class="w-full bg-gray-100 text-gray-700 font-semibold py-3 rounded-xl text-center mb-4 hover:bg-gray-200 transition">
-          ${t.editCardBtn}
-        </button>
+          <button onclick="window.renderManageWithCode('${card.card_code}')" class="w-full bg-slate-100 hover:bg-slate-200/70 active:scale-[0.99] text-slate-700 font-semibold py-3.5 px-4 rounded-2xl text-center transition-all text-sm">
+            ${t.editCardBtn}
+          </button>
+        </div>
 
-        <div class="bg-gray-50 p-4 rounded-xl text-center border border-gray-100 flex flex-col gap-2.5">
-          <p class="text-[11px] text-gray-500 leading-normal mb-1">${t.saveInfoText}</p>
+        <div class="bg-slate-50/80 p-4 rounded-2xl text-center border border-slate-200/60 flex flex-col gap-3">
+          <p class="text-[11px] text-slate-500 leading-normal">${t.saveInfoText}</p>
           
-          <button onclick="window.copyPageLink()" class="w-full bg-white text-blue-600 border border-blue-200 text-xs font-semibold py-2.5 rounded-lg hover:bg-blue-50 transition flex items-center justify-center gap-1.5 shadow-sm">
+          <button onclick="window.copyPageLink()" class="w-full bg-white hover:bg-slate-50 active:scale-[0.99] text-blue-600 border border-blue-200 text-xs font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm">
             ${t.copyLinkBtn}
           </button>
 
-          <a href="${waOwnerUrl}" target="_blank" class="w-full bg-emerald-500 text-white text-xs font-semibold py-2.5 rounded-lg hover:bg-emerald-600 transition flex items-center justify-center gap-2 shadow-sm">
+          <a href="${waOwnerUrl}" target="_blank" class="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-[0.99] text-white text-xs font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20">
             <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
             </svg>
@@ -452,20 +465,30 @@
     window.renderManage = function(defaultCode = '') {
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">${t.manageCardTitle}</h1>
-        <p class="text-gray-500 text-sm mb-6">${t.manageCardDesc}</p>
-        
-        <label class="block text-xs font-semibold text-gray-700 mb-1">${t.cardCodeLabel}</label>
-        <input id="manageCode" type="text" value="${defaultCode}" placeholder="${t.cardCodePlaceholder}" oninput="updateForgotPinLink()" class="w-full border rounded-xl p-3 mb-3 text-sm uppercase">
-        
-        <div class="flex justify-between items-center mb-1">
-          <label class="block text-xs font-semibold text-gray-700">${t.pinLabel}</label>
-          <a id="forgotPinAnchor" href="#" target="_blank" class="text-xs text-blue-600 font-medium hover:underline">${t.forgotPinText}</a>
+        <div class="mb-6">
+          <h1 class="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">${t.manageCardTitle}</h1>
+          <p class="text-slate-500 text-sm leading-relaxed">${t.manageCardDesc}</p>
         </div>
-        <input id="managePin" type="password" maxlength="4" placeholder="****" class="w-full border rounded-xl p-3 mb-4 text-sm">
+        
+        <div class="space-y-4 mb-6">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.cardCodeLabel}</label>
+            <input id="manageCode" type="text" value="${defaultCode}" placeholder="${t.cardCodePlaceholder}" oninput="updateForgotPinLink()" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm uppercase font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+          </div>
+          
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label class="block text-xs font-semibold text-slate-700">${t.pinLabel}</label>
+              <a id="forgotPinAnchor" href="#" target="_blank" class="text-xs text-blue-600 font-semibold hover:underline">${t.forgotPinText}</a>
+            </div>
+            <input id="managePin" type="password" maxlength="4" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+          </div>
+        </div>
 
-        <button onclick="window.handleManageLogin()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl mb-3 hover:bg-blue-700 transition">${t.openCardBtn}</button>
-        <button onclick="window.renderHome()" class="w-full text-gray-600 text-sm py-2">${t.backBtn}</button>
+        <div class="space-y-2.5">
+          <button onclick="window.handleManageLogin()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm">${t.openCardBtn}</button>
+          <button onclick="window.renderHome()" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-2.5 transition-all">${t.backBtn}</button>
+        </div>
       `;
       updateForgotPinLink();
     }
@@ -486,34 +509,46 @@
     function renderActivationForm(code) {
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">${t.activationTitle}</h1>
-        <p class="text-gray-500 text-xs mb-6">${t.activationDesc(code)}</p>
+        <div class="mb-6">
+          <h1 class="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">${t.activationTitle}</h1>
+          <p class="text-slate-500 text-xs leading-relaxed">${t.activationDesc(code)}</p>
+        </div>
 
-        <label class="block text-xs font-semibold text-gray-700 mb-1">${t.bizNameLabel}</label>
-        <input id="bizName" type="text" placeholder="${t.bizNamePlaceholder}" class="w-full border rounded-xl p-3 mb-4 text-sm">
+        <div class="space-y-4 mb-6">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.bizNameLabel}</label>
+            <input id="bizName" type="text" placeholder="${t.bizNamePlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+          </div>
 
-        <label class="block text-xs font-semibold text-gray-700 mb-1">${t.bizUrlLabel}</label>
-        <input id="bizUrl" type="text" placeholder="ChIJXanaDyrDaC4RTkdVD1FTIyc" class="w-full border rounded-xl p-3 mb-1 text-sm">
-        
-        <!-- BANTUAN CARI PLACE ID & CONVERTER GRATIS -->
-        <div class="mt-2 mb-4 text-[11px] text-gray-500 space-y-1 bg-blue-50/60 p-2.5 rounded-xl border border-blue-100">
-          <p class="font-semibold text-blue-900 mb-1">💡 Bingung cara dapatkan link ulasan?</p>
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
-              🔍 Cari Place ID Toko ↗
-            </a>
-            <span class="text-gray-300">|</span>
-            <a href="https://productmate.com/google-review-link-generator" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
-              🔗 Convert Link Maps ↗
-            </a>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.bizUrlLabel}</label>
+            <input id="bizUrl" type="text" placeholder="ChIJXanaDyrDaC4RTkdVD1FTIyc" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+            
+            <!-- BANTUAN CARI PLACE ID & CONVERTER GRATIS -->
+            <div class="mt-2 text-[11px] text-slate-500 space-y-1 bg-blue-50/60 p-3 rounded-2xl border border-blue-100">
+              <p class="font-semibold text-blue-900 mb-1">💡 Bingung cara dapatkan link ulasan?</p>
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
+                  🔍 Cari Place ID Toko ↗
+                </a>
+                <span class="text-slate-300">|</span>
+                <a href="https://productmate.com/google-review-link-generator" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
+                  🔗 Convert Link Maps ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.bizPinLabel}</label>
+            <input id="bizPin" type="password" maxlength="4" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
           </div>
         </div>
 
-        <label class="block text-xs font-semibold text-gray-700 mb-1">${t.bizPinLabel}</label>
-        <input id="bizPin" type="password" maxlength="4" placeholder="****" class="w-full border rounded-xl p-3 mb-6 text-sm">
-
-        <button onclick="window.submitActivation('${code}')" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl mb-3 hover:bg-blue-700 transition">${t.activateBtn}</button>
-        <button onclick="window.renderHome()" class="w-full text-gray-600 text-sm py-2">${t.backBtn}</button>
+        <div class="space-y-2.5">
+          <button onclick="window.submitActivation('${code}')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm">${t.activateBtn}</button>
+          <button onclick="window.renderHome()" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-2.5 transition-all">${t.backBtn}</button>
+        </div>
       `;
     }
 
@@ -604,34 +639,46 @@
     function renderEditForm(card) {
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">${t.editInfoTitle}</h1>
-        <p class="text-gray-500 text-xs mb-6">${t.editInfoDesc(card.card_code)}</p>
+        <div class="mb-6">
+          <h1 class="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">${t.editInfoTitle}</h1>
+          <p class="text-slate-500 text-xs leading-relaxed">${t.editInfoDesc(card.card_code)}</p>
+        </div>
 
-        <label class="block text-xs font-semibold text-gray-700 mb-1">${t.bizNameLabel}</label>
-        <input id="editName" type="text" value="${card.business_name || ''}" class="w-full border rounded-xl p-3 mb-4 text-sm">
+        <div class="space-y-4 mb-6">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.bizNameLabel}</label>
+            <input id="editName" type="text" value="${card.business_name || ''}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+          </div>
 
-        <label class="block text-xs font-semibold text-gray-700 mb-1">${t.bizUrlLabel}</label>
-        <input id="editUrl" type="text" value="${card.google_review_url || ''}" class="w-full border rounded-xl p-3 mb-1 text-sm">
-        
-        <!-- BANTUAN DI HALAMAN EDIT -->
-        <div class="mt-2 mb-4 text-[11px] text-gray-500 space-y-1 bg-blue-50/60 p-2.5 rounded-xl border border-blue-100">
-          <p class="font-semibold text-blue-900 mb-1">💡 Bingung mengubah link ulasan?</p>
-          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
-              🔍 Cari Place ID Toko ↗
-            </a>
-            <span class="text-gray-300">|</span>
-            <a href="https://productmate.com/google-review-link-generator" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
-              🔗 Convert Link Maps ↗
-            </a>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.bizUrlLabel}</label>
+            <input id="editUrl" type="text" value="${card.google_review_url || ''}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+            
+            <!-- BANTUAN DI HALAMAN EDIT -->
+            <div class="mt-2 text-[11px] text-slate-500 space-y-1 bg-blue-50/60 p-3 rounded-2xl border border-blue-100">
+              <p class="font-semibold text-blue-900 mb-1">💡 Bingung mengubah link ulasan?</p>
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
+                  🔍 Cari Place ID Toko ↗
+                </a>
+                <span class="text-slate-300">|</span>
+                <a href="https://productmate.com/google-review-link-generator" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
+                  🔗 Convert Link Maps ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.newPinLabel}</label>
+            <input id="editPin" type="password" maxlength="4" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
           </div>
         </div>
 
-        <label class="block text-xs font-semibold text-gray-700 mb-1">${t.newPinLabel}</label>
-        <input id="editPin" type="password" maxlength="4" placeholder="****" class="w-full border rounded-xl p-3 mb-6 text-sm">
-
-        <button onclick="window.submitEdit('${card.card_code}', '${card.pin}')" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-xl mb-3 hover:bg-blue-700 transition">${t.saveChangesBtn}</button>
-        <button onclick="window.renderActiveCardStatusByCode('${card.card_code}')" class="w-full text-gray-600 text-sm py-2">${t.cancelBtn}</button>
+        <div class="space-y-2.5">
+          <button onclick="window.submitEdit('${card.card_code}', '${card.pin}')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm">${t.saveChangesBtn}</button>
+          <button onclick="window.renderActiveCardStatusByCode('${card.card_code}')" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-2.5 transition-all">${t.cancelBtn}</button>
+        </div>
       `;
     }
 
