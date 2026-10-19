@@ -26,7 +26,7 @@
     <div class="flex items-center gap-2">
       <div class="bg-red-700 text-white font-bold rounded-full w-8 h-8 flex items-center justify-center">R</div>
       <span class="font-bold text-gray-800 text-lg" data-i18n="brandTitle">Render Project Card</span>
-      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v1.0</span>
+      <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">v6.3</span>
     </div>
     <!-- Tombol Bahasa Interaktif -->
     <div class="bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded-full flex gap-1 cursor-pointer">
@@ -99,9 +99,9 @@
         activationTitle: "Aktivasi Kartu",
         activationDesc: (code) => `Anda sedang menyiapkan kartu <span class="font-bold text-black">${code}</span>. Lengkapi detail berikut agar kartu siap digunakan.`,
         bizNameLabel: "Nama Bisnis",
-        bizNamePlaceholder: "",
+        bizNamePlaceholder: "Contoh: Kedai NM",
         bizUrlLabel: "Link Google Review atau Place ID",
-        bizUrlHelp: "💡 Masukkan link Google Review hasil konversi atau cukup salin Place ID (contoh: ChIJXanaDyrDaC4RTkdVD1FTIyc).",
+        bizUrlHelp: "💡 Cukup salin Place ID (contoh: ChIJXanaDyrDaC4RTkdVD1FTIyc) atau gunakan link hasil konversi.",
         bizPinLabel: "Buat PIN (4 Digit Angka)",
         activateBtn: "Aktifkan Kartu",
 
@@ -146,7 +146,7 @@
         bizNameLabel: "Business Name",
         bizNamePlaceholder: "Example: Coffee Shop",
         bizUrlLabel: "Google Review Link or Place ID",
-        bizUrlHelp: "💡 Paste the converted Google review link or simply paste the Place ID (e.g. ChIJXanaDyrDaC4RTkdVD1FTIyc).",
+        bizUrlHelp: "💡 Simply paste the Place ID (e.g. ChIJXanaDyrDaC4RTkdVD1FTIyc) or converted review link.",
         bizPinLabel: "Create PIN (4 Digits)",
         activateBtn: "Activate Card",
 
@@ -404,7 +404,7 @@
 
     window.renderManageWithCode = function(code) { window.renderManage(code); }
 
-    // 4. FORM AKTIVASI
+    // 4. FORM AKTIVASI (DIKEMAS DENGAN BANTUAN TOOL AMAN 100% GRATIS)
     function renderActivationForm(code) {
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
@@ -415,8 +415,21 @@
         <input id="bizName" type="text" placeholder="${t.bizNamePlaceholder}" class="w-full border rounded-xl p-3 mb-4 text-sm">
 
         <label class="block text-xs font-semibold text-gray-700 mb-1">${t.bizUrlLabel}</label>
-        <input id="bizUrl" type="text" placeholder="" class="w-full border rounded-xl p-3 mb-1 text-sm">
-        <p class="text-[11px] text-gray-400 mb-4 leading-normal">${t.bizUrlHelp}</p>
+        <input id="bizUrl" type="text" placeholder="ChIJXanaDyrDaC4RTkdVD1FTIyc" class="w-full border rounded-xl p-3 mb-1 text-sm">
+        
+        <!-- BANTUAN CARI PLACE ID & CONVERTER GRATIS -->
+        <div class="mt-2 mb-4 text-[11px] text-gray-500 space-y-1 bg-blue-50/60 p-2.5 rounded-xl border border-blue-100">
+          <p class="font-semibold text-blue-900 mb-1">💡 Bingung cara dapatkan link ulasan?</p>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
+              🔍 Cari Place ID Toko ↗
+            </a>
+            <span class="text-gray-300">|</span>
+            <a href="https://produkmate.com/google-review-link-generator" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
+              🔗 Convert Link Maps ↗
+            </a>
+          </div>
+        </div>
 
         <label class="block text-xs font-semibold text-gray-700 mb-1">${t.bizPinLabel}</label>
         <input id="bizPin" type="password" maxlength="4" placeholder="****" class="w-full border rounded-xl p-3 mb-6 text-sm">
@@ -521,7 +534,20 @@
 
         <label class="block text-xs font-semibold text-gray-700 mb-1">${t.bizUrlLabel}</label>
         <input id="editUrl" type="text" value="${card.google_review_url || ''}" class="w-full border rounded-xl p-3 mb-1 text-sm">
-        <p class="text-[11px] text-gray-400 mb-4 leading-normal">${t.bizUrlHelp}</p>
+        
+        <!-- BANTUAN DI HALAMAN EDIT -->
+        <div class="mt-2 mb-4 text-[11px] text-gray-500 space-y-1 bg-blue-50/60 p-2.5 rounded-xl border border-blue-100">
+          <p class="font-semibold text-blue-900 mb-1">💡 Bingung mengubah link ulasan?</p>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
+              🔍 Cari Place ID Toko ↗
+            </a>
+            <span class="text-gray-300">|</span>
+            <a href="https://produkmate.com/google-review-link-generator" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-medium hover:text-blue-800 transition">
+              🔗 Convert Link Maps ↗
+            </a>
+          </div>
+        </div>
 
         <label class="block text-xs font-semibold text-gray-700 mb-1">${t.newPinLabel}</label>
         <input id="editPin" type="password" maxlength="4" placeholder="****" class="w-full border rounded-xl p-3 mb-6 text-sm">
