@@ -86,8 +86,15 @@
 
     let currentLang = localStorage.getItem('app_lang') || 'id';
     
-    // FITUR KEAMANAN 1: Flag status autentikasi untuk memproteksi halaman pengelolaan
+    // FITUR KEAMANAN 1: Sesi Autentikasi Internal
     let isAuthenticated = false;
+    let sessionTimeoutTimer = null;
+    const SESSION_TIMEOUT_MS = 10 * 60 * 1000; // Auto-logout dalam 10 menit tanpa aktivitas
+
+    // FITUR KEAMANAN 2: Proteksi Brute-Force Rate-Limiting PIN
+    let failedPinAttempts = 0;
+    let isPinLocked = false;
+    let pinLockTimer = null;
 
     const translations = {
       id: {
@@ -206,6 +213,23 @@
       }
     };
 
+    // FITUR KEAMANAN 3: Reset Waktu Sesi Otomatis (Auto Logout pada Inaktivitas)
+    function resetSessionTimer() {
+      if (sessionTimeoutTimer) clearTimeout(sessionTimeoutTimer);
+      if (isAuthenticated) {
+        sessionTimeoutTimer = setTimeout(() => {
+          isAuthenticated = false;
+          showNotification('Sesi Berakhir', 'Sesi Anda telah berakhir demi keamanan. Silakan masukkan PIN kembali.', 'info', () => {
+            window.renderHome();
+          });
+        }, SESSION_TIMEOUT_MS);
+      }
+    }
+
+    ['click', 'mousemove', 'keypress', 'touchstart'].forEach(evt => {
+      window.addEventListener(evt, resetSessionTimer, { passive: true });
+    });
+
     window.setLanguage = function(lang) {
       currentLang = lang;
       localStorage.setItem('app_lang', lang);
@@ -248,7 +272,6 @@
       return clean;
     }
 
-    // FITUR KEAMANAN 2: Validasi & Sanitasi Nomor WhatsApp Owner / Pelanggan
     function sanitizePhoneNumber(phone) {
       if (!phone) return '';
       let clean = phone.replace(/[^0-9]/g, '');
@@ -260,7 +283,6 @@
       return clean;
     }
 
-    // FITUR PENGEMBANGAN 3: Pengelola Status Tombol Loading & Disabled
     function setButtonLoading(btnId, isLoading, originalHtml) {
       const btn = document.getElementById(btnId);
       if (!btn) return;
@@ -277,6 +299,22 @@
       } else {
         btn.disabled = false;
         btn.innerHTML = btn.dataset.originalContent || originalHtml;
+      }
+    }
+
+    // FITUR KEAMANAN 4: Pencatatan Log Aktivitas Perubahan (Audit Trail)
+    async function logActivity(cardCode, actionType, details = '') {
+      try {
+        await supabaseClient
+          .from('card_logs')
+          .insert({
+            card_code: cardCode,
+            action: actionType,
+            details: details,
+            created_at: new Date().toISOString()
+          });
+      } catch (err) {
+        // Log kegagalan secara diam-diam tanpa mengganggu user
       }
     }
 
@@ -541,7 +579,6 @@
       if (!error) {
         const targetWa = ownerPhone ? sanitizePhoneNumber(ownerPhone) : RENDER_SUPPORT_WHATSAPP;
         
-        // FITUR PENGEMBANGAN 2: Waktu Pengiriman & Link Kontak Langsung ke Pelanggan
         const now = new Date();
         const timeFormatted = now.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
         const custChatLink = sanitizedCustPhone ? `https://wa.me/${sanitizedCustPhone}` : '-';
@@ -571,7 +608,7 @@
 
     // 1. BERANDA
     window.renderHome = function() {
-      isAuthenticated = false; // Reset status login saat berada di beranda
+      isAuthenticated = false; // Reset sesi saat di beranda
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
         <div class="mb-6">
@@ -603,11 +640,12 @@
 
     // 2. KARTU AKTIF (HANYA DIBUKA JIKA LOGIN KELOLA BERHASIL)
     function renderActiveCardStatus(card) {
-      // FITUR KEAMANAN 1: Proteksi Sesi Akses Langsung
       if (!isAuthenticated) {
         window.renderManage(card.card_code);
         return;
       }
+
+      resetSessionTimer(); // Reset timer inaktivitas saat membuka dashboard status
 
       const t = translations[currentLang];
       const reviewUrl = formatReviewUrl(card.google_review_url);
@@ -655,7 +693,6 @@
       `;
     }
 
-    // Helper untuk pindah ke Form Edit dengan proteksi
     window.renderEditFormByCardCode = async function(code) {
       if (!isAuthenticated) {
         window.renderManage(code);
@@ -667,7 +704,7 @@
 
     // 3. KELOLA KARTU
     window.renderManage = function(defaultCode = '') {
-      isAuthenticated = false; // Memastikan reset status autentikasi saat di halaman login PIN
+      isAuthenticated = false;
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
         <div class="mb-6">
@@ -690,7 +727,9 @@
         </div>
 
         <div class="space-y-2.5">
-          <button id="openCardBtn" onclick="window.handleManageLogin()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm flex items-center justify-center">${t.openCardBtn}</button>
+          <button id="openCardBtn" onclick="window.handleManageLogin()" ${isPinLocked ? 'disabled' : ''} class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+            ${isPinLocked ? 'Terkuci Sementara...' : t.openCardBtn}
+          </button>
           <button onclick="window.renderHome()" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-2.5 transition-all">${t.backBtn}</button>
         </div>
       `;
@@ -798,10 +837,11 @@
           enable_routing: true
         }, { onConflict: 'card_code' });
 
-      setButtonLoading('activateCardBtn', false, translations[currentLang].activateBtn);
+      setButtonLoading('activateCardCardBtn', false, translations[currentLang].activateBtn);
 
       if (!error) {
-        isAuthenticated = true; // Set Sesi Login Sah
+        isAuthenticated = true; 
+        logActivity(code, 'ACTIVATION', `Aktivasi kartu baru untuk: ${name}`);
         showNotification('Success!', 'Kartu berhasil diaktifkan.', 'success', () => {
           window.renderActiveCardStatusByCode(code);
         });
@@ -810,8 +850,13 @@
       }
     }
 
-    // AUTENTIKASI KELOLA KARTU: Wajib Kode + PIN
+    // AUTENTIKASI KELOLA KARTU: Rate-Limiting Brute-Force Protected
     window.handleManageLogin = async function() {
+      if (isPinLocked) {
+        showNotification('Terkunci Sementara', 'Terlalu banyak percobaan PIN salah. Coba lagi dalam beberapa detik.', 'error');
+        return;
+      }
+
       const code = document.getElementById('manageCode').value.trim().toUpperCase();
       const pin = document.getElementById('managePin').value.trim();
 
@@ -832,14 +877,47 @@
       setButtonLoading('openCardBtn', false, translations[currentLang].openCardBtn);
 
       if (card) { 
+        failedPinAttempts = 0; // Reset counter saat PIN sukses
         if (card.is_activated) {
-          isAuthenticated = true; // Set Sesi Login Terverifikasi
+          isAuthenticated = true;
+          logActivity(code, 'LOGIN_SUCCESS', 'Owner berhasil login ke dashboard kelola');
           renderActiveCardStatus(card); 
         } else {
           renderActivationForm(card.card_code);
         }
       } else { 
-        showNotification('Access Denied', 'Kode atau PIN salah!', 'error'); 
+        failedPinAttempts++;
+        logActivity(code, 'LOGIN_FAILED', `Percobaan PIN salah ke-${failedPinAttempts}`);
+
+        if (failedPinAttempts >= 3) {
+          isPinLocked = true;
+          let lockSeconds = 30;
+          
+          showNotification(
+            'Akses Dibatasi', 
+            `PIN salah 3 kali berturut-turut! Akses dikunci sementara selama ${lockSeconds} detik untuk keamanan.`, 
+            'error'
+          );
+
+          const lockInterval = setInterval(() => {
+            lockSeconds--;
+            const btn = document.getElementById('openCardBtn');
+            if (btn) btn.innerText = `Terkunci (${lockSeconds}s)...`;
+
+            if (lockSeconds <= 0) {
+              clearInterval(lockInterval);
+              isPinLocked = false;
+              failedPinAttempts = 0;
+              if (btn) {
+                btn.disabled = false;
+                btn.innerText = translations[currentLang].openCardBtn;
+              }
+            }
+          }, 1000);
+
+        } else {
+          showNotification('Access Denied', `Kode atau PIN salah! (Percobaan ${failedPinAttempts}/3)`, 'error'); 
+        }
       }
     }
 
@@ -848,6 +926,8 @@
         window.renderManage(card.card_code);
         return;
       }
+
+      resetSessionTimer();
 
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
@@ -898,9 +978,12 @@
       }
 
       let finalPin = currentPin;
+      let isPinChanged = false;
+
       if (newPin) {
         if (newPin.length !== 4) { showNotification('Notice', 'PIN harus 4 digit.', 'info'); return; }
         finalPin = newPin;
+        isPinChanged = true;
       }
 
       const formattedReviewUrl = formatReviewUrl(rawInput);
@@ -916,6 +999,7 @@
       setButtonLoading('saveChangesBtn', false, translations[currentLang].saveChangesBtn);
 
       if (!error) {
+        logActivity(cardCode, 'UPDATE_INFO', `Perbarui data ${name}. ${isPinChanged ? '(PIN Diubah)' : ''}`);
         showNotification('Success', 'Data berhasil diperbarui.', 'success', () => {
           window.renderActiveCardStatusByCode(cardCode);
         });
@@ -924,7 +1008,6 @@
       }
     }
 
-    // FITUR KEAMANAN 1: Proteksi Batal Edit
     window.handleCancelEdit = async function(code) {
       if (isAuthenticated) {
         window.renderActiveCardStatusByCode(code);
