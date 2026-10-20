@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Super Admin Dashboard | Render Project</title>
-  <!-- PENGAMANAN 1: Cegah Mesin Pencari Meng-index Halaman Ini -->
+  <title>System Management Core</title>
+  <!-- Proteksi Agar Tidak Terindeks Mesin Pencari -->
   <meta name="robots" content="noindex, nofollow, noarchive">
   
   <!-- Tailwind CSS CDN -->
@@ -32,20 +32,20 @@
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-slate-100 to-blue-50/30 min-h-full font-sans text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
 
-  <!-- LOGIN CONTAINER -->
+  <!-- LOGIN CONTAINER (MENyamar Menjadi Sistem Core/Node) -->
   <div id="login-section" class="min-h-screen flex items-center justify-center p-4">
     <div class="bg-white/90 backdrop-blur-xl w-full max-w-sm rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-200/60 animate-modal text-center">
-      <div class="bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-bold rounded-2xl w-14 h-14 mx-auto flex items-center justify-center shadow-md shadow-blue-500/20 text-xl tracking-wider mb-4">R</div>
-      <h2 class="font-extrabold text-slate-900 text-xl tracking-tight mb-1">Super Admin Panel</h2>
-      <p class="text-xs text-slate-500 mb-6 leading-relaxed">Masukkan PIN Master Super Admin untuk mengelola seluruh ekosistem kartu review.</p>
+      <div class="bg-gradient-to-tr from-slate-800 to-slate-900 text-white font-bold rounded-2xl w-14 h-14 mx-auto flex items-center justify-center shadow-md text-xl tracking-wider mb-4">⚙️</div>
+      <h2 class="font-extrabold text-slate-900 text-xl tracking-tight mb-1">System Gateway</h2>
+      <p class="text-xs text-slate-500 mb-6 leading-relaxed">Masukkan security PIN untuk mengakses konfigurasi node.</p>
       
       <div class="text-left mb-4">
-        <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Super Admin</label>
-        <input id="adminPinInput" type="password" maxlength="6" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl p-3.5 text-center tracking-widest text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all" onkeypress="if(event.key === 'Enter') handleAdminLogin()">
+        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Security PIN</label>
+        <input id="adminPinInput" type="password" maxlength="6" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl p-3.5 text-center tracking-widest text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-800 transition-all" onkeypress="if(event.key === 'Enter') handleAdminLogin()">
       </div>
       
-      <button onclick="handleAdminLogin()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm">
-        Masuk Dashboard
+      <button onclick="handleAdminLogin()" class="w-full bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg transition-all text-sm">
+        Connect Node
       </button>
     </div>
   </div>
@@ -58,12 +58,12 @@
         <div class="flex items-center gap-3">
           <div class="bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-bold rounded-2xl w-11 h-11 flex items-center justify-center shadow-md shadow-blue-500/20 text-lg">R</div>
           <div>
-            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Dashboard Super Admin</h1>
-            <p class="text-xs text-slate-500">Kelola kartu, cetak massal QR/NFC, kelola PIN klien & pantau masukan.</p>
+            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">System Node Control</h1>
+            <p class="text-xs text-slate-500">Manajemen database kartu, cetak QR massal, & monitoring sistem.</p>
           </div>
         </div>
         <button onclick="logoutAdmin()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all">
-          Logout
+          Disconnect
         </button>
       </header>
 
@@ -198,11 +198,11 @@
     </div>
 
     <footer class="py-4 text-center text-xs text-slate-400 font-medium">
-      © 2026 Create Render Project. Super Admin System.
+      © 2026 Create Render Project. System Management Node.
     </footer>
   </div>
 
-  <!-- MODAL MODALS (CSV, ZIP, BATCH, EDIT/ADD, QR, PROGRESS) -->
+  <!-- MODAL-MODAL PENDUKUNG -->
   <div id="csv-filter-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
       <h3 class="font-extrabold text-slate-900 text-lg mb-1">📥 Export CSV Berdasarkan Range</h3>
@@ -306,7 +306,6 @@
   </div>
 
   <script>
-    // PENGAMANAN 2: Sesi Tersimpan Sementara di Browser Session Storage
     const MASTER_ADMIN_PIN = "140806"; 
     const DOMAIN_BASE = window.location.origin;
 
@@ -320,9 +319,8 @@
     let activeCardCodeForDownload = '';
     let editingOriginalCode = null;
 
-    // Cek Sesi Saat Halaman Dimuat
     window.addEventListener('DOMContentLoaded', () => {
-      if (sessionStorage.getItem('super_admin_logged') === 'true') {
+      if (sessionStorage.getItem('system_node_auth') === 'true') {
         document.getElementById('login-section').classList.add('hidden');
         document.getElementById('dashboard-section').classList.remove('hidden');
         fetchCards();
@@ -355,19 +353,19 @@
     function handleAdminLogin() {
       const pin = document.getElementById('adminPinInput').value.trim();
       if (pin === MASTER_ADMIN_PIN) {
-        sessionStorage.setItem('super_admin_logged', 'true');
+        sessionStorage.setItem('system_node_auth', 'true');
         document.getElementById('login-section').classList.add('hidden');
         document.getElementById('dashboard-section').classList.remove('hidden');
         fetchCards();
         fetchFeedbacks();
         fetchLogs();
       } else {
-        alert("PIN Super Admin Salah!");
+        alert("Security PIN Salah!");
       }
     }
 
     function logoutAdmin() {
-      sessionStorage.removeItem('super_admin_logged');
+      sessionStorage.removeItem('system_node_auth');
       document.getElementById('adminPinInput').value = '';
       document.getElementById('dashboard-section').classList.add('hidden');
       document.getElementById('login-section').classList.remove('hidden');
