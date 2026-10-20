@@ -103,7 +103,7 @@
         openReviewBtn: "Tes Buka Halaman Review",
         editCardBtn: "Edit Info Kartu",
         saveInfoText: "Simpan halaman ini bila perlu. PIN yang Anda buat sebelumnya akan diminta saat membuka halaman edit.",
-        copyLinkBtn: "📋 Salin Link Halaman Ini",
+        copyLinkBtn: "📲 Simpan Link ke WhatsApp",
         contactOwnerBtn: "Ada kendala? Hubungi Support via WhatsApp",
 
         manageCardTitle: "Kelola Kartu",
@@ -133,7 +133,6 @@
         footerText: "© 2026 Create Render Project.",
         modalBtn: "Mengerti",
 
-        // Tambahan Bahasa untuk Smart Review Routing
         ratingDefaultTitle: "Ulasan Pelanggan",
         ratingSubtitle: "Bagaimana pengalaman Anda bersama kami? Berikan penilaian terbaik Anda!",
         apologyNote: "Mohon maaf atas ketidaknyamanan Anda. Masukan Anda sangat berharga bagi kami.",
@@ -161,7 +160,7 @@
         openReviewBtn: "Test Open Review Page",
         editCardBtn: "Edit Card Info",
         saveInfoText: "Save this page if needed. Your previously created PIN will be required when opening the edit page.",
-        copyLinkBtn: "📋 Copy This Page Link",
+        copyLinkBtn: "📲 Save Link to WhatsApp",
         contactOwnerBtn: "Problem? Contact Support via WhatsApp",
 
         manageCardTitle: "Manage Card",
@@ -191,7 +190,6 @@
         footerText: "© 2026 Create Render Project.",
         modalBtn: "Understand",
 
-        // Tambahan Bahasa untuk Smart Review Routing
         ratingDefaultTitle: "Customer Review",
         ratingSubtitle: "How was your experience with us? Please rate us!",
         apologyNote: "We apologize for any inconvenience. Your feedback is very valuable to us.",
@@ -302,10 +300,19 @@
       }
     }
 
-    window.copyPageLink = function() {
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        showNotification('Berhasil Disalin!', 'Link halaman telah disalin.', 'success');
-      });
+    window.sendLinkToWa = function(cardCode, businessName, ownerPhone) {
+      const pageUrl = window.location.href;
+      const targetWa = ownerPhone ? ownerPhone.trim() : RENDER_SUPPORT_WHATSAPP;
+      
+      const waMessage = encodeURIComponent(
+        `📌 *LINK HALAMAN KARTU REVIEW (${businessName || cardCode})*\n\n` +
+        `Simpan pesan ini untuk membuka/mengelola kartu Anda kapan saja:\n` +
+        `🔗 ${pageUrl}\n\n` +
+        `_Simpan link ini baik-baik agar mudah diakses kembali._`
+      );
+
+      const waUrl = `https://wa.me/${targetWa}?text=${waMessage}`;
+      window.open(waUrl, '_blank');
     }
 
     function showNotification(title, message, type = 'info', onConfirm = null) {
@@ -544,7 +551,7 @@
       `;
     }
 
-    // 2. KARTU AKTIF
+    // 2. KARTU AKTIF (HANYA DIBUKA JIKA LOGIN KELOLA BERHASIL)
     function renderActiveCardStatus(card) {
       const t = translations[currentLang];
       const reviewUrl = formatReviewUrl(card.google_review_url);
@@ -578,7 +585,7 @@
         <div class="bg-slate-50/80 p-4 rounded-2xl text-center border border-slate-200/60 flex flex-col gap-3">
           <p class="text-[11px] text-slate-500 leading-normal">${t.saveInfoText}</p>
           
-          <button onclick="window.copyPageLink()" class="w-full bg-white hover:bg-slate-50 active:scale-[0.99] text-blue-600 border border-blue-200 text-xs font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm">
+          <button onclick="window.sendLinkToWa('${card.card_code}', '${card.business_name || ''}', '${card.owner_phone || RENDER_SUPPORT_WHATSAPP}')" class="w-full bg-white hover:bg-slate-50 active:scale-[0.99] text-blue-600 border border-blue-200 text-xs font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm">
             ${t.copyLinkBtn}
           </button>
 
@@ -662,6 +669,7 @@
       `;
     }
 
+    // UPDATE PERBAIKAN KEAMANAN: Input Kode / Scan di Beranda Utama
     window.handleCheckCard = async function() {
       const code = document.getElementById('cardInput').value.trim().toUpperCase();
       if (!code) {
@@ -682,8 +690,10 @@
 
       if (card) {
         if (card.is_activated) { 
-          renderActiveCardStatus(card); 
+          // JIKA SUDAH AKTIF: Langsung arahkan ke Halaman Review (Smart Rating) untuk Pelanggan!
+          renderSmartRatingPage(card); 
         } else { 
+          // JIKA BELUM AKTIF: Buka Form Aktivasi
           renderActivationForm(card.card_code); 
         }
       } else {
@@ -725,6 +735,7 @@
       }
     }
 
+    // AUTENTIKASI KELOLA KARTU: Wajib Kode + PIN
     window.handleManageLogin = async function() {
       const code = document.getElementById('manageCode').value.trim().toUpperCase();
       const pin = document.getElementById('managePin').value.trim();
@@ -743,7 +754,8 @@
 
       if (card) { 
         if (card.is_activated) {
-          renderEditForm(card); 
+          // JIKA PIN BENAR: Buka Halaman Status & Edit Info
+          renderActiveCardStatus(card); 
         } else {
           renderActivationForm(card.card_code);
         }
