@@ -3,717 +3,454 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Super Admin Dashboard | Render Project</title>
+  <title>Admin Dashboard - Render Project Card</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- QRCode.js CDN untuk Preview QR Instant -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- JSZip untuk Download Massal ZIP -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <!-- FileSaver.js untuk Menyimpan File ZIP -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
-    @keyframes modalFadeIn {
-      from { opacity: 0; transform: scale(0.95) translateY(10px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
-    }
-    .animate-modal {
-      animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
   </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 via-slate-100 to-blue-50/30 min-h-full font-sans text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
+<body class="bg-slate-100 min-h-full flex flex-col text-slate-800 antialiased">
 
-  <!-- LOGIN CONTAINER -->
-  <div id="login-section" class="min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white/90 backdrop-blur-xl w-full max-w-sm rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-200/60 animate-modal text-center">
-      <div class="bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-bold rounded-2xl w-14 h-14 mx-auto flex items-center justify-center shadow-md shadow-blue-500/20 text-xl tracking-wider mb-4">R</div>
-      <h2 class="font-extrabold text-slate-900 text-xl tracking-tight mb-1">Super Admin Panel</h2>
-      <p class="text-xs text-slate-500 mb-6 leading-relaxed">Masukkan PIN Master Super Admin untuk mengelola seluruh ekosistem kartu review.</p>
-      
-      <div class="text-left mb-4">
-        <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Super Admin</label>
-        <input id="adminPinInput" type="password" maxlength="6" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl p-3.5 text-center tracking-widest text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-      </div>
-      
-      <button onclick="handleAdminLogin()" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm">
-        Masuk Dashboard
-      </button>
+  <!-- GERBANG LOGIN ADMIN (Tampil jika belum autentikasi) -->
+  <div id="admin-login-screen" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-100 text-center">
+      <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 shadow-inner">🔒</div>
+      <h2 class="text-xl font-bold text-slate-900 mb-1">Admin Panel Login</h2>
+      <p class="text-xs text-slate-500 mb-5">Masukkan kata sandi admin untuk mengakses dasbor.</p>
+
+      <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+        <div>
+          <input id="adminPassword" type="password" placeholder="Kata Sandi Admin" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all text-center">
+        </div>
+        <button id="loginBtn" type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm">
+          Masuk Dasbor
+        </button>
+      </form>
     </div>
   </div>
 
-  <!-- DASHBOARD CONTAINER (Hidden by Default) -->
-  <div id="dashboard-section" class="hidden min-h-screen p-4 sm:p-6 md:p-8 max-w-6xl mx-auto flex flex-col justify-between">
-    <div>
-      <!-- Top Header -->
-      <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-white/80 backdrop-blur-md p-4 sm:p-6 rounded-3xl border border-slate-200/60 shadow-sm">
+  <!-- DASHBOARD UTAMA ADMIN -->
+  <div id="admin-dashboard" class="hidden flex-1 flex flex-col">
+    <!-- Header Admin -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <div class="flex items-center gap-3">
-          <div class="bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-bold rounded-2xl w-11 h-11 flex items-center justify-center shadow-md shadow-blue-500/20 text-lg">R</div>
+          <div class="bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-bold rounded-2xl w-10 h-10 flex items-center justify-center shadow-md shadow-blue-500/20 text-base">R</div>
           <div>
-            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Dashboard Super Admin</h1>
-            <p class="text-xs text-slate-500">Kelola kartu, cetak massal QR/NFC, dan kelola PIN klien.</p>
+            <h1 class="font-bold text-slate-900 text-base">Render Project Card</h1>
+            <span class="text-[10px] font-semibold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md uppercase tracking-wider">Admin Control Panel</span>
           </div>
         </div>
-        <button onclick="logoutAdmin()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all">
-          Logout
+        <button onclick="handleAdminLogout()" class="text-xs font-semibold text-rose-600 hover:bg-rose-50 px-3 py-2 rounded-xl border border-rose-200 transition-all">
+          🚪 Keluar
         </button>
-      </header>
+      </div>
+    </header>
 
-      <!-- Stat Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div class="bg-white/90 backdrop-blur-xl p-5 rounded-3xl border border-slate-200/60 shadow-sm">
-          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Kartu</p>
-          <h2 id="statTotal" class="text-3xl font-extrabold text-slate-900 tracking-tight">0</h2>
-        </div>
-        <div class="bg-white/90 backdrop-blur-xl p-5 rounded-3xl border border-slate-200/60 shadow-sm">
-          <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Kartu Aktif</p>
-          <h2 id="statActive" class="text-3xl font-extrabold text-emerald-600 tracking-tight">0</h2>
-        </div>
-        <div class="bg-white/90 backdrop-blur-xl p-5 rounded-3xl border border-slate-200/60 shadow-sm">
-          <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider mb-1">Belum Aktif (Blank)</p>
-          <h2 id="statInactive" class="text-3xl font-extrabold text-amber-600 tracking-tight">0</h2>
-        </div>
+    <!-- Konten Dasbor -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+      
+      <!-- TAB NAVIGATION -->
+      <div class="flex border-b border-slate-200 mb-6 gap-2 overflow-x-auto pb-1">
+        <button id="tab-cards-btn" onclick="switchTab('cards')" class="px-4 py-2 text-xs sm:text-sm font-bold border-b-2 border-blue-600 text-blue-600 transition-all whitespace-nowrap">
+          🎴 Kelola Kartu (<span id="count-cards">0</span>)
+        </button>
+        <button id="tab-feedbacks-btn" onclick="switchTab('feedbacks')" class="px-4 py-2 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all whitespace-nowrap">
+          💬 Laporan Feedback (<span id="count-feedbacks">0</span>)
+        </button>
+        <button id="tab-logs-btn" onclick="switchTab('logs')" class="px-4 py-2 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all whitespace-nowrap">
+          🛡️ Audit Log Aktivitas
+        </button>
       </div>
 
-      <!-- Action & Table Bar -->
-      <div class="bg-white/90 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-200/50 border border-slate-200/60 mb-8">
-        <!-- Controls Header -->
-        <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 mb-6">
-          <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-            <input id="searchInput" type="text" oninput="filterCards()" placeholder="Cari Kode Kartu / Bisnis..." class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-            
-            <!-- Filter Tabs Status -->
-            <div class="bg-slate-100 p-1 rounded-2xl flex gap-1 text-xs font-semibold">
-              <button id="filter-all" onclick="setFilterStatus('all')" class="flex-1 px-3 py-1.5 rounded-xl bg-white text-slate-800 shadow-sm transition-all">Semua</button>
-              <button id="filter-active" onclick="setFilterStatus('active')" class="flex-1 px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all">Aktif</button>
-              <button id="filter-inactive" onclick="setFilterStatus('inactive')" class="flex-1 px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all">Blank</button>
-            </div>
+      <!-- SECTION 1: KELOLA KARTU -->
+      <section id="section-cards">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Daftar Kartu Terdaftar</h2>
+            <p class="text-xs text-slate-500">Kelola status aktivasi, PIN, dan link review Google milik klien.</p>
           </div>
-          
-          <!-- Action Buttons -->
-          <div class="flex flex-wrap gap-2">
-            <button onclick="openCsvFilterModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm">
-              📥 Export CSV (Filter Range)
-            </button>
-            <button onclick="openZipFilterModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/20">
-              📦 Download QR (Filter Range)
-            </button>
-            <button onclick="openBatchModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20">
-              ⚡ Generate Massal
-            </button>
-            <button onclick="openAddModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20">
-              + Tambah Single
-            </button>
+          <button onclick="openAddCardModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs sm:text-sm shadow-md shadow-blue-500/20 transition-all flex items-center gap-2">
+            <span>+</span> Tambah Kartu Baru
+          </button>
+        </div>
+
+        <!-- Tabel Kartu -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm text-slate-600">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-bold text-[11px] tracking-wider">
+                <tr>
+                  <th class="p-4">Kode Kartu</th>
+                  <th class="p-4">Nama Bisnis</th>
+                  <th class="p-4">No. WA Owner</th>
+                  <th class="p-4">PIN</th>
+                  <th class="p-4 text-center">Status Aktivasi</th>
+                  <th class="p-4 text-center">Smart Routing</th>
+                  <th class="p-4 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="cards-table-body" class="divide-y divide-slate-100">
+                <!-- Diisi JavaScript -->
+              </tbody>
+            </table>
           </div>
         </div>
+      </section>
 
-        <!-- Data Table -->
-        <div class="overflow-x-auto rounded-2xl border border-slate-100">
-          <table class="w-full text-left text-sm">
-            <thead>
-              <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-                <th class="py-3.5 px-4">Kode Kartu</th>
-                <th class="py-3.5 px-4">Nama Bisnis</th>
-                <th class="py-3.5 px-4">WA Owner</th>
-                <th class="py-3.5 px-4">Status</th>
-                <th class="py-3.5 px-4">PIN</th>
-                <th class="py-3.5 px-4 text-right">Aksi & Print</th>
-              </tr>
-            </thead>
-            <tbody id="cardsTableBody" class="divide-y divide-slate-100 bg-white">
-              <!-- Diisi otomatis oleh JS -->
-            </tbody>
-          </table>
+      <!-- SECTION 2: LAPORAN FEEDBACK -->
+      <section id="section-feedbacks" class="hidden">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-slate-900">Laporan Feedback Pelanggan (Bintang 1-3)</h2>
+          <p class="text-xs text-slate-500">Kritik dan saran приват yang dikirim pelanggan melalui Smart Routing.</p>
         </div>
-      </div>
-    </div>
 
-    <footer class="py-4 text-center text-xs text-slate-400 font-medium">
-      © 2026 Create Render Project. Super Admin System.
-    </footer>
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm text-slate-600">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-bold text-[11px] tracking-wider">
+                <tr>
+                  <th class="p-4">Waktu</th>
+                  <th class="p-4">Kode Kartu / Bisnis</th>
+                  <th class="p-4">Rating</th>
+                  <th class="p-4">Pelanggan</th>
+                  <th class="p-4">Kritik & Saran</th>
+                  <th class="p-4 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="feedbacks-table-body" class="divide-y divide-slate-100">
+                <!-- Diisi JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: AUDIT LOG -->
+      <section id="section-logs" class="hidden">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-slate-900">Audit Trail & Log Aktivitas</h2>
+          <p class="text-xs text-slate-500">Catatan riwayat akses, login gagal, dan perubahan data di sistem.</p>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs sm:text-sm text-slate-600">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase font-bold text-[11px] tracking-wider">
+                <tr>
+                  <th class="p-4">Waktu Log</th>
+                  <th class="p-4">Kode Kartu</th>
+                  <th class="p-4">Jenis Aksi</th>
+                  <th class="p-4">Rincian Aktivitas</th>
+                </tr>
+              </thead>
+              <tbody id="logs-table-body" class="divide-y divide-slate-100">
+                <!-- Diisi JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
   </div>
 
-  <!-- MODAL FILTER EXPORT CSV (RENTANG KODE) -->
-  <div id="csv-filter-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
-      <h3 class="font-extrabold text-slate-900 text-lg mb-1">📥 Export CSV Berdasarkan Range</h3>
-      <p class="text-xs text-slate-500 mb-6">Pilih rentang kode kartu tertentu yang ingin di-export ke CSV.</p>
-      
-      <div class="grid grid-cols-2 gap-3 mb-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label>
-          <input id="csvStartCode" type="text" placeholder="Contoh: CARD001" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label>
-          <input id="csvEndCode" type="text" placeholder="Contoh: CARD020" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase">
-        </div>
-      </div>
-
-      <div class="flex gap-2">
-        <button onclick="closeCsvFilterModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm hover:bg-slate-200 transition-all">Batal</button>
-        <button onclick="processFilteredCsvExport()" class="w-1/2 bg-slate-800 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-slate-900 transition-all shadow-md">Download CSV</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL FILTER DOWNLOAD ZIP (RENTANG KODE) -->
-  <div id="zip-filter-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
-      <h3 class="font-extrabold text-slate-900 text-lg mb-1">📦 Download QR Berdasarkan Range</h3>
-      <p class="text-xs text-slate-500 mb-6">Pilih rentang kode kartu tertentu yang ingin di-download ke ZIP.</p>
-      
-      <div class="grid grid-cols-2 gap-3 mb-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label>
-          <input id="zipStartCode" type="text" placeholder="Contoh: CARD001" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label>
-          <input id="zipEndCode" type="text" placeholder="Contoh: CARD020" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase">
-        </div>
-      </div>
-
-      <div class="flex gap-2">
-        <button onclick="closeZipFilterModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm hover:bg-slate-200 transition-all">Batal</button>
-        <button onclick="processFilteredZipDownload()" class="w-1/2 bg-indigo-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-indigo-700 transition-all shadow-md shadow-indigo-500/20">Download ZIP</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL BATCH GENERATE (MASSAL) -->
-  <div id="batch-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
-      <h3 class="font-extrabold text-slate-900 text-lg mb-1">⚡ Generate Kartu Massal</h3>
-      <p class="text-xs text-slate-500 mb-6">Buat puluhan kode kartu sekaligus untuk dicetak ke fisik kartu.</p>
-      
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Prefix Kode Kartu</label>
-      <input id="batchPrefix" type="text" value="CARD" placeholder="Contoh: CARD" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
-
-      <div class="grid grid-cols-2 gap-3 mb-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Angka Awal</label>
-          <input id="batchStart" type="number" value="1" min="1" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Jumlah Kartu</label>
-          <input id="batchCount" type="number" value="10" min="1" max="100" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm">
-        </div>
-      </div>
-
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Default (4 Digit)</label>
-      <input id="batchPin" type="text" maxlength="4" value="1234" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-6 text-sm">
-
-      <div class="flex gap-2">
-        <button onclick="closeBatchModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm hover:bg-slate-200 transition-all">Batal</button>
-        <button onclick="submitBatchGenerate()" class="w-1/2 bg-emerald-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20">Proses Massal</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL SINGLE EDIT / TAMBAH KARTU -->
+  <!-- MODAL TAMBAH / EDIT KARTU -->
   <div id="card-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100 max-h-[90vh] overflow-y-auto">
-      <h3 id="modalFormTitle" class="font-extrabold text-slate-900 text-lg mb-1">Tambah Kartu Baru</h3>
-      <p id="modalFormSub" class="text-xs text-slate-500 mb-4"></p>
-      
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kode Kartu (Unik)</label>
-      <input id="formCardCode" type="text" placeholder="Contoh: CARD001" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-100">
+      <h3 id="modal-form-title" class="font-bold text-slate-900 text-lg mb-1">Tambah Kartu Baru</h3>
+      <p class="text-xs text-slate-500 mb-5">Lengkapi parameter kartu sebelum diserahkan ke klien.</p>
 
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Bisnis</label>
-      <input id="formBizName" type="text" placeholder="Nama Bisnis" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Link Review / Place ID</label>
-      <input id="formReviewUrl" type="text" placeholder="ChIJXanaDyrDaC4RTkdVD1FTIyc" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">No. WhatsApp Owner Bisnis</label>
-      <input id="formOwnerPhone" type="tel" placeholder="628123456789" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Klien (4 Digit)</label>
-      <input id="formPin" type="text" maxlength="4" placeholder="1234" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-6 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-
-      <div class="flex gap-2">
-        <button onclick="closeModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm hover:bg-slate-200 transition-all">Batal</button>
-        <button onclick="saveCardData()" class="w-1/2 bg-blue-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20">Simpan</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL PREVIEW & DOWNLOAD QR CODE -->
-  <div id="qr-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
-      <h3 id="qrModalTitle" class="font-extrabold text-slate-900 text-lg mb-1">QR Code Kartu</h3>
-      <p id="qrModalSub" class="text-xs text-slate-500 mb-4 font-mono"></p>
-
-      <div id="qrcode-container" class="bg-white p-4 rounded-2xl border border-slate-200 inline-block mb-4 shadow-sm flex justify-center"></div>
-
-      <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4">
-        <p class="text-[10px] text-slate-400 font-semibold uppercase mb-1">Link URL NFC & QR</p>
-        <p id="qrModalUrl" class="text-xs font-mono text-blue-600 break-all select-all"></p>
-      </div>
-
-      <div class="space-y-2">
-        <button onclick="downloadQrImage()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl text-xs transition-all shadow-md shadow-emerald-500/20">
-          📥 Download Gambar QR (Sesuai Nama Kartu)
-        </button>
-        <div class="flex gap-2">
-          <button onclick="copyQrUrl()" class="w-1/2 bg-blue-50 text-blue-600 font-semibold py-2.5 rounded-xl text-xs hover:bg-blue-100 transition-all">📋 Copy Link</button>
-          <button onclick="closeQrModal()" class="w-1/2 bg-slate-100 text-slate-700 font-semibold py-2.5 rounded-xl text-xs hover:bg-slate-200 transition-all">Tutup</button>
+      <form onsubmit="handleSaveCardForm(event)" class="space-y-4">
+        <input type="hidden" id="formIsEdit" value="false">
+        
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Kode Kartu (Unik)</label>
+          <input id="modalCardCode" type="text" placeholder="Contoh: CARD001" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 uppercase font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
         </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- MODAL PROGRESS DOWNLOAD ZIP -->
-  <div id="zip-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
-      <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-xl mb-3 animate-spin">⏳</div>
-      <h3 class="font-bold text-slate-900 text-base mb-1">Memproses ZIP...</h3>
-      <p id="zipProgressText" class="text-xs text-slate-500">Menyiapkan file QR code.</p>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Bisnis (Opsional)</label>
+          <input id="modalBusinessName" type="text" placeholder="Contoh: Warung Kopi" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Link Google Review / Place ID</label>
+          <input id="modalReviewUrl" type="text" placeholder="https://g.page/r/..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">No. WA Owner Bisnis</label>
+          <input id="modalOwnerPhone" type="tel" placeholder="Contoh: 628123456789" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">PIN 4 Digit</label>
+          <input id="modalPin" type="password" maxlength="4" placeholder="••••" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <input id="modalEnableRouting" type="checkbox" checked class="w-4 h-4 text-blue-600 rounded">
+          <label for="modalEnableRouting" class="text-xs font-semibold text-slate-700 cursor-pointer">Aktifkan Smart Routing (Filter Bintang 1-3)</label>
+        </div>
+
+        <div class="flex gap-2 pt-4">
+          <button type="button" onclick="closeCardModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-2xl text-xs transition-all">Batal</button>
+          <button id="saveCardBtn" type="submit" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-2xl text-xs shadow-lg shadow-blue-500/25 transition-all">Simpan Kartu</button>
+        </div>
+      </form>
     </div>
   </div>
 
   <script>
-    const MASTER_ADMIN_PIN = "140806"; 
-    const DOMAIN_BASE = window.location.origin;
-
+    // KONFIGURASI SUPABASE (Sesuaikan jika beda)
     const SUPABASE_URL = 'https://lzudrzpcahjyeqdvkyto.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6dWRyenBjYWhqeWVxZHZreXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDYyODcsImV4cCI6MjEwNzgyMjI4N30.nI_84CyPRp-sv6_VJvpUB1bk7XWN0NCtSotwztl_lEY';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let allCardsData = [];
-    let currentFilter = 'all';
-    let currentQrUrl = '';
-    let activeCardCodeForDownload = '';
-    let editingOriginalCode = null;
+    // KATA SANDI ADMIN DEFAULT (Silakan ganti sesuai keinginan)
+    const ADMIN_PASSWORD_HASH = "admin123";
 
-    function handleAdminLogin() {
-      const pin = document.getElementById('adminPinInput').value.trim();
-      if (pin === MASTER_ADMIN_PIN) {
-        document.getElementById('login-section').classList.add('hidden');
-        document.getElementById('dashboard-section').classList.remove('hidden');
-        fetchCards();
-      } else {
-        alert("PIN Super Admin Salah!");
-      }
-    }
-
-    function logoutAdmin() {
-      document.getElementById('adminPinInput').value = '';
-      document.getElementById('dashboard-section').classList.add('hidden');
-      document.getElementById('login-section').classList.remove('hidden');
-    }
-
-    async function fetchCards() {
-      const { data: cards, error } = await supabaseClient.from('cards').select('*').order('card_code', { ascending: true });
-      if (!error && cards) {
-        allCardsData = cards;
-        updateStats();
-        filterCards();
-      }
-    }
-
-    function updateStats() {
-      document.getElementById('statTotal').innerText = allCardsData.length;
-      const activeCount = allCardsData.filter(c => c.is_activated).length;
-      document.getElementById('statActive').innerText = activeCount;
-      document.getElementById('statInactive').innerText = allCardsData.length - activeCount;
-    }
-
-    function setFilterStatus(status) {
-      currentFilter = status;
-      ['all', 'active', 'inactive'].forEach(s => {
-        const btn = document.getElementById(`filter-${s}`);
-        if (s === status) {
-          btn.className = "flex-1 px-3 py-1.5 rounded-xl bg-white text-slate-800 shadow-sm transition-all font-bold";
-        } else {
-          btn.className = "flex-1 px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all font-semibold";
-        }
-      });
-      filterCards();
-    }
-
-    function filterCards() {
-      const q = document.getElementById('searchInput').value.toLowerCase().trim();
-      let filtered = allCardsData.filter(c => 
-        c.card_code.toLowerCase().includes(q) || 
-        (c.business_name && c.business_name.toLowerCase().includes(q))
-      );
-
-      if (currentFilter === 'active') {
-        filtered = filtered.filter(c => c.is_activated);
-      } else if (currentFilter === 'inactive') {
-        filtered = filtered.filter(c => !c.is_activated);
-      }
-
-      renderTable(filtered);
-    }
-
-    function renderTable(data) {
-      const tbody = document.getElementById('cardsTableBody');
-      tbody.innerHTML = '';
-
-      if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu.</td></tr>`;
-        return;
-      }
-
-      data.forEach(card => {
-        const badge = card.is_activated 
-          ? `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">🟢 Aktif</span>`
-          : `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">🟡 Blank</span>`;
-
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-50/80 transition-all">
-            <td class="py-3.5 px-4 font-bold text-slate-900 font-mono">${card.card_code}</td>
-            <td class="py-3.5 px-4 font-semibold text-slate-700">${card.business_name || '-'}</td>
-            <td class="py-3.5 px-4 text-xs font-mono text-slate-600">${card.owner_phone || '-'}</td>
-            <td class="py-3.5 px-4">${badge}</td>
-            <td class="py-3.5 px-4 font-mono text-xs text-slate-600">${card.pin || '-'}</td>
-            <td class="py-3.5 px-4 text-right">
-              <button onclick="showQrModal('${card.card_code}')" class="text-xs bg-slate-100 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-slate-200 transition-all mr-1" title="Lihat QR Code">🔲 QR</button>
-              <button onclick="openEditModal('${card.card_code}')" class="text-xs bg-blue-50 text-blue-600 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-blue-100 transition-all mr-1">Edit</button>
-              <button onclick="deleteCard('${card.card_code}')" class="text-xs bg-rose-50 text-rose-600 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-rose-100 transition-all">Hapus</button>
-            </td>
-          </tr>
-        `;
-      });
-    }
-
-    // KONTROL MODAL FILTER EXPORT CSV
-    function openCsvFilterModal() {
-      document.getElementById('csvStartCode').value = allCardsData.length > 0 ? allCardsData[0].card_code : '';
-      document.getElementById('csvEndCode').value = allCardsData.length > 0 ? allCardsData[allCardsData.length - 1].card_code : '';
-      document.getElementById('csv-filter-modal').classList.remove('hidden');
-    }
-
-    function closeCsvFilterModal() {
-      document.getElementById('csv-filter-modal').classList.add('hidden');
-    }
-
-    // PROSES EXPORT CSV BERDASARKAN FILTER KODE RANGE
-    function processFilteredCsvExport() {
-      const startCode = document.getElementById('csvStartCode').value.trim().toUpperCase();
-      const endCode = document.getElementById('csvEndCode').value.trim().toUpperCase();
-
-      if (!startCode || !endCode) {
-        alert("Masukkan kode awal dan kode akhir dengan benar!");
-        return;
-      }
-
-      const filteredCards = allCardsData.filter(c => c.card_code >= startCode && c.card_code <= endCode);
-
-      if (filteredCards.length === 0) {
-        alert("Tidak ada kartu ditemukan dalam rentang kode tersebut.");
-        return;
-      }
-
-      closeCsvFilterModal();
-
-      let csvContent = "data:text/csv;charset=utf-8,Kode Kartu,URL NFC dan QR,Nama Bisnis,No WA Owner,Status,PIN\n";
-
-      filteredCards.forEach(card => {
-        const fullUrl = `${DOMAIN_BASE}/?code=${card.card_code}`;
-        const status = card.is_activated ? 'AKTIF' : 'BLANK';
-        const bizName = card.business_name ? `"${card.business_name}"` : '-';
-        const ownerPhone = card.owner_phone || '';
-        csvContent += `${card.card_code},${fullUrl},${bizName},${ownerPhone},${status},${card.pin || ''}\n`;
-      });
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Data_Kartu_${startCode}_to_${endCode}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    // KONTROL MODAL FILTER RANGE ZIP
-    function openZipFilterModal() {
-      document.getElementById('zipStartCode').value = allCardsData.length > 0 ? allCardsData[0].card_code : '';
-      document.getElementById('zipEndCode').value = allCardsData.length > 0 ? allCardsData[allCardsData.length - 1].card_code : '';
-      document.getElementById('zip-filter-modal').classList.remove('hidden');
-    }
-
-    function closeZipFilterModal() {
-      document.getElementById('zip-filter-modal').classList.add('hidden');
-    }
-
-    // PROSES DOWNLOAD ZIP BERDASARKAN FILTER KODE
-    async function processFilteredZipDownload() {
-      const startCode = document.getElementById('zipStartCode').value.trim().toUpperCase();
-      const endCode = document.getElementById('zipEndCode').value.trim().toUpperCase();
-
-      if (!startCode || !endCode) {
-        alert("Masukkan kode awal dan kode akhir dengan benar!");
-        return;
-      }
-
-      const filteredCards = allCardsData.filter(c => c.card_code >= startCode && c.card_code <= endCode);
-
-      if (filteredCards.length === 0) {
-        alert("Tidak ada kartu ditemukan dalam rentang kode tersebut.");
-        return;
-      }
-
-      closeZipFilterModal();
-      const zipModal = document.getElementById('zip-modal');
-      const progressText = document.getElementById('zipProgressText');
-      zipModal.classList.remove('hidden');
-
-      const zip = new JSZip();
-      const folder = zip.folder("QR_Codes_RenderProject");
-
-      let hiddenContainer = document.getElementById('hidden-qr-render');
-      if (!hiddenContainer) {
-        hiddenContainer = document.createElement('div');
-        hiddenContainer.id = 'hidden-qr-render';
-        hiddenContainer.style.display = 'none';
-        document.body.appendChild(hiddenContainer);
-      }
-
-      for (let i = 0; i < filteredCards.length; i++) {
-        const card = filteredCards[i];
-        progressText.innerText = `Memproses (${i + 1}/${filteredCards.length}): ${card.card_code}`;
-
-        hiddenContainer.innerHTML = '';
-        const targetUrl = `${DOMAIN_BASE}/?code=${card.card_code}`;
-
-        await new Promise((resolve) => {
-          new QRCode(hiddenContainer, {
-            text: targetUrl,
-            width: 300,
-            height: 300,
-            colorDark: "#0f172a",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-          });
-          setTimeout(resolve, 100);
-        });
-
-        const img = hiddenContainer.querySelector('img');
-        const canvas = hiddenContainer.querySelector('canvas');
-        let dataUrl = '';
-
-        if (img && img.src) {
-          dataUrl = img.src;
-        } else if (canvas) {
-          dataUrl = canvas.toDataURL("image/png");
-        }
-
-        if (dataUrl) {
-          const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
-          folder.file(`QR_${card.card_code}.png`, base64Data, { base64: true });
-        }
-      }
-
-      progressText.innerText = "Mengompres file ke ZIP...";
-      const content = await zip.generateAsync({ type: "blob" });
-      
-      zipModal.classList.add('hidden');
-      saveAs(content, `QR_Range_${startCode}_to_${endCode}.zip`);
-    }
-
-    function showQrModal(code) {
-      activeCardCodeForDownload = code;
-      currentQrUrl = `${DOMAIN_BASE}/?code=${code}`;
-      document.getElementById('qrModalTitle').innerText = `QR Code (${code})`;
-      document.getElementById('qrModalSub').innerText = code;
-      document.getElementById('qrModalUrl').innerText = currentQrUrl;
-
-      const container = document.getElementById('qrcode-container');
-      container.innerHTML = '';
-      new QRCode(container, {
-        text: currentQrUrl,
-        width: 160,
-        height: 160,
-        colorDark : "#0f172a",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
-      });
-
-      document.getElementById('qr-modal').classList.remove('hidden');
-    }
-
-    function closeQrModal() {
-      document.getElementById('qr-modal').classList.add('hidden');
-    }
-
-    function copyQrUrl() {
-      navigator.clipboard.writeText(currentQrUrl).then(() => {
-        alert("Link URL berhasil disalin!");
-      });
-    }
-
-    function downloadQrImage() {
-      const container = document.getElementById('qrcode-container');
-      const img = container.querySelector('img');
-      const canvas = container.querySelector('canvas');
-
-      let imageUrl = '';
-      if (img && img.src) {
-        imageUrl = img.src;
-      } else if (canvas) {
-        imageUrl = canvas.toDataURL("image/png");
-      }
-
-      if (!imageUrl) {
-        alert("Gambar QR belum siap, silakan coba sesaat lagi.");
-        return;
-      }
-
-      const link = document.createElement('a');
-      link.href = imageUrl;
-      link.download = `QR_Card_${activeCardCodeForDownload}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-
-    function formatReviewUrl(input) {
-      if (!input) return '';
-      let clean = input.trim();
-      if (clean.startsWith('ChI') && !clean.includes('http') && !clean.includes(' ')) {
-        return `https://search.google.com/local/writereview?placeid=${clean}`;
-      }
-      if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
-        return 'https://' + clean;
-      }
+    // Sanitizer No. WhatsApp
+    function sanitizePhoneNumber(phone) {
+      if (!phone) return '';
+      let clean = phone.replace(/[^0-9]/g, '');
+      if (clean.startsWith('0')) clean = '62' + clean.slice(1);
+      else if (clean.startsWith('8')) clean = '628' + clean.slice(1);
       return clean;
     }
 
-    function openBatchModal() { document.getElementById('batch-modal').classList.remove('hidden'); }
-    function closeBatchModal() { document.getElementById('batch-modal').classList.add('hidden'); }
-
-    async function submitBatchGenerate() {
-      const prefix = document.getElementById('batchPrefix').value.trim().toUpperCase() || 'CARD';
-      const startNum = parseInt(document.getElementById('batchStart').value) || 1;
-      const count = parseInt(document.getElementById('batchCount').value) || 1;
-      const defaultPin = document.getElementById('batchPin').value.trim() || '1234';
-
-      if (count > 100) { alert("Maksimal 100 kartu sekali generate!"); return; }
-
-      const batchPayload = [];
-      for (let i = 0; i < count; i++) {
-        const currentNum = startNum + i;
-        const paddedNum = String(currentNum).padStart(3, '0');
-        const code = `${prefix}${paddedNum}`;
-
-        batchPayload.push({
-          card_code: code,
-          pin: defaultPin,
-          is_activated: false
-        });
-      }
-
-      const { error } = await supabaseClient.from('cards').upsert(batchPayload, { onConflict: 'card_code' });
-
-      if (!error) {
-        alert(`Berhasil membuat ${count} kartu baru!`);
-        closeBatchModal();
-        fetchCards();
+    // AUTH GUARD ADMIN
+    function checkAdminSession() {
+      const session = sessionStorage.getItem('admin_authenticated');
+      if (session === 'true') {
+        document.getElementById('admin-login-screen').classList.add('hidden');
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        loadAllData();
       } else {
-        alert("Gagal generate massal: " + error.message);
+        document.getElementById('admin-login-screen').classList.remove('hidden');
+        document.getElementById('admin-dashboard').classList.add('hidden');
       }
     }
 
-    function openAddModal() {
-      editingOriginalCode = null;
-      document.getElementById('modalFormTitle').innerText = "Tambah Kartu Baru";
-      document.getElementById('modalFormSub').innerText = "Masukkan kode kartu unik baru.";
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const pwd = document.getElementById('adminPassword').value;
+      if (pwd === ADMIN_PASSWORD_HASH) {
+        sessionStorage.setItem('admin_authenticated', 'true');
+        checkAdminSession();
+      } else {
+        alert('Kata sandi admin salah!');
+      }
+    }
+
+    function handleAdminLogout() {
+      sessionStorage.removeItem('admin_authenticated');
+      checkAdminSession();
+    }
+
+    // TAB NAVIGATION
+    function switchTab(tabName) {
+      ['cards', 'feedbacks', 'logs'].forEach(t => {
+        document.getElementById(`section-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-${t}-btn`);
+        btn.className = "px-4 py-2 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all whitespace-nowrap";
+      });
+
+      document.getElementById(`section-${tabName}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-${tabName}-btn`);
+      activeBtn.className = "px-4 py-2 text-xs sm:text-sm font-bold border-b-2 border-blue-600 text-blue-600 transition-all whitespace-nowrap";
+    }
+
+    // LOAD DATA DARI SUPABASE
+    async function loadAllData() {
+      await Promise.all([fetchCards(), fetchFeedbacks(), fetchLogs()]);
+    }
+
+    async function fetchCards() {
+      const { data, error } = await supabaseClient.from('cards').select('*').order('created_at', { ascending: false });
+      if (error) return;
+
+      document.getElementById('count-cards').innerText = data.length;
+      const tbody = document.getElementById('cards-table-body');
       
-      const codeInput = document.getElementById('formCardCode');
-      codeInput.value = '';
-      codeInput.disabled = false;
-      codeInput.className = "w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all";
-
-      document.getElementById('formBizName').value = '';
-      document.getElementById('formReviewUrl').value = '';
-      document.getElementById('formOwnerPhone').value = '';
-      document.getElementById('formPin').value = '1234';
-      document.getElementById('card-modal').classList.remove('hidden');
-    }
-
-    function openEditModal(code) {
-      const card = allCardsData.find(c => c.card_code === code);
-      if (!card) return;
-
-      editingOriginalCode = card.card_code;
-      const codeInput = document.getElementById('formCardCode');
-      codeInput.value = card.card_code;
-
-      if (card.is_activated) {
-        codeInput.disabled = true;
-        codeInput.className = "w-full bg-slate-100 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase text-slate-500 cursor-not-allowed";
-        document.getElementById('modalFormTitle').innerText = `Edit Kartu Aktif (${code})`;
-        document.getElementById('modalFormSub').innerText = "🔒 Kode kartu dikunci karena kartu sudah aktif digunakan.";
-      } else {
-        codeInput.disabled = false;
-        codeInput.className = "w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all";
-        document.getElementById('modalFormTitle').innerText = `Edit Kartu Blank (${code})`;
-        document.getElementById('modalFormSub').innerText = "✏️ Kartu belum aktif. Anda dapat mengedit kode kartu ini.";
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 text-xs">Belum ada kartu terdaftar.</td></tr>`;
+        return;
       }
 
-      document.getElementById('formBizName').value = card.business_name || '';
-      document.getElementById('formReviewUrl').value = card.google_review_url || '';
-      document.getElementById('formOwnerPhone').value = card.owner_phone || '';
-      document.getElementById('formPin').value = card.pin || '';
+      tbody.innerHTML = data.map(c => `
+        <tr class="hover:bg-slate-50/80 transition-all">
+          <td class="p-4 font-bold text-slate-900 uppercase">${c.card_code}</td>
+          <td class="p-4 font-medium text-slate-800">${c.business_name || '-'}</td>
+          <td class="p-4 text-slate-600">${c.owner_phone ? '+' + c.owner_phone : '-'}</td>
+          <td class="p-4 font-mono tracking-widest text-slate-500">${c.pin || '••••'}</td>
+          <td class="p-4 text-center">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${c.is_activated ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+              ${c.is_activated ? 'Aktif' : 'Belum Aktivasi'}
+            </span>
+          </td>
+          <td class="p-4 text-center">
+            <button onclick="toggleRouting('${c.card_code}', ${c.enable_routing !== false})" class="px-2.5 py-1 rounded-xl text-[10px] font-bold border transition-all ${c.enable_routing !== false ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-100 text-slate-500 border-slate-200'}">
+              ${c.enable_routing !== false ? 'ON (Smart)' : 'OFF (Direct)'}
+            </button>
+          </td>
+          <td class="p-4 text-center">
+            <div class="flex justify-center gap-1">
+              <button onclick="openEditCardModal('${c.card_code}', '${c.business_name || ''}', '${c.google_review_url || ''}', '${c.owner_phone || ''}', '${c.pin || ''}', ${c.enable_routing !== false})" class="p-1.5 hover:bg-slate-200 rounded-lg text-slate-600 text-xs" title="Edit">✏️</button>
+              <button onclick="deleteCard('${c.card_code}')" class="p-1.5 hover:bg-rose-100 rounded-lg text-rose-600 text-xs" title="Hapus">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function fetchFeedbacks() {
+      const { data, error } = await supabaseClient.from('review_feedbacks').select('*').order('created_at', { ascending: false });
+      if (error) return;
+
+      document.getElementById('count-feedbacks').innerText = data.length;
+      const tbody = document.getElementById('feedbacks-table-body');
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 text-xs">Belum ada feedback dari pelanggan.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(f => `
+        <tr class="hover:bg-slate-50/80 transition-all">
+          <td class="p-4 text-xs text-slate-400 whitespace-nowrap">${new Date(f.created_at).toLocaleString('id-ID')}</td>
+          <td class="p-4 font-semibold text-slate-800">${f.card_code}<br><span class="text-[11px] font-normal text-slate-500">${f.business_name || ''}</span></td>
+          <td class="p-4 font-bold text-amber-500">${'⭐'.repeat(f.rating)} (${f.rating})</td>
+          <td class="p-4 text-slate-800">${f.customer_name || 'Anonim'}<br><span class="text-[11px] text-slate-500">${f.customer_phone || '-'}</span></td>
+          <td class="p-4 text-slate-700 italic max-w-xs break-words">"${f.feedback_message}"</td>
+          <td class="p-4 text-center">
+            ${f.customer_phone && f.customer_phone !== '-' ? `
+              <a href="https://wa.me/${sanitizePhoneNumber(f.customer_phone)}" target="_blank" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-semibold shadow-sm inline-flex items-center gap-1">
+                💬 Balas WA
+              </a>
+            ` : '-'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function fetchLogs() {
+      const { data, error } = await supabaseClient.from('card_logs').select('*').order('created_at', { ascending: false }).limit(50);
+      if (error) return;
+
+      const tbody = document.getElementById('logs-table-body');
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400 text-xs">Belum ada riwayat aktivitas.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = data.map(l => `
+        <tr class="hover:bg-slate-50/80 transition-all text-xs">
+          <td class="p-4 text-slate-400 whitespace-nowrap">${new Date(l.created_at).toLocaleString('id-ID')}</td>
+          <td class="p-4 font-bold text-slate-800 uppercase">${l.card_code}</td>
+          <td class="p-4">
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${l.action.includes('SUCCESS') || l.action.includes('ACTIVATION') ? 'bg-emerald-100 text-emerald-700' : l.action.includes('FAILED') ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'}">
+              ${l.action}
+            </span>
+          </td>
+          <td class="p-4 text-slate-600">${l.details || '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    // AKSI TAMBAH / EDIT KARTU
+    function openAddCardModal() {
+      document.getElementById('modal-form-title').innerText = "Tambah Kartu Baru";
+      document.getElementById('formIsEdit').value = "false";
+      document.getElementById('modalCardCode').value = "";
+      document.getElementById('modalCardCode').disabled = false;
+      document.getElementById('modalBusinessName').value = "";
+      document.getElementById('modalReviewUrl').value = "";
+      document.getElementById('modalOwnerPhone').value = "";
+      document.getElementById('modalPin').value = "";
+      document.getElementById('modalEnableRouting').checked = true;
       document.getElementById('card-modal').classList.remove('hidden');
     }
 
-    function closeModal() { document.getElementById('card-modal').classList.add('hidden'); }
+    function openEditCardModal(code, name, url, phone, pin, routing) {
+      document.getElementById('modal-form-title').innerText = `Edit Kartu: ${code}`;
+      document.getElementById('formIsEdit').value = "true";
+      document.getElementById('modalCardCode').value = code;
+      document.getElementById('modalCardCode').disabled = true;
+      document.getElementById('modalBusinessName').value = name;
+      document.getElementById('modalReviewUrl').value = url;
+      document.getElementById('modalOwnerPhone').value = phone;
+      document.getElementById('modalPin').value = pin;
+      document.getElementById('modalEnableRouting').checked = routing;
+      document.getElementById('card-modal').classList.remove('hidden');
+    }
 
-    async function saveCardData() {
-      const newCode = document.getElementById('formCardCode').value.trim().toUpperCase();
-      const name = document.getElementById('formBizName').value.trim();
-      const urlInput = document.getElementById('formReviewUrl').value.trim();
-      const ownerPhone = document.getElementById('formOwnerPhone').value.trim();
-      const pin = document.getElementById('formPin').value.trim();
+    function closeCardModal() {
+      document.getElementById('card-modal').classList.add('hidden');
+    }
 
-      if (!newCode) { alert("Kode kartu wajib diisi!"); return; }
+    async function handleSaveCardForm(e) {
+      e.preventDefault();
+      const isEdit = document.getElementById('formIsEdit').value === "true";
+      const code = document.getElementById('modalCardCode').value.trim().toUpperCase();
+      const name = document.getElementById('modalBusinessName').value.trim();
+      const url = document.getElementById('modalReviewUrl').value.trim();
+      const phone = sanitizePhoneNumber(document.getElementById('modalOwnerPhone').value.trim());
+      const pin = document.getElementById('modalPin').value.trim();
+      const routing = document.getElementById('modalEnableRouting').checked;
 
-      const formattedUrl = formatReviewUrl(urlInput);
-      const isActivated = name.length > 0 || formattedUrl.length > 0 || ownerPhone.length > 0;
-
-      if (editingOriginalCode && editingOriginalCode !== newCode) {
-        await supabaseClient.from('cards').delete().eq('card_code', editingOriginalCode);
+      if (!code || pin.length !== 4) {
+        alert('Kode kartu dan PIN 4 digit wajib diisi.');
+        return;
       }
 
       const payload = {
-        card_code: newCode,
-        business_name: name || null,
-        google_review_url: formattedUrl || null,
-        owner_phone: ownerPhone || null,
-        pin: pin || '1234',
-        is_activated: isActivated
+        card_code: code,
+        business_name: name,
+        google_review_url: url,
+        owner_phone: phone,
+        pin: pin,
+        enable_routing: routing
       };
+
+      if (!isEdit) {
+        payload.is_activated = false;
+      }
 
       const { error } = await supabaseClient.from('cards').upsert(payload, { onConflict: 'card_code' });
 
       if (!error) {
-        closeModal();
+        closeCardModal();
         fetchCards();
       } else {
-        alert("Gagal menyimpan data: " + error.message);
+        alert('Gagal menyimpan: ' + error.message);
       }
+    }
+
+    async function toggleRouting(code, currentStatus) {
+      const { error } = await supabaseClient
+        .from('cards')
+        .update({ enable_routing: !currentStatus })
+        .eq('card_code', code);
+
+      if (!error) fetchCards();
     }
 
     async function deleteCard(code) {
       if (confirm(`Apakah Anda yakin ingin menghapus kartu ${code}?`)) {
         const { error } = await supabaseClient.from('cards').delete().eq('card_code', code);
-        if (!error) {
-          fetchCards();
-        } else {
-          alert("Gagal menghapus kartu: " + error.message);
-        }
+        if (!error) fetchCards();
       }
     }
+
+    // INISIALISASI
+    checkAdminSession();
   </script>
 </body>
 </html>
