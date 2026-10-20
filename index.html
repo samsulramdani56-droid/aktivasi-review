@@ -163,35 +163,52 @@
       return clean;
     }
 
-    // KONVERTER LINK GOOGLE MAPS KE PLACE ID / REVIEW URL
-    function convertGoogleMapsUrlToPlaceId(inputUrl) {
-      if (!inputUrl) return '';
-      let clean = inputUrl.trim();
+// KONVERTER LINK GOOGLE MAPS KE PLACE ID / REVIEW URL (ENHANCED VERSION)
+function convertGoogleMapsUrlToPlaceId(inputUrl) {
+  if (!inputUrl) return '';
+  let clean = inputUrl.trim();
 
-      // 1. Jika pengguna sudah memasukkan Place ID langsung (misal: ChIJ...)
-      if (clean.startsWith('ChI') && !clean.includes('http') && !clean.includes(' ')) {
-        return `https://search.google.com/local/writereview?placeid=${clean}`;
-      }
+  // 1. Jika pengguna memasukkan Place ID langsung (misal: ChIJ...)
+  if (clean.startsWith('ChI') && !clean.includes('http') && !clean.includes(' ')) {
+    return `https://search.google.com/local/writereview?placeid=${clean}`;
+  }
 
-      // 2. Ekstrak Place ID dari URL panjang Google Maps (ftid / placeid / place_id)
-      const placeIdMatch = clean.match(/(?:placeid=|place_id=|ftid=)(ChIJ[a-zA-Z0-9_-]+)/);
-      if (placeIdMatch && placeIdMatch[1]) {
-        return `https://search.google.com/local/writereview?placeid=${placeIdMatch[1]}`;
-      }
+  // 2. Ekstrak Place ID dari URL Google Maps (fitur placeid= / place_id= / ftid=)
+  const placeIdMatch = clean.match(/(?:placeid=|place_id=|ftid=)(ChIJ[a-zA-Z0-9_-]+)/);
+  if (placeIdMatch && placeIdMatch[1]) {
+    return `https://search.google.com/local/writereview?placeid=${placeIdMatch[1]}`;
+  }
 
-      // 3. Ekstrak CID / Hex Place ID dari URL Google Maps
-      const cidMatch = clean.match(/0x[0-9a-fA-F]+:0x([0-9a-fA-F]+)/);
-      if (cidMatch && cidMatch[1]) {
-        return `https://maps.google.com/maps?cid=${cidMatch[1]}`;
-      }
+  // 3. Ekstrak dari URL Google Maps Web yang memuat nama tempat + Place ID (!1sChIJ...)
+  const dataPlaceMatch = clean.match(/!1s(ChIJ[a-zA-Z0-9_-]+)/);
+  if (dataPlaceMatch && dataPlaceMatch[1]) {
+    return `https://search.google.com/local/writereview?placeid=${dataPlaceMatch[1]}`;
+  }
 
-      // 4. Jika link biasa / tanpa HTTP, pastikan awalan https://
-      if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
-        return 'https://' + clean;
-      }
-
-      return clean;
+  // 4. Ekstrak CID Hex dari URL Google Maps (0x...:0x...)
+  const cidMatch = clean.match(/0x[0-9a-fA-F]+:0x([0-9a-fA-F]+)/);
+  if (cidMatch && cidMatch[1]) {
+    // Konversi Hex CID ke Decimal CID untuk tautan Google Maps langsung
+    try {
+      const decCid = BigInt('0x' + cidMatch[1]).toString(10);
+      return `https://maps.google.com/maps?cid=${decCid}`;
+    } catch (e) {
+      return `https://maps.google.com/maps?cid=0x${cidMatch[1]}`;
     }
+  }
+
+  // 5. Jika menginput query pencarian atau nama tempat di Google Search
+  if (clean.includes('google.com/search') || clean.includes('g.page')) {
+    return clean;
+  }
+
+  // 6. Jika tidak ada format yang cocok namun URL valid, pastikan memakai https://
+  if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+    return 'https://' + clean;
+  }
+
+  return clean;
+}
 
     // REAL-TIME INPUT CONVERTER DI FORM
     function handleGoogleMapsUrlInput(value) {
