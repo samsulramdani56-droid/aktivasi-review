@@ -32,7 +32,7 @@
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-slate-100 to-blue-50/30 min-h-full font-sans text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
 
-  <!-- LOGIN CONTAINER (MENyamar Menjadi Sistem Core/Node) -->
+  <!-- LOGIN CONTAINER (Menyamar Menjadi Sistem Core/Node) -->
   <div id="login-section" class="min-h-screen flex items-center justify-center p-4">
     <div class="bg-white/90 backdrop-blur-xl w-full max-w-sm rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-200/60 animate-modal text-center">
       <div class="bg-gradient-to-tr from-slate-800 to-slate-900 text-white font-bold rounded-2xl w-14 h-14 mx-auto flex items-center justify-center shadow-md text-xl tracking-wider mb-4">⚙️</div>
@@ -41,7 +41,7 @@
       
       <div class="text-left mb-4">
         <label class="block text-xs font-semibold text-slate-700 mb-1.5">Security PIN</label>
-        <input id="adminPinInput" type="password" maxlength="6" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl p-3.5 text-center tracking-widest text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-800 transition-all" onkeypress="if(event.key === 'Enter') handleAdminLogin()">
+        <input id="adminPinInput" type="password" maxlength="6" autocomplete="current-password" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl p-3.5 text-center tracking-widest text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-800 transition-all" onkeypress="if(event.key === 'Enter') handleAdminLogin()">
       </div>
       
       <button onclick="handleAdminLogin()" class="w-full bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg transition-all text-sm">
@@ -101,7 +101,7 @@
         <div class="bg-white/90 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-200/50 border border-slate-200/60 mb-8">
           <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 mb-6">
             <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-              <input id="searchInput" type="text" oninput="filterCards()" placeholder="Cari Kode Kartu / Bisnis..." class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+              <input id="searchInput" type="text" oninput="filterCards()" placeholder="Cari Kode Kartu / Bisnis..." autocomplete="off" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
               
               <div class="bg-slate-100 p-1 rounded-2xl flex gap-1 text-xs font-semibold">
                 <button id="filter-all" onclick="setFilterStatus('all')" class="flex-1 px-3 py-1.5 rounded-xl bg-white text-slate-800 shadow-sm transition-all font-bold">Semua</button>
@@ -208,8 +208,8 @@
       <h3 class="font-extrabold text-slate-900 text-lg mb-1">📥 Export CSV Berdasarkan Range</h3>
       <p class="text-xs text-slate-500 mb-6">Pilih rentang kode kartu tertentu yang ingin di-export ke CSV.</p>
       <div class="grid grid-cols-2 gap-3 mb-4">
-        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label><input id="csvStartCode" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
-        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label><input id="csvEndCode" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label><input id="csvStartCode" type="text" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label><input id="csvEndCode" type="text" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
       </div>
       <div class="flex gap-2">
         <button onclick="closeCsvFilterModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
@@ -223,8 +223,8 @@
       <h3 class="font-extrabold text-slate-900 text-lg mb-1">📦 Download QR Berdasarkan Range</h3>
       <p class="text-xs text-slate-500 mb-6">Pilih rentang kode kartu tertentu untuk di-download ke ZIP.</p>
       <div class="grid grid-cols-2 gap-3 mb-4">
-        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label><input id="zipStartCode" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
-        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label><input id="zipEndCode" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label><input id="zipStartCode" type="text" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label><input id="zipEndCode" type="text" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
       </div>
       <div class="flex gap-2">
         <button onclick="closeZipFilterModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
@@ -233,18 +233,29 @@
     </div>
   </div>
 
+  <!-- MODAL GENERATE KARTU MASSAL (Dibersihkan dari default value) -->
   <div id="batch-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
       <h3 class="font-extrabold text-slate-900 text-lg mb-1">⚡ Generate Kartu Massal</h3>
       <p class="text-xs text-slate-500 mb-6">Buat puluhan kode kartu sekaligus untuk dicetak.</p>
+      
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">Prefix Kode</label>
-      <input id="batchPrefix" type="text" value="CARD" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
+      <input id="batchPrefix" type="text" placeholder="Contoh: RPC- atau DEMO-" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
+      
       <div class="grid grid-cols-2 gap-3 mb-4">
-        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Angka Awal</label><input id="batchStart" type="number" value="1" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm"></div>
-        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Jumlah</label><input id="batchCount" type="number" value="10" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm"></div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Angka Awal</label>
+          <input id="batchStart" type="number" placeholder="1" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Jumlah</label>
+          <input id="batchCount" type="number" placeholder="10" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm">
+        </div>
       </div>
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Default</label>
-      <input id="batchPin" type="text" maxlength="4" value="1234" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-6 text-sm">
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Default (Opsional)</label>
+      <input id="batchPin" type="password" maxlength="4" placeholder="Kosongkan jika belum diisi" autocomplete="new-password" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-6 text-sm tracking-widest">
+      
       <div class="flex gap-2">
         <button onclick="closeBatchModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
         <button id="batchSubmitBtn" onclick="submitBatchGenerate()" class="w-1/2 bg-emerald-600 text-white font-semibold py-3 rounded-2xl text-sm shadow-md">Proses Massal</button>
@@ -252,25 +263,32 @@
     </div>
   </div>
 
+  <!-- MODAL TAMBAH/EDIT SINGLE (Dibersihkan dari nilai pre-filled) -->
   <div id="card-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100 max-h-[90vh] overflow-y-auto">
       <h3 id="modalFormTitle" class="font-extrabold text-slate-900 text-lg mb-1">Tambah Kartu Baru</h3>
       <p id="modalFormSub" class="text-xs text-slate-500 mb-4"></p>
       
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kode Kartu</label>
-      <input id="formCardCode" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
+      <input id="formCardCode" type="text" autocomplete="off" placeholder="Contoh: RPC-001" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
+      
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Bisnis</label>
-      <input id="formBizName" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
+      <input id="formBizName" type="text" autocomplete="off" placeholder="Kosongkan jika belum diisi klien" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
+      
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">Link Review / Place ID</label>
-      <input id="formReviewUrl" type="text" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
+      <input id="formReviewUrl" type="text" autocomplete="off" placeholder="ChIJ... atau link review" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
+      
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">No. WhatsApp Owner</label>
-      <input id="formOwnerPhone" type="tel" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Klien</label>
-      <input id="formPin" type="text" maxlength="4" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
+      <input id="formOwnerPhone" type="tel" autocomplete="off" placeholder="628123456789" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
+      
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Klien (Opsional)</label>
+      <input id="formPin" type="password" maxlength="4" autocomplete="new-password" placeholder="Kosongkan untuk kartu baru" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm tracking-widest">
+      
       <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 mb-6">
         <input id="formEnableRouting" type="checkbox" checked class="w-4 h-4 text-blue-600 rounded">
         <label for="formEnableRouting" class="text-xs font-semibold text-slate-700 cursor-pointer select-none">Aktifkan Smart Routing (Filter Bintang 1-3)</label>
       </div>
+
       <div class="flex gap-2">
         <button onclick="closeModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
         <button id="saveCardBtn" onclick="saveCardData()" class="w-1/2 bg-blue-600 text-white font-semibold py-3 rounded-2xl text-sm shadow-md">Simpan</button>
@@ -305,6 +323,18 @@
     </div>
   </div>
 
+  <!-- MODAL NOTIFIKASI KUSTOM (Sama persis dengan index.html) -->
+  <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <div id="modal-icon" class="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 shadow-sm"></div>
+      <h3 id="modal-title" class="font-bold text-slate-900 text-lg mb-1.5">Pemberitahuan</h3>
+      <p id="modal-message" class="text-sm text-slate-600 mb-6 leading-relaxed"></p>
+      <button id="modal-btn" onclick="closeCustomModal()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-blue-700 shadow-lg shadow-blue-500/25 transition-all">
+        Mengerti
+      </button>
+    </div>
+  </div>
+
   <script>
     const MASTER_ADMIN_PIN = "140806"; 
     const DOMAIN_BASE = window.location.origin;
@@ -318,6 +348,7 @@
     let currentQrUrl = '';
     let activeCardCodeForDownload = '';
     let editingOriginalCode = null;
+    let modalCallback = null;
 
     window.addEventListener('DOMContentLoaded', () => {
       if (sessionStorage.getItem('system_node_auth') === 'true') {
@@ -328,6 +359,39 @@
         fetchLogs();
       }
     });
+
+    // FUNGSI NOTIFIKASI KUSTOM (Sama seperti index.html)
+    function showNotification(title, message, type = 'info', onConfirm = null) {
+      const modal = document.getElementById('custom-modal');
+      const iconEl = document.getElementById('modal-icon');
+      const titleEl = document.getElementById('modal-title');
+      const msgEl = document.getElementById('modal-message');
+
+      titleEl.innerText = title;
+      msgEl.innerText = message;
+      modalCallback = onConfirm;
+
+      if (type === 'success') {
+        iconEl.className = 'w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 bg-emerald-50 text-emerald-600 shadow-inner';
+        iconEl.innerText = '✓';
+      } else if (type === 'error') {
+        iconEl.className = 'w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 bg-rose-50 text-rose-600 shadow-inner';
+        iconEl.innerText = '✕';
+      } else {
+        iconEl.className = 'w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 bg-blue-50 text-blue-600 shadow-inner';
+        iconEl.innerText = 'ℹ';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    window.closeCustomModal = function() {
+      document.getElementById('custom-modal').classList.add('hidden');
+      if (modalCallback) {
+        modalCallback();
+        modalCallback = null;
+      }
+    }
 
     function sanitizePhoneNumber(phone) {
       if (!phone) return '';
@@ -360,7 +424,7 @@
         fetchFeedbacks();
         fetchLogs();
       } else {
-        alert("Security PIN Salah!");
+        showNotification('Akses Ditolak', 'Security PIN salah!', 'error');
       }
     }
 
@@ -519,7 +583,7 @@
       const startCode = document.getElementById('csvStartCode').value.trim().toUpperCase();
       const endCode = document.getElementById('csvEndCode').value.trim().toUpperCase();
       const filteredCards = allCardsData.filter(c => c.card_code >= startCode && c.card_code <= endCode);
-      if (filteredCards.length === 0) { alert("Tidak ada kartu ditemukan."); return; }
+      if (filteredCards.length === 0) { showNotification('Informasi', 'Tidak ada kartu ditemukan.', 'info'); return; }
       closeCsvFilterModal();
       let csvContent = "data:text/csv;charset=utf-8,Kode Kartu,URL NFC dan QR,Nama Bisnis,No WA Owner,Status,PIN,Smart Routing\n";
       filteredCards.forEach(card => {
@@ -544,7 +608,7 @@
       const startCode = document.getElementById('zipStartCode').value.trim().toUpperCase();
       const endCode = document.getElementById('zipEndCode').value.trim().toUpperCase();
       const filteredCards = allCardsData.filter(c => c.card_code >= startCode && c.card_code <= endCode);
-      if (filteredCards.length === 0) { alert("Tidak ada kartu ditemukan."); return; }
+      if (filteredCards.length === 0) { showNotification('Informasi', 'Tidak ada kartu ditemukan.', 'info'); return; }
       closeZipFilterModal();
       const zipModal = document.getElementById('zip-modal');
       const progressText = document.getElementById('zipProgressText');
@@ -589,14 +653,14 @@
       document.getElementById('qr-modal').classList.remove('hidden');
     }
     function closeQrModal() { document.getElementById('qr-modal').classList.add('hidden'); }
-    function copyQrUrl() { navigator.clipboard.writeText(currentQrUrl).then(() => alert("Link berhasil disalin!")); }
+    function copyQrUrl() { navigator.clipboard.writeText(currentQrUrl).then(() => showNotification('Berhasil', 'Link berhasil disalin!', 'success')); }
 
     function downloadQrImage() {
       const container = document.getElementById('qrcode-container');
       const img = container.querySelector('img');
       const canvas = container.querySelector('canvas');
       const imageUrl = img && img.src ? img.src : (canvas ? canvas.toDataURL("image/png") : '');
-      if (!imageUrl) { alert("QR belum siap."); return; }
+      if (!imageUrl) { showNotification('Informasi', 'QR belum siap.', 'info'); return; }
       const link = document.createElement('a');
       link.href = imageUrl;
       link.download = `QR_Card_${activeCardCodeForDownload}.png`;
@@ -613,26 +677,51 @@
       return clean;
     }
 
-    function openBatchModal() { document.getElementById('batch-modal').classList.remove('hidden'); }
+    // Modal Generate Massal (Dibersihkan dari nilai pre-filled)
+    function openBatchModal() {
+      document.getElementById('batchPrefix').value = '';
+      document.getElementById('batchStart').value = '';
+      document.getElementById('batchCount').value = '';
+      document.getElementById('batchPin').value = '';
+      document.getElementById('batch-modal').classList.remove('hidden');
+    }
     function closeBatchModal() { document.getElementById('batch-modal').classList.add('hidden'); }
 
     async function submitBatchGenerate() {
-      const prefix = document.getElementById('batchPrefix').value.trim().toUpperCase() || 'CARD';
-      const startNum = parseInt(document.getElementById('batchStart').value) || 1;
-      const count = parseInt(document.getElementById('batchCount').value) || 1;
-      const defaultPin = document.getElementById('batchPin').value.trim() || '1234';
-      if (count > 100) { alert("Maksimal 100 kartu sekali generate!"); return; }
+      const prefix = document.getElementById('batchPrefix').value.trim().toUpperCase();
+      const startNum = parseInt(document.getElementById('batchStart').value);
+      const count = parseInt(document.getElementById('batchCount').value);
+      const defaultPin = document.getElementById('batchPin').value.trim() || null;
+
+      if (!prefix || isNaN(startNum) || isNaN(count) || count <= 0) {
+        showNotification('Perhatian', 'Mohon isi Prefix, Angka Awal, dan Jumlah kartu dengan benar.', 'info');
+        return;
+      }
+      if (count > 100) { showNotification('Batas Maksimal', 'Maksimal 100 kartu sekali generate!', 'info'); return; }
+      
       setButtonLoading('batchSubmitBtn', true, 'Proses Massal');
       const batchPayload = [];
       for (let i = 0; i < count; i++) {
-        batchPayload.push({ card_code: `${prefix}${String(startNum + i).padStart(3, '0')}`, pin: defaultPin, is_activated: false, enable_routing: true });
+        batchPayload.push({ 
+          card_code: `${prefix}${String(startNum + i).padStart(3, '0')}`, 
+          pin: defaultPin, 
+          is_activated: false, 
+          enable_routing: true 
+        });
       }
       const { error } = await supabaseClient.from('cards').upsert(batchPayload, { onConflict: 'card_code' });
       setButtonLoading('batchSubmitBtn', false, 'Proses Massal');
-      if (!error) { alert(`Berhasil membuat ${count} kartu!`); closeBatchModal(); fetchCards(); }
-      else alert("Gagal: " + error.message);
+      if (!error) { 
+        showNotification('Berhasil', `Berhasil membuat ${count} kartu!`, 'success', () => {
+          closeBatchModal(); 
+          fetchCards();
+        });
+      } else {
+        showNotification('Gagal', error.message, 'error');
+      }
     }
 
+    // Modal Tambah Single (Dibersihkan dari nilai pre-filled)
     function openAddModal() {
       editingOriginalCode = null;
       document.getElementById('modalFormTitle').innerText = "Tambah Kartu Baru";
@@ -643,7 +732,7 @@
       document.getElementById('formBizName').value = '';
       document.getElementById('formReviewUrl').value = '';
       document.getElementById('formOwnerPhone').value = '';
-      document.getElementById('formPin').value = '1234';
+      document.getElementById('formPin').value = '';
       document.getElementById('formEnableRouting').checked = true;
       document.getElementById('card-modal').classList.remove('hidden');
     }
@@ -680,7 +769,9 @@
       const rawOwnerPhone = document.getElementById('formOwnerPhone').value.trim();
       const pin = document.getElementById('formPin').value.trim();
       const routing = document.getElementById('formEnableRouting').checked;
-      if (!newCode) { alert("Kode kartu wajib diisi!"); return; }
+      
+      if (!newCode) { showNotification('Perhatian', 'Kode kartu wajib diisi!', 'info'); return; }
+      
       setButtonLoading('saveCardBtn', true, 'Simpan');
       if (editingOriginalCode && editingOriginalCode !== newCode) {
         await supabaseClient.from('cards').delete().eq('card_code', editingOriginalCode);
@@ -690,19 +781,30 @@
         business_name: name || null,
         google_review_url: formatReviewUrl(urlInput) || null,
         owner_phone: sanitizePhoneNumber(rawOwnerPhone) || null,
-        pin: pin || '1234',
+        pin: pin || null,
         is_activated: name.length > 0 || urlInput.length > 0 || rawOwnerPhone.length > 0,
         enable_routing: routing
       };
       const { error } = await supabaseClient.from('cards').upsert(payload, { onConflict: 'card_code' });
       setButtonLoading('saveCardBtn', false, 'Simpan');
-      if (!error) { closeModal(); fetchCards(); } else alert("Gagal: " + error.message);
+      if (!error) { 
+        showNotification('Berhasil', 'Data kartu berhasil disimpan.', 'success', () => {
+          closeModal(); 
+          fetchCards();
+        });
+      } else {
+        showNotification('Gagal', error.message, 'error');
+      }
     }
 
     async function deleteCard(code) {
       if (confirm(`Yakin ingin menghapus kartu ${code}?`)) {
         const { error } = await supabaseClient.from('cards').delete().eq('card_code', code);
-        if (!error) fetchCards(); else alert("Gagal: " + error.message);
+        if (!error) {
+          fetchCards();
+        } else {
+          showNotification('Gagal', error.message, 'error');
+        }
       }
     }
   </script>
