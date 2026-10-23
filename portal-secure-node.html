@@ -101,8 +101,18 @@
         <div class="bg-white/90 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-200/50 border border-slate-200/60 mb-8">
           <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 mb-6">
             <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-              <input id="searchInput" type="text" oninput="filterCards()" placeholder="Cari Kode Kartu / Bisnis..." autocomplete="off" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+              <input id="searchInput" type="text" oninput="filterCards()" placeholder="Cari Kode Kartu / Bisnis..." autocomplete="off" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm w-full sm:w-56 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
               
+              <!-- DROPDOWN FILTER KATEGORI -->
+              <select id="categoryFilter" onchange="filterCards()" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                <option value="all">📁 Semua Kategori</option>
+                <option value="Retail Local">🏪 Retail Local</option>
+                <option value="Reseller Lynk.id">🔗 Reseller Lynk.id</option>
+                <option value="TikTok Shop">🎵 TikTok Shop</option>
+                <option value="Shopee">🟠 Shopee</option>
+                <option value="Demo Sample">🧪 Demo Sample</option>
+              </select>
+
               <div class="bg-slate-100 p-1 rounded-2xl flex gap-1 text-xs font-semibold">
                 <button id="filter-all" onclick="setFilterStatus('all')" class="flex-1 px-3 py-1.5 rounded-xl bg-white text-slate-800 shadow-sm transition-all font-bold">Semua</button>
                 <button id="filter-active" onclick="setFilterStatus('active')" class="flex-1 px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all font-semibold">Aktif</button>
@@ -505,9 +515,17 @@
 
     function filterCards() {
       const q = document.getElementById('searchInput').value.toLowerCase().trim();
-      let filtered = allCardsData.filter(c => c.card_code.toLowerCase().includes(q) || (c.business_name && c.business_name.toLowerCase().includes(q)));
+      const catFilter = document.getElementById('categoryFilter').value;
+
+      let filtered = allCardsData.filter(c => {
+        const matchQuery = c.card_code.toLowerCase().includes(q) || (c.business_name && c.business_name.toLowerCase().includes(q));
+        const matchCat = (catFilter === 'all') || (c.category === catFilter);
+        return matchQuery && matchCat;
+      });
+
       if (currentFilter === 'active') filtered = filtered.filter(c => c.is_activated);
       else if (currentFilter === 'inactive') filtered = filtered.filter(c => !c.is_activated);
+      
       renderCardsTable(filtered);
     }
 
