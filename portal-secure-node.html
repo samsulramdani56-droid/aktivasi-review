@@ -799,7 +799,7 @@
       saveAs(content, `QR_Mentahan_${selectedCat !== 'all' ? selectedCat.replace(/[^a-zA-Z0-9]/g, '_') : 'Range'}.zip`);
     }
 
-    // FUNGSI UTAMA: GENERATE DESAIN KARTU OTOMATIS (TEMPLATE + QR)
+    // FUNGSI UTAMA: GENERATE DESAIN KARTU OTOMATIS (POSISI PRESISI DALAM SUDIR SUDUT)
     async function downloadCompleteCardDesign(cardCode, qrText) {
       return new Promise(async (resolve, reject) => {
         try {
@@ -820,8 +820,8 @@
             const tempDiv = document.createElement('div');
             new QRCode(tempDiv, {
               text: qrText,
-              width: 400,
-              height: 400,
+              width: 500,
+              height: 500,
               colorDark: "#0f172a",
               colorLight: "#ffffff",
               correctLevel: QRCode.CorrectLevel.H
@@ -838,24 +838,27 @@
               await new Promise(res => qrCanvas.onload = res);
             }
 
-            // 3. Tentukan posisi koordinat penempatan QR code di atas template (sesuaikan dengan kotak putih pada desain Anda)
-            let qrSize = canvas.width * 0.30; 
-            let qrX = canvas.width * 0.58;  
-            let qrY = canvas.height * 0.42; 
+            // 3. Koordinat Presisi Mengikuti Tanda Siku (Biru, Merah, Hijau, Kuning)
+            // Posisi X: 59.5% dari lebar canvas
+            // Posisi Y: 46% dari tinggi canvas
+            // Ukuran QR: 28% dari lebar canvas
+            let qrSize = canvas.width * 0.28; 
+            let qrX = canvas.width * 0.595;  
+            let qrY = canvas.height * 0.460; 
 
             ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
 
-            // 4. Tulis teks kode kartu di bawah QR code (opsional)
-            ctx.font = "bold 22px sans-serif";
+            // 4. Teks Kode Kartu Tepat di Bawah QR Code
+            ctx.font = "bold 18px monospace";
             ctx.fillStyle = "#0f172a";
             ctx.textAlign = "center";
-            ctx.fillText(cardCode, qrX + (qrSize / 2), qrY + qrSize + 30);
+            ctx.fillText(cardCode, qrX + (qrSize / 2), qrY + qrSize + 22);
 
             resolve(canvas.toDataURL("image/png"));
           };
 
           templateImg.onerror = () => {
-            reject(new Error("File 'card-template.png' tidak ditemukan di folder! Letakkan file mentahan PNG Anda dengan nama 'card-template.png'."));
+            reject(new Error("File 'card-template.png' tidak ditemukan di folder! Pastikan file berada di direktori yang sama."));
           };
         } catch (err) {
           reject(err);
