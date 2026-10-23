@@ -799,7 +799,7 @@
       saveAs(content, `QR_Mentahan_${selectedCat !== 'all' ? selectedCat.replace(/[^a-zA-Z0-9]/g, '_') : 'Range'}.zip`);
     }
 
-            // FUNGSI UTAMA: GENERATE DESAIN KARTU OTOMATIS (PENYESUAIAN PRESISI FINAL)
+    // FUNGSI UTAMA: GENERATE DESAIN KARTU OTOMATIS (PRESISI SESUAI CONTOH KARTU)
     async function downloadCompleteCardDesign(cardCode, qrText) {
       return new Promise(async (resolve, reject) => {
         try {
@@ -820,8 +820,8 @@
             const tempDiv = document.createElement('div');
             new QRCode(tempDiv, {
               text: qrText,
-              width: 400,
-              height: 400,
+              width: 500,
+              height: 500,
               colorDark: "#0f172a",
               colorLight: "#ffffff",
               correctLevel: QRCode.CorrectLevel.H
@@ -838,18 +838,12 @@
               await new Promise(res => qrCanvas.onload = res);
             }
 
-            // 3. Penyesuaian Posisi & Ukuran Presisi Final
-            let qrSize = canvas.width * 0.215; // Ukuran diperkecil sedikit agar pas di dalam siku
-            let qrX = canvas.width * 0.592;    // Posisi horizontal digeser ke kiri
-            let qrY = canvas.height * 0.452;   // Posisi vertikal digeser ke atas
+            // 3. Posisi & Ukuran Presisi Pas di Dalam Frame Siku (Biru, Merah, Hijau, Kuning)
+            let qrSize = canvas.width * 0.262; // Ukuran diperbesar pas mengisi siku
+            let qrX = canvas.width * 0.602;    // Posisi X tepat di dalam siku kiri
+            let qrY = canvas.height * 0.468;   // Posisi Y tepat di dalam siku atas
 
             ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-
-            // 4. Teks Kode Kartu Tepat di Bawah QR Code
-            ctx.font = "bold 15px monospace";
-            ctx.fillStyle = "#0f172a";
-            ctx.textAlign = "center";
-            ctx.fillText(cardCode, qrX + (qrSize / 2), qrY + qrSize + 16);
 
             resolve(canvas.toDataURL("image/png"));
           };
