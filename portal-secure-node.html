@@ -125,7 +125,10 @@
                 📥 Export CSV
               </button>
               <button onclick="openZipFilterModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/20">
-                📦 Download QR ZIP
+                📦 QR Mentahan (ZIP)
+              </button>
+              <button onclick="openCardDesignZipModal()" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/20">
+                🖼️ Desain Kartu (ZIP)
               </button>
               <button onclick="openBatchModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20">
                 ⚡ Generate Massal
@@ -219,7 +222,7 @@
       <h3 class="font-extrabold text-slate-900 text-lg mb-1">📥 Export CSV Data Kartu</h3>
       <p class="text-xs text-slate-500 mb-6">Pilih export berdasarkan Kategori khusus atau Rentang Kode Kartu.</p>
       
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Berdasarkan Kategori (Rekomendasi Reseller)</label>
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Berdasarkan Kategori</label>
       <select id="csvCategorySelect" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/20">
         <option value="all">📁 Semua Kategori</option>
         <option value="Reseller Lynk.id">🔗 Reseller Lynk.id</option>
@@ -247,13 +250,13 @@
     </div>
   </div>
 
-  <!-- MODAL DOWNLOAD QR ZIP -->
+  <!-- MODAL DOWNLOAD QR MENTAHAN ZIP -->
   <div id="zip-filter-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
-      <h3 class="font-extrabold text-slate-900 text-lg mb-1">📦 Download QR Code Massal (ZIP)</h3>
-      <p class="text-xs text-slate-500 mb-6">Pilih unduh file QR berdasarkan Kategori khusus atau Rentang Kode.</p>
+      <h3 class="font-extrabold text-slate-900 text-lg mb-1">📦 Download QR Mentahan (ZIP)</h3>
+      <p class="text-xs text-slate-500 mb-6">Unduh file mentahan QR code saja berdasarkan kategori atau range.</p>
 
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Berdasarkan Kategori (Khusus Reseller / Platform)</label>
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Berdasarkan Kategori</label>
       <select id="zipCategorySelect" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
         <option value="all">📁 Semua Kategori</option>
         <option value="Reseller Lynk.id">🔗 Reseller Lynk.id</option>
@@ -276,7 +279,41 @@
 
       <div class="flex gap-2">
         <button onclick="closeZipFilterModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
-        <button onclick="processFilteredZipDownload()" class="w-1/2 bg-indigo-600 text-white font-semibold py-3 rounded-2xl text-sm shadow-md">Download ZIP</button>
+        <button onclick="processFilteredZipDownload()" class="w-1/2 bg-indigo-600 text-white font-semibold py-3 rounded-2xl text-sm shadow-md">Download ZIP QR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DOWNLOAD ZIP DESAIN KARTU LENGKAP (BARU) -->
+  <div id="design-zip-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
+      <h3 class="font-extrabold text-slate-900 text-lg mb-1">🖼️ Download ZIP Desain Kartu Lengkap</h3>
+      <p class="text-xs text-slate-500 mb-6">Menggabungkan template background <code class="bg-slate-100 px-1 py-0.5 rounded font-mono text-purple-600">card-template.png</code> dengan QR code secara otomatis.</p>
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Berdasarkan Kategori</label>
+      <select id="designZipCategorySelect" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20">
+        <option value="all">📁 Semua Kategori</option>
+        <option value="Reseller Lynk.id">🔗 Reseller Lynk.id</option>
+        <option value="Retail Local">🏪 Retail Local</option>
+        <option value="TikTok Shop">🎵 TikTok Shop</option>
+        <option value="Shopee">🟠 Shopee</option>
+        <option value="Demo Sample">🧪 Demo Sample</option>
+      </select>
+
+      <div class="relative flex py-2 items-center mb-3">
+        <div class="flex-grow border-t border-slate-200"></div>
+        <span class="flex-shrink mx-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atau Range Kode (Opsional)</span>
+        <div class="flex-grow border-t border-slate-200"></div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label><input id="designZipStartCode" type="text" placeholder="RPC-001" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label><input id="designZipEndCode" type="text" placeholder="RPC-050" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closeCardDesignZipModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
+        <button onclick="processCardDesignZipDownload()" class="w-1/2 bg-purple-600 text-white font-semibold py-3 rounded-2xl text-sm shadow-md">Download ZIP Desain</button>
       </div>
     </div>
   </div>
@@ -384,6 +421,7 @@
     </div>
   </div>
 
+  <!-- MODAL QR (DENGAN 2 OPSI: MENTAHAN & DESAIN KARTU) -->
   <div id="qr-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
       <h3 id="qrModalTitle" class="font-extrabold text-slate-900 text-lg mb-1">QR Code Kartu</h3>
@@ -394,7 +432,8 @@
         <p id="qrModalUrl" class="text-xs font-mono text-blue-600 break-all select-all"></p>
       </div>
       <div class="space-y-2">
-        <button onclick="downloadQrImage()" class="w-full bg-emerald-600 text-white font-semibold py-2.5 rounded-xl text-xs shadow-md">📥 Download Gambar QR</button>
+        <button onclick="downloadCompleteCardDesignModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-xl text-xs shadow-md">🖼️ Download Desain Kartu (Template + QR)</button>
+        <button onclick="downloadQrImage()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl text-xs shadow-md">📥 Download QR Mentahan Saja</button>
         <div class="flex gap-2">
           <button onclick="copyQrUrl()" class="w-1/2 bg-blue-50 text-blue-600 font-semibold py-2.5 rounded-xl text-xs">📋 Copy Link</button>
           <button onclick="closeQrModal()" class="w-1/2 bg-slate-100 text-slate-700 font-semibold py-2.5 rounded-xl text-xs">Tutup</button>
@@ -406,8 +445,8 @@
   <div id="zip-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
       <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-xl mb-3 animate-spin">⏳</div>
-      <h3 class="font-bold text-slate-900 text-base mb-1">Memproses ZIP...</h3>
-      <p id="zipProgressText" class="text-xs text-slate-500">Menyiapkan file QR code.</p>
+      <h3 class="font-bold text-slate-900 text-base mb-1">Memproses File...</h3>
+      <p id="zipProgressText" class="text-xs text-slate-500">Menyiapkan gambar kartu.</p>
     </div>
   </div>
 
@@ -669,7 +708,6 @@
       if (!error) fetchCards();
     }
 
-    // EXPORT CSV DENGAN KOLOM RESELLER
     function openCsvFilterModal() {
       document.getElementById('csvCategorySelect').value = 'all';
       document.getElementById('csvStartCode').value = '';
@@ -684,28 +722,18 @@
       const endCode = document.getElementById('csvEndCode').value.trim().toUpperCase();
 
       let filteredCards = allCardsData;
+      if (selectedCat !== 'all') filteredCards = filteredCards.filter(c => (c.category || 'Retail Local') === selectedCat);
+      if (startCode && endCode) filteredCards = filteredCards.filter(c => c.card_code >= startCode && c.card_code <= endCode);
 
-      if (selectedCat !== 'all') {
-        filteredCards = filteredCards.filter(c => (c.category || 'Retail Local') === selectedCat);
-      }
-
-      if (startCode && endCode) {
-        filteredCards = filteredCards.filter(c => c.card_code >= startCode && c.card_code <= endCode);
-      }
-
-      if (filteredCards.length === 0) { 
-        showNotification('Informasi', 'Tidak ada data kartu yang cocok dengan kriteria.', 'info'); 
-        return; 
-      }
-
+      if (filteredCards.length === 0) { showNotification('Informasi', 'Tidak ada data kartu.', 'info'); return; }
       closeCsvFilterModal();
+
       let csvContent = "data:text/csv;charset=utf-8,Kode Kartu,Kategori,Reseller ID,Catatan Reseller,URL NFC dan QR,Nama Bisnis,No WA Owner,Status,PIN,Smart Routing\n";
       filteredCards.forEach(card => {
         csvContent += `${card.card_code},"${card.category || 'Retail Local'}","${card.reseller_id || ''}","${card.reseller_notes || ''}",${DOMAIN_BASE}/?code=${card.card_code},"${card.business_name || '-'}",${card.owner_phone || ''},${card.is_activated ? 'AKTIF' : 'BLANK'},${card.pin || ''},${card.enable_routing !== false ? 'ON' : 'OFF'}\n`;
       });
 
       const fileName = selectedCat !== 'all' ? `Data_Kartu_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}.csv` : `Data_Kartu_${startCode || 'ALL'}_to_${endCode || 'ALL'}.csv`;
-
       const link = document.createElement("a");
       link.setAttribute("href", encodeURI(csvContent));
       link.setAttribute("download", fileName);
@@ -714,7 +742,6 @@
       document.body.removeChild(link);
     }
 
-    // DOWNLOAD ZIP QR
     function openZipFilterModal() {
       document.getElementById('zipCategorySelect').value = 'all';
       document.getElementById('zipStartCode').value = '';
@@ -723,33 +750,25 @@
     }
     function closeZipFilterModal() { document.getElementById('zip-filter-modal').classList.add('hidden'); }
 
+    // DOWNLOAD ZIP QR MENTAHAN
     async function processFilteredZipDownload() {
       const selectedCat = document.getElementById('zipCategorySelect').value;
       const startCode = document.getElementById('zipStartCode').value.trim().toUpperCase();
       const endCode = document.getElementById('zipEndCode').value.trim().toUpperCase();
 
       let filteredCards = allCardsData;
+      if (selectedCat !== 'all') filteredCards = filteredCards.filter(c => (c.category || 'Retail Local') === selectedCat);
+      if (startCode && endCode) filteredCards = filteredCards.filter(c => c.card_code >= startCode && c.card_code <= endCode);
 
-      if (selectedCat !== 'all') {
-        filteredCards = filteredCards.filter(c => (c.category || 'Retail Local') === selectedCat);
-      }
-
-      if (startCode && endCode) {
-        filteredCards = filteredCards.filter(c => c.card_code >= startCode && c.card_code <= endCode);
-      }
-
-      if (filteredCards.length === 0) { 
-        showNotification('Informasi', 'Tidak ada data kartu yang cocok untuk dibuatkan QR ZIP.', 'info'); 
-        return; 
-      }
-
+      if (filteredCards.length === 0) { showNotification('Informasi', 'Tidak ada data kartu ditemukan.', 'info'); return; }
       closeZipFilterModal();
+
       const zipModal = document.getElementById('zip-modal');
       const progressText = document.getElementById('zipProgressText');
       zipModal.classList.remove('hidden');
 
       const zip = new JSZip();
-      const folderName = selectedCat !== 'all' ? `QR_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}` : "QR_Codes_RenderProject";
+      const folderName = selectedCat !== 'all' ? `QR_Mentahan_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}` : "QR_Mentahan_RenderProject";
       const folder = zip.folder(folderName);
 
       let hiddenContainer = document.getElementById('hidden-qr-render');
@@ -762,7 +781,7 @@
 
       for (let i = 0; i < filteredCards.length; i++) {
         const card = filteredCards[i];
-        progressText.innerText = `Memproses (${i + 1}/${filteredCards.length}): ${card.card_code}`;
+        progressText.innerText = `Memproses QR (${i + 1}/${filteredCards.length}): ${card.card_code}`;
         hiddenContainer.innerHTML = '';
         await new Promise((resolve) => {
           new QRCode(hiddenContainer, { text: `${DOMAIN_BASE}/?code=${card.card_code}`, width: 300, height: 300, colorDark: "#0f172a", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H });
@@ -777,9 +796,145 @@
       progressText.innerText = "Mengompres ke ZIP...";
       const content = await zip.generateAsync({ type: "blob" });
       zipModal.classList.add('hidden');
+      saveAs(content, `QR_Mentahan_${selectedCat !== 'all' ? selectedCat.replace(/[^a-zA-Z0-9]/g, '_') : 'Range'}.zip`);
+    }
 
-      const zipFileName = selectedCat !== 'all' ? `QR_Kategori_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}.zip` : `QR_Range_${startCode || 'ALL'}_to_${endCode || 'ALL'}.zip`;
-      saveAs(content, zipFileName);
+    // FUNGSI UTAMA: GENERATE DESAIN KARTU OTOMATIS (TEMPLATE + QR)
+    async function downloadCompleteCardDesign(cardCode, qrText) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const templateImg = new Image();
+          templateImg.crossOrigin = "anonymous";
+          templateImg.src = "card-template.png"; // Memuat file mentahan background PNG
+          
+          templateImg.onload = async () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = templateImg.naturalWidth || 1000;
+            canvas.height = templateImg.naturalHeight || 1000;
+            const ctx = canvas.getContext('2d');
+            
+            // 1. Gambar Background Template
+            ctx.drawImage(templateImg, 0, 0);
+
+            // 2. Buat QR Code secara temporal
+            const tempDiv = document.createElement('div');
+            new QRCode(tempDiv, {
+              text: qrText,
+              width: 400,
+              height: 400,
+              colorDark: "#0f172a",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.H
+            });
+
+            await new Promise(r => setTimeout(r, 100));
+            const qrCanvas = tempDiv.querySelector('canvas') || tempDiv.querySelector('img');
+            if (!qrCanvas) {
+              reject(new Error("Gagal merender QR Code."));
+              return;
+            }
+
+            if (qrCanvas.tagName === 'IMG' && !qrCanvas.complete) {
+              await new Promise(res => qrCanvas.onload = res);
+            }
+
+            // 3. Tentukan posisi koordinat penempatan QR code di atas template (sesuaikan dengan kotak putih pada desain Anda)
+            let qrSize = canvas.width * 0.30; 
+            let qrX = canvas.width * 0.58;  
+            let qrY = canvas.height * 0.42; 
+
+            ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+            // 4. Tulis teks kode kartu di bawah QR code (opsional)
+            ctx.font = "bold 22px sans-serif";
+            ctx.fillStyle = "#0f172a";
+            ctx.textAlign = "center";
+            ctx.fillText(cardCode, qrX + (qrSize / 2), qrY + qrSize + 30);
+
+            resolve(canvas.toDataURL("image/png"));
+          };
+
+          templateImg.onerror = () => {
+            reject(new Error("File 'card-template.png' tidak ditemukan di folder! Letakkan file mentahan PNG Anda dengan nama 'card-template.png'."));
+          };
+        } catch (err) {
+          reject(err);
+        }
+      });
+    }
+
+    // Tombol Download Single Desain Kartu di Modal QR
+    async function downloadCompleteCardDesignModal() {
+      try {
+        const dataUrl = await downloadCompleteCardDesign(activeCardCodeForDownload, currentQrUrl);
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `Desain_Kartu_${activeCardCodeForDownload}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showNotification('Berhasil', 'Desain kartu lengkap berhasil diunduh!', 'success');
+      } catch (err) {
+        showNotification('Perhatian', err.message, 'error');
+      }
+    }
+
+    // Modal Download ZIP Desain Kartu Massal
+    function openCardDesignZipModal() {
+      document.getElementById('designZipCategorySelect').value = 'all';
+      document.getElementById('designZipStartCode').value = '';
+      document.getElementById('designZipEndCode').value = '';
+      document.getElementById('design-zip-modal').classList.remove('hidden');
+    }
+    function closeCardDesignZipModal() { document.getElementById('design-zip-modal').classList.add('hidden'); }
+
+    async function processCardDesignZipDownload() {
+      const selectedCat = document.getElementById('designZipCategorySelect').value;
+      const startCode = document.getElementById('designZipStartCode').value.trim().toUpperCase();
+      const endCode = document.getElementById('designZipEndCode').value.trim().toUpperCase();
+
+      let filteredCards = allCardsData;
+      if (selectedCat !== 'all') filteredCards = filteredCards.filter(c => (c.category || 'Retail Local') === selectedCat);
+      if (startCode && endCode) filteredCards = filteredCards.filter(c => c.card_code >= startCode && c.card_code <= endCode);
+
+      if (filteredCards.length === 0) { 
+        showNotification('Informasi', 'Tidak ada data kartu yang cocok untuk dibuatkan ZIP Desain.', 'info'); 
+        return; 
+      }
+
+      closeCardDesignZipModal();
+      const zipModal = document.getElementById('zip-modal');
+      const progressText = document.getElementById('zipProgressText');
+      zipModal.classList.remove('hidden');
+
+      try {
+        const zip = new JSZip();
+        const folderName = selectedCat !== 'all' ? `Desain_Kartu_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}` : "Desain_Kartu_RenderProject";
+        const folder = zip.folder(folderName);
+
+        for (let i = 0; i < filteredCards.length; i++) {
+          const card = filteredCards[i];
+          progressText.innerText = `Membuat Desain (${i + 1}/${filteredCards.length}): ${card.card_code}`;
+          
+          const qrUrl = `${DOMAIN_BASE}/?code=${card.card_code}`;
+          const dataUrl = await downloadCompleteCardDesign(card.card_code, qrUrl);
+          
+          if (dataUrl) {
+            folder.file(`Desain_${card.card_code}.png`, dataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+          }
+        }
+
+        progressText.innerText = "Mengompres ke ZIP...";
+        const content = await zip.generateAsync({ type: "blob" });
+        zipModal.classList.add('hidden');
+
+        const zipFileName = selectedCat !== 'all' ? `Desain_Kategori_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}.zip` : `Desain_Range_${startCode || 'ALL'}_to_${endCode || 'ALL'}.zip`;
+        saveAs(content, zipFileName);
+        showNotification('Berhasil', 'ZIP Desain Kartu Lengkap berhasil diunduh!', 'success');
+      } catch (err) {
+        zipModal.classList.add('hidden');
+        showNotification('Gagal', err.message, 'error');
+      }
     }
 
     function showQrModal(code) {
@@ -804,7 +959,7 @@
       if (!imageUrl) { showNotification('Informasi', 'QR belum siap.', 'info'); return; }
       const link = document.createElement('a');
       link.href = imageUrl;
-      link.download = `QR_Card_${activeCardCodeForDownload}.png`;
+      link.download = `QR_Mentahan_${activeCardCodeForDownload}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -818,7 +973,7 @@
       return clean;
     }
 
-    // Modal Generate Massal (Dengan Reseller ID & Catatan)
+    // Modal Generate Massal
     function openBatchModal() {
       document.getElementById('batchCategory').value = 'Reseller Lynk.id';
       document.getElementById('batchResellerId').value = '';
@@ -871,7 +1026,7 @@
       }
     }
 
-    // Modal Tambah Single (Dengan Reseller ID & Catatan)
+    // Modal Tambah Single
     function openAddModal() {
       editingOriginalCode = null;
       document.getElementById('modalFormTitle').innerText = "Tambah Kartu Baru";
