@@ -131,6 +131,7 @@
               <thead>
                 <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
                   <th class="py-3.5 px-4">Kode Kartu</th>
+                  <th class="py-3.5 px-4">Kategori</th>
                   <th class="py-3.5 px-4">Nama Bisnis</th>
                   <th class="py-3.5 px-4">WA Owner</th>
                   <th class="py-3.5 px-4">Status</th>
@@ -233,12 +234,21 @@
     </div>
   </div>
 
-  <!-- MODAL GENERATE KARTU MASSAL (Dibersihkan dari default value) -->
+  <!-- MODAL GENERATE KARTU MASSAL -->
   <div id="batch-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100 max-h-[90vh] overflow-y-auto">
       <h3 class="font-extrabold text-slate-900 text-lg mb-1">⚡ Generate Kartu Massal</h3>
       <p class="text-xs text-slate-500 mb-6">Buat puluhan kode kartu sekaligus untuk dicetak.</p>
       
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kategori Stok</label>
+      <select id="batchCategory" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+        <option value="Retail Local">🏪 Retail Local (Door-to-Door)</option>
+        <option value="Reseller Lynk.id">🔗 Reseller (Lynk.id)</option>
+        <option value="TikTok Shop">🎵 TikTok Shop</option>
+        <option value="Shopee">🟠 Shopee</option>
+        <option value="Demo Sample">🧪 Demo / Sampel</option>
+      </select>
+
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">Prefix Kode</label>
       <input id="batchPrefix" type="text" placeholder="Contoh: RPC- atau DEMO-" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
       
@@ -263,12 +273,21 @@
     </div>
   </div>
 
-  <!-- MODAL TAMBAH/EDIT SINGLE (Dibersihkan dari nilai pre-filled) -->
+  <!-- MODAL TAMBAH/EDIT SINGLE -->
   <div id="card-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100 max-h-[90vh] overflow-y-auto">
       <h3 id="modalFormTitle" class="font-extrabold text-slate-900 text-lg mb-1">Tambah Kartu Baru</h3>
       <p id="modalFormSub" class="text-xs text-slate-500 mb-4"></p>
       
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kategori Stok</label>
+      <select id="formCategory" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+        <option value="Retail Local">🏪 Retail Local (Door-to-Door)</option>
+        <option value="Reseller Lynk.id">🔗 Reseller (Lynk.id)</option>
+        <option value="TikTok Shop">🎵 TikTok Shop</option>
+        <option value="Shopee">🟠 Shopee</option>
+        <option value="Demo Sample">🧪 Demo / Sampel</option>
+      </select>
+
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kode Kartu</label>
       <input id="formCardCode" type="text" autocomplete="off" placeholder="Contoh: RPC-001" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
       
@@ -323,7 +342,7 @@
     </div>
   </div>
 
-  <!-- MODAL NOTIFIKASI KUSTOM (Sama persis dengan index.html) -->
+  <!-- MODAL NOTIFIKASI KUSTOM -->
   <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
       <div id="modal-icon" class="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 shadow-sm"></div>
@@ -360,7 +379,6 @@
       }
     });
 
-    // FUNGSI NOTIFIKASI KUSTOM (Sama seperti index.html)
     function showNotification(title, message, type = 'info', onConfirm = null) {
       const modal = document.getElementById('custom-modal');
       const iconEl = document.getElementById('modal-icon');
@@ -497,7 +515,7 @@
       const tbody = document.getElementById('cardsTableBody');
       tbody.innerHTML = '';
       if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu.</td></tr>`;
         return;
       }
       data.forEach(card => {
@@ -506,6 +524,7 @@
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50/80 transition-all">
             <td class="py-3.5 px-4 font-bold text-slate-900 font-mono">${card.card_code}</td>
+            <td class="py-3.5 px-4 text-xs font-medium text-slate-600"><span class="bg-slate-100 px-2 py-1 rounded-lg">${card.category || 'Retail Local'}</span></td>
             <td class="py-3.5 px-4 font-semibold text-slate-700">${card.business_name || '-'}</td>
             <td class="py-3.5 px-4 text-xs font-mono text-slate-600">${card.owner_phone ? '+' + card.owner_phone : '-'}</td>
             <td class="py-3.5 px-4">${badge}</td>
@@ -585,9 +604,9 @@
       const filteredCards = allCardsData.filter(c => c.card_code >= startCode && c.card_code <= endCode);
       if (filteredCards.length === 0) { showNotification('Informasi', 'Tidak ada kartu ditemukan.', 'info'); return; }
       closeCsvFilterModal();
-      let csvContent = "data:text/csv;charset=utf-8,Kode Kartu,URL NFC dan QR,Nama Bisnis,No WA Owner,Status,PIN,Smart Routing\n";
+      let csvContent = "data:text/csv;charset=utf-8,Kode Kartu,Kategori,URL NFC dan QR,Nama Bisnis,No WA Owner,Status,PIN,Smart Routing\n";
       filteredCards.forEach(card => {
-        csvContent += `${card.card_code},${DOMAIN_BASE}/?code=${card.card_code},"${card.business_name || '-'}",${card.owner_phone || ''},${card.is_activated ? 'AKTIF' : 'BLANK'},${card.pin || ''},${card.enable_routing !== false ? 'ON' : 'OFF'}\n`;
+        csvContent += `${card.card_code},"${card.category || 'Retail Local'}",${DOMAIN_BASE}/?code=${card.card_code},"${card.business_name || '-'}",${card.owner_phone || ''},${card.is_activated ? 'AKTIF' : 'BLANK'},${card.pin || ''},${card.enable_routing !== false ? 'ON' : 'OFF'}\n`;
       });
       const link = document.createElement("a");
       link.setAttribute("href", encodeURI(csvContent));
@@ -677,8 +696,9 @@
       return clean;
     }
 
-    // Modal Generate Massal (Dibersihkan dari nilai pre-filled)
+    // Modal Generate Massal
     function openBatchModal() {
+      document.getElementById('batchCategory').value = 'Retail Local';
       document.getElementById('batchPrefix').value = '';
       document.getElementById('batchStart').value = '';
       document.getElementById('batchCount').value = '';
@@ -688,6 +708,7 @@
     function closeBatchModal() { document.getElementById('batch-modal').classList.add('hidden'); }
 
     async function submitBatchGenerate() {
+      const category = document.getElementById('batchCategory').value;
       const prefix = document.getElementById('batchPrefix').value.trim().toUpperCase();
       const startNum = parseInt(document.getElementById('batchStart').value);
       const count = parseInt(document.getElementById('batchCount').value);
@@ -704,6 +725,7 @@
       for (let i = 0; i < count; i++) {
         batchPayload.push({ 
           card_code: `${prefix}${String(startNum + i).padStart(3, '0')}`, 
+          category: category,
           pin: defaultPin, 
           is_activated: false, 
           enable_routing: true 
@@ -721,11 +743,12 @@
       }
     }
 
-    // Modal Tambah Single (Dibersihkan dari nilai pre-filled)
+    // Modal Tambah Single
     function openAddModal() {
       editingOriginalCode = null;
       document.getElementById('modalFormTitle').innerText = "Tambah Kartu Baru";
       document.getElementById('modalFormSub').innerText = "Masukkan kode kartu unik baru.";
+      document.getElementById('formCategory').value = 'Retail Local';
       const codeInput = document.getElementById('formCardCode');
       codeInput.value = '';
       codeInput.disabled = false;
@@ -741,6 +764,7 @@
       const card = allCardsData.find(c => c.card_code === code);
       if (!card) return;
       editingOriginalCode = card.card_code;
+      document.getElementById('formCategory').value = card.category || 'Retail Local';
       const codeInput = document.getElementById('formCardCode');
       codeInput.value = card.card_code;
       if (card.is_activated) {
@@ -763,6 +787,7 @@
     function closeModal() { document.getElementById('card-modal').classList.add('hidden'); }
 
     async function saveCardData() {
+      const category = document.getElementById('formCategory').value;
       const newCode = document.getElementById('formCardCode').value.trim().toUpperCase();
       const name = document.getElementById('formBizName').value.trim();
       const urlInput = document.getElementById('formReviewUrl').value.trim();
@@ -778,6 +803,7 @@
       }
       const payload = {
         card_code: newCode,
+        category: category,
         business_name: name || null,
         google_review_url: formatReviewUrl(urlInput) || null,
         owner_phone: sanitizePhoneNumber(rawOwnerPhone) || null,
