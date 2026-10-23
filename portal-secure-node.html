@@ -122,10 +122,10 @@
             
             <div class="flex flex-wrap gap-2">
               <button onclick="openCsvFilterModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm">
-                📥 Export CSV (Filter Range)
+                📥 Export CSV
               </button>
               <button onclick="openZipFilterModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/20">
-                📦 Download QR (Filter Range)
+                📦 Download QR ZIP
               </button>
               <button onclick="openBatchModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20">
                 ⚡ Generate Massal
@@ -141,7 +141,7 @@
               <thead>
                 <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
                   <th class="py-3.5 px-4">Kode Kartu</th>
-                  <th class="py-3.5 px-4">Kategori</th>
+                  <th class="py-3.5 px-4">Kategori & Reseller</th>
                   <th class="py-3.5 px-4">Nama Bisnis</th>
                   <th class="py-3.5 px-4">WA Owner</th>
                   <th class="py-3.5 px-4">Status</th>
@@ -213,15 +213,33 @@
     </footer>
   </div>
 
-  <!-- MODAL-MODAL PENDUKUNG -->
+  <!-- MODAL EXPORT CSV -->
   <div id="csv-filter-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
-      <h3 class="font-extrabold text-slate-900 text-lg mb-1">📥 Export CSV Berdasarkan Range</h3>
-      <p class="text-xs text-slate-500 mb-6">Pilih rentang kode kartu tertentu yang ingin di-export ke CSV.</p>
-      <div class="grid grid-cols-2 gap-3 mb-4">
-        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label><input id="csvStartCode" type="text" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
-        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label><input id="csvEndCode" type="text" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+      <h3 class="font-extrabold text-slate-900 text-lg mb-1">📥 Export CSV Data Kartu</h3>
+      <p class="text-xs text-slate-500 mb-6">Pilih export berdasarkan Kategori khusus atau Rentang Kode Kartu.</p>
+      
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Berdasarkan Kategori (Rekomendasi Reseller)</label>
+      <select id="csvCategorySelect" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/20">
+        <option value="all">📁 Semua Kategori</option>
+        <option value="Reseller Lynk.id">🔗 Reseller Lynk.id</option>
+        <option value="Retail Local">🏪 Retail Local</option>
+        <option value="TikTok Shop">🎵 TikTok Shop</option>
+        <option value="Shopee">🟠 Shopee</option>
+        <option value="Demo Sample">🧪 Demo Sample</option>
+      </select>
+
+      <div class="relative flex py-2 items-center mb-3">
+        <div class="flex-grow border-t border-slate-200"></div>
+        <span class="flex-shrink mx-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atau Range Kode (Opsional)</span>
+        <div class="flex-grow border-t border-slate-200"></div>
       </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label><input id="csvStartCode" type="text" placeholder="RPC-001" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label><input id="csvEndCode" type="text" placeholder="RPC-050" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+      </div>
+
       <div class="flex gap-2">
         <button onclick="closeCsvFilterModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
         <button onclick="processFilteredCsvExport()" class="w-1/2 bg-slate-800 text-white font-semibold py-3 rounded-2xl text-sm shadow-md">Download CSV</button>
@@ -229,14 +247,33 @@
     </div>
   </div>
 
+  <!-- MODAL DOWNLOAD QR ZIP -->
   <div id="zip-filter-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
-      <h3 class="font-extrabold text-slate-900 text-lg mb-1">📦 Download QR Berdasarkan Range</h3>
-      <p class="text-xs text-slate-500 mb-6">Pilih rentang kode kartu tertentu untuk di-download ke ZIP.</p>
-      <div class="grid grid-cols-2 gap-3 mb-4">
-        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label><input id="zipStartCode" type="text" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
-        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label><input id="zipEndCode" type="text" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+      <h3 class="font-extrabold text-slate-900 text-lg mb-1">📦 Download QR Code Massal (ZIP)</h3>
+      <p class="text-xs text-slate-500 mb-6">Pilih unduh file QR berdasarkan Kategori khusus atau Rentang Kode.</p>
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Berdasarkan Kategori (Khusus Reseller / Platform)</label>
+      <select id="zipCategorySelect" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+        <option value="all">📁 Semua Kategori</option>
+        <option value="Reseller Lynk.id">🔗 Reseller Lynk.id</option>
+        <option value="Retail Local">🏪 Retail Local</option>
+        <option value="TikTok Shop">🎵 TikTok Shop</option>
+        <option value="Shopee">🟠 Shopee</option>
+        <option value="Demo Sample">🧪 Demo Sample</option>
+      </select>
+
+      <div class="relative flex py-2 items-center mb-3">
+        <div class="flex-grow border-t border-slate-200"></div>
+        <span class="flex-shrink mx-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atau Range Kode (Opsional)</span>
+        <div class="flex-grow border-t border-slate-200"></div>
       </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label><input id="zipStartCode" type="text" placeholder="RPC-001" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label><input id="zipEndCode" type="text" placeholder="RPC-050" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+      </div>
+
       <div class="flex gap-2">
         <button onclick="closeZipFilterModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
         <button onclick="processFilteredZipDownload()" class="w-1/2 bg-indigo-600 text-white font-semibold py-3 rounded-2xl text-sm shadow-md">Download ZIP</button>
@@ -259,10 +296,24 @@
         <option value="Demo Sample">🧪 Demo / Sampel</option>
       </select>
 
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Prefix Kode</label>
-      <input id="batchPrefix" type="text" placeholder="Contoh: RPC- atau DEMO-" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
-      
       <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Reseller ID (Opsional)</label>
+          <input id="batchResellerId" type="text" placeholder="Contoh: RSL-01" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Default (Opsional)</label>
+          <input id="batchPin" type="password" maxlength="4" placeholder="••••" autocomplete="new-password" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm tracking-widest">
+        </div>
+      </div>
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Catatan Reseller / Batch (Opsional)</label>
+      <input id="batchResellerNotes" type="text" placeholder="Contoh: Paket 50 Pcs Lunas Transfer" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Prefix Kode</label>
+      <input id="batchPrefix" type="text" placeholder="Contoh: RPC- atau RSL-" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
+      
+      <div class="grid grid-cols-2 gap-3 mb-6">
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1.5">Angka Awal</label>
           <input id="batchStart" type="number" placeholder="1" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm">
@@ -272,9 +323,6 @@
           <input id="batchCount" type="number" placeholder="10" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm">
         </div>
       </div>
-
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Default (Opsional)</label>
-      <input id="batchPin" type="password" maxlength="4" placeholder="Kosongkan jika belum diisi" autocomplete="new-password" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-6 text-sm tracking-widest">
       
       <div class="flex gap-2">
         <button onclick="closeBatchModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
@@ -298,6 +346,20 @@
         <option value="Demo Sample">🧪 Demo / Sampel</option>
       </select>
 
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Reseller ID (Opsional)</label>
+          <input id="formResellerId" type="text" placeholder="RSL-BDG-01" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Klien (Opsional)</label>
+          <input id="formPin" type="password" maxlength="4" autocomplete="new-password" placeholder="••••" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm tracking-widest">
+        </div>
+      </div>
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Catatan Reseller / Batch (Opsional)</label>
+      <input id="formResellerNotes" type="text" autocomplete="off" placeholder="Contoh: Pembayaran Lunas" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
+
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kode Kartu</label>
       <input id="formCardCode" type="text" autocomplete="off" placeholder="Contoh: RPC-001" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
       
@@ -309,9 +371,6 @@
       
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">No. WhatsApp Owner</label>
       <input id="formOwnerPhone" type="tel" autocomplete="off" placeholder="628123456789" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
-      
-      <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Klien (Opsional)</label>
-      <input id="formPin" type="password" maxlength="4" autocomplete="new-password" placeholder="Kosongkan untuk kartu baru" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm tracking-widest">
       
       <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 mb-6">
         <input id="formEnableRouting" type="checkbox" checked class="w-4 h-4 text-blue-600 rounded">
@@ -518,7 +577,7 @@
       const catFilter = document.getElementById('categoryFilter').value;
 
       let filtered = allCardsData.filter(c => {
-        const matchQuery = c.card_code.toLowerCase().includes(q) || (c.business_name && c.business_name.toLowerCase().includes(q));
+        const matchQuery = c.card_code.toLowerCase().includes(q) || (c.business_name && c.business_name.toLowerCase().includes(q)) || (c.reseller_id && c.reseller_id.toLowerCase().includes(q));
         const matchCat = (catFilter === 'all') || (c.category === catFilter);
         return matchQuery && matchCat;
       });
@@ -539,10 +598,11 @@
       data.forEach(card => {
         const badge = card.is_activated ? `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">🟢 Aktif</span>` : `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">🟡 Blank</span>`;
         const isRoutingOn = card.enable_routing !== false;
+        const resellerBadge = card.reseller_id ? `<br><span class="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded">ID: ${card.reseller_id}</span>` : '';
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50/80 transition-all">
             <td class="py-3.5 px-4 font-bold text-slate-900 font-mono">${card.card_code}</td>
-            <td class="py-3.5 px-4 text-xs font-medium text-slate-600"><span class="bg-slate-100 px-2 py-1 rounded-lg">${card.category || 'Retail Local'}</span></td>
+            <td class="py-3.5 px-4 text-xs font-medium text-slate-600"><span class="bg-slate-100 px-2 py-1 rounded-lg">${card.category || 'Retail Local'}</span>${resellerBadge}</td>
             <td class="py-3.5 px-4 font-semibold text-slate-700">${card.business_name || '-'}</td>
             <td class="py-3.5 px-4 text-xs font-mono text-slate-600">${card.owner_phone ? '+' + card.owner_phone : '-'}</td>
             <td class="py-3.5 px-4">${badge}</td>
@@ -609,49 +669,89 @@
       if (!error) fetchCards();
     }
 
+    // EXPORT CSV DENGAN KOLOM RESELLER
     function openCsvFilterModal() {
-      document.getElementById('csvStartCode').value = allCardsData.length > 0 ? allCardsData[0].card_code : '';
-      document.getElementById('csvEndCode').value = allCardsData.length > 0 ? allCardsData[allCardsData.length - 1].card_code : '';
+      document.getElementById('csvCategorySelect').value = 'all';
+      document.getElementById('csvStartCode').value = '';
+      document.getElementById('csvEndCode').value = '';
       document.getElementById('csv-filter-modal').classList.remove('hidden');
     }
     function closeCsvFilterModal() { document.getElementById('csv-filter-modal').classList.add('hidden'); }
 
     function processFilteredCsvExport() {
+      const selectedCat = document.getElementById('csvCategorySelect').value;
       const startCode = document.getElementById('csvStartCode').value.trim().toUpperCase();
       const endCode = document.getElementById('csvEndCode').value.trim().toUpperCase();
-      const filteredCards = allCardsData.filter(c => c.card_code >= startCode && c.card_code <= endCode);
-      if (filteredCards.length === 0) { showNotification('Informasi', 'Tidak ada kartu ditemukan.', 'info'); return; }
+
+      let filteredCards = allCardsData;
+
+      if (selectedCat !== 'all') {
+        filteredCards = filteredCards.filter(c => (c.category || 'Retail Local') === selectedCat);
+      }
+
+      if (startCode && endCode) {
+        filteredCards = filteredCards.filter(c => c.card_code >= startCode && c.card_code <= endCode);
+      }
+
+      if (filteredCards.length === 0) { 
+        showNotification('Informasi', 'Tidak ada data kartu yang cocok dengan kriteria.', 'info'); 
+        return; 
+      }
+
       closeCsvFilterModal();
-      let csvContent = "data:text/csv;charset=utf-8,Kode Kartu,Kategori,URL NFC dan QR,Nama Bisnis,No WA Owner,Status,PIN,Smart Routing\n";
+      let csvContent = "data:text/csv;charset=utf-8,Kode Kartu,Kategori,Reseller ID,Catatan Reseller,URL NFC dan QR,Nama Bisnis,No WA Owner,Status,PIN,Smart Routing\n";
       filteredCards.forEach(card => {
-        csvContent += `${card.card_code},"${card.category || 'Retail Local'}",${DOMAIN_BASE}/?code=${card.card_code},"${card.business_name || '-'}",${card.owner_phone || ''},${card.is_activated ? 'AKTIF' : 'BLANK'},${card.pin || ''},${card.enable_routing !== false ? 'ON' : 'OFF'}\n`;
+        csvContent += `${card.card_code},"${card.category || 'Retail Local'}","${card.reseller_id || ''}","${card.reseller_notes || ''}",${DOMAIN_BASE}/?code=${card.card_code},"${card.business_name || '-'}",${card.owner_phone || ''},${card.is_activated ? 'AKTIF' : 'BLANK'},${card.pin || ''},${card.enable_routing !== false ? 'ON' : 'OFF'}\n`;
       });
+
+      const fileName = selectedCat !== 'all' ? `Data_Kartu_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}.csv` : `Data_Kartu_${startCode || 'ALL'}_to_${endCode || 'ALL'}.csv`;
+
       const link = document.createElement("a");
       link.setAttribute("href", encodeURI(csvContent));
-      link.setAttribute("download", `Data_Kartu_${startCode}_to_${endCode}.csv`);
+      link.setAttribute("download", fileName);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     }
 
+    // DOWNLOAD ZIP QR
     function openZipFilterModal() {
-      document.getElementById('zipStartCode').value = allCardsData.length > 0 ? allCardsData[0].card_code : '';
-      document.getElementById('zipEndCode').value = allCardsData.length > 0 ? allCardsData[allCardsData.length - 1].card_code : '';
+      document.getElementById('zipCategorySelect').value = 'all';
+      document.getElementById('zipStartCode').value = '';
+      document.getElementById('zipEndCode').value = '';
       document.getElementById('zip-filter-modal').classList.remove('hidden');
     }
     function closeZipFilterModal() { document.getElementById('zip-filter-modal').classList.add('hidden'); }
 
     async function processFilteredZipDownload() {
+      const selectedCat = document.getElementById('zipCategorySelect').value;
       const startCode = document.getElementById('zipStartCode').value.trim().toUpperCase();
       const endCode = document.getElementById('zipEndCode').value.trim().toUpperCase();
-      const filteredCards = allCardsData.filter(c => c.card_code >= startCode && c.card_code <= endCode);
-      if (filteredCards.length === 0) { showNotification('Informasi', 'Tidak ada kartu ditemukan.', 'info'); return; }
+
+      let filteredCards = allCardsData;
+
+      if (selectedCat !== 'all') {
+        filteredCards = filteredCards.filter(c => (c.category || 'Retail Local') === selectedCat);
+      }
+
+      if (startCode && endCode) {
+        filteredCards = filteredCards.filter(c => c.card_code >= startCode && c.card_code <= endCode);
+      }
+
+      if (filteredCards.length === 0) { 
+        showNotification('Informasi', 'Tidak ada data kartu yang cocok untuk dibuatkan QR ZIP.', 'info'); 
+        return; 
+      }
+
       closeZipFilterModal();
       const zipModal = document.getElementById('zip-modal');
       const progressText = document.getElementById('zipProgressText');
       zipModal.classList.remove('hidden');
+
       const zip = new JSZip();
-      const folder = zip.folder("QR_Codes_RenderProject");
+      const folderName = selectedCat !== 'all' ? `QR_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}` : "QR_Codes_RenderProject";
+      const folder = zip.folder(folderName);
+
       let hiddenContainer = document.getElementById('hidden-qr-render');
       if (!hiddenContainer) {
         hiddenContainer = document.createElement('div');
@@ -659,23 +759,27 @@
         hiddenContainer.style.display = 'none';
         document.body.appendChild(hiddenContainer);
       }
+
       for (let i = 0; i < filteredCards.length; i++) {
         const card = filteredCards[i];
         progressText.innerText = `Memproses (${i + 1}/${filteredCards.length}): ${card.card_code}`;
         hiddenContainer.innerHTML = '';
         await new Promise((resolve) => {
           new QRCode(hiddenContainer, { text: `${DOMAIN_BASE}/?code=${card.card_code}`, width: 300, height: 300, colorDark: "#0f172a", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H });
-          setTimeout(resolve, 100);
+          setTimeout(resolve, 80);
         });
         const img = hiddenContainer.querySelector('img');
         const canvas = hiddenContainer.querySelector('canvas');
         let dataUrl = img && img.src ? img.src : (canvas ? canvas.toDataURL("image/png") : '');
         if (dataUrl) folder.file(`QR_${card.card_code}.png`, dataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
       }
+
       progressText.innerText = "Mengompres ke ZIP...";
       const content = await zip.generateAsync({ type: "blob" });
       zipModal.classList.add('hidden');
-      saveAs(content, `QR_Range_${startCode}_to_${endCode}.zip`);
+
+      const zipFileName = selectedCat !== 'all' ? `QR_Kategori_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}.zip` : `QR_Range_${startCode || 'ALL'}_to_${endCode || 'ALL'}.zip`;
+      saveAs(content, zipFileName);
     }
 
     function showQrModal(code) {
@@ -714,9 +818,11 @@
       return clean;
     }
 
-    // Modal Generate Massal
+    // Modal Generate Massal (Dengan Reseller ID & Catatan)
     function openBatchModal() {
-      document.getElementById('batchCategory').value = 'Retail Local';
+      document.getElementById('batchCategory').value = 'Reseller Lynk.id';
+      document.getElementById('batchResellerId').value = '';
+      document.getElementById('batchResellerNotes').value = '';
       document.getElementById('batchPrefix').value = '';
       document.getElementById('batchStart').value = '';
       document.getElementById('batchCount').value = '';
@@ -727,6 +833,8 @@
 
     async function submitBatchGenerate() {
       const category = document.getElementById('batchCategory').value;
+      const resellerId = document.getElementById('batchResellerId').value.trim() || null;
+      const resellerNotes = document.getElementById('batchResellerNotes').value.trim() || null;
       const prefix = document.getElementById('batchPrefix').value.trim().toUpperCase();
       const startNum = parseInt(document.getElementById('batchStart').value);
       const count = parseInt(document.getElementById('batchCount').value);
@@ -744,6 +852,8 @@
         batchPayload.push({ 
           card_code: `${prefix}${String(startNum + i).padStart(3, '0')}`, 
           category: category,
+          reseller_id: resellerId,
+          reseller_notes: resellerNotes,
           pin: defaultPin, 
           is_activated: false, 
           enable_routing: true 
@@ -761,12 +871,14 @@
       }
     }
 
-    // Modal Tambah Single
+    // Modal Tambah Single (Dengan Reseller ID & Catatan)
     function openAddModal() {
       editingOriginalCode = null;
       document.getElementById('modalFormTitle').innerText = "Tambah Kartu Baru";
       document.getElementById('modalFormSub').innerText = "Masukkan kode kartu unik baru.";
       document.getElementById('formCategory').value = 'Retail Local';
+      document.getElementById('formResellerId').value = '';
+      document.getElementById('formResellerNotes').value = '';
       const codeInput = document.getElementById('formCardCode');
       codeInput.value = '';
       codeInput.disabled = false;
@@ -783,6 +895,8 @@
       if (!card) return;
       editingOriginalCode = card.card_code;
       document.getElementById('formCategory').value = card.category || 'Retail Local';
+      document.getElementById('formResellerId').value = card.reseller_id || '';
+      document.getElementById('formResellerNotes').value = card.reseller_notes || '';
       const codeInput = document.getElementById('formCardCode');
       codeInput.value = card.card_code;
       if (card.is_activated) {
@@ -806,6 +920,8 @@
 
     async function saveCardData() {
       const category = document.getElementById('formCategory').value;
+      const resellerId = document.getElementById('formResellerId').value.trim() || null;
+      const resellerNotes = document.getElementById('formResellerNotes').value.trim() || null;
       const newCode = document.getElementById('formCardCode').value.trim().toUpperCase();
       const name = document.getElementById('formBizName').value.trim();
       const urlInput = document.getElementById('formReviewUrl').value.trim();
@@ -822,6 +938,8 @@
       const payload = {
         card_code: newCode,
         category: category,
+        reseller_id: resellerId,
+        reseller_notes: resellerNotes,
         business_name: name || null,
         google_review_url: formatReviewUrl(urlInput) || null,
         owner_phone: sanitizePhoneNumber(rawOwnerPhone) || null,
