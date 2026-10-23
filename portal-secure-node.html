@@ -799,7 +799,7 @@
       saveAs(content, `QR_Mentahan_${selectedCat !== 'all' ? selectedCat.replace(/[^a-zA-Z0-9]/g, '_') : 'Range'}.zip`);
     }
 
-    // FUNGSI UTAMA: GENERATE DESAIN KARTU OTOMATIS (POSISI PRESISI DALAM SUDIR SUDUT)
+        // FUNGSI UTAMA: GENERATE DESAIN KARTU OTOMATIS (UKURAN & POSISI PRESISI SESUAI CONTOH)
     async function downloadCompleteCardDesign(cardCode, qrText) {
       return new Promise(async (resolve, reject) => {
         try {
@@ -820,8 +820,8 @@
             const tempDiv = document.createElement('div');
             new QRCode(tempDiv, {
               text: qrText,
-              width: 500,
-              height: 500,
+              width: 400,
+              height: 400,
               colorDark: "#0f172a",
               colorLight: "#ffffff",
               correctLevel: QRCode.CorrectLevel.H
@@ -838,21 +838,18 @@
               await new Promise(res => qrCanvas.onload = res);
             }
 
-            // 3. Koordinat Presisi Mengikuti Tanda Siku (Biru, Merah, Hijau, Kuning)
-            // Posisi X: 59.5% dari lebar canvas
-            // Posisi Y: 46% dari tinggi canvas
-            // Ukuran QR: 28% dari lebar canvas
-            let qrSize = canvas.width * 0.28; 
-            let qrX = canvas.width * 0.595;  
-            let qrY = canvas.height * 0.460; 
+            // 3. Penyesuaian Ukuran & Posisi Presisi Sesuai Contoh Anda
+            let qrSize = canvas.width * 0.225; // Ukuran diperkecil agar pas di dalam siku
+            let qrX = canvas.width * 0.605;    // Geser posisi horizontal
+            let qrY = canvas.height * 0.465;   // Geser posisi vertikal
 
             ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
 
-            // 4. Teks Kode Kartu Tepat di Bawah QR Code
-            ctx.font = "bold 18px monospace";
+            // 4. Teks Kode Kartu Tepat di Bawah QR Code (Sebelum tulisan Scan QR)
+            ctx.font = "bold 15px monospace";
             ctx.fillStyle = "#0f172a";
             ctx.textAlign = "center";
-            ctx.fillText(cardCode, qrX + (qrSize / 2), qrY + qrSize + 22);
+            ctx.fillText(cardCode, qrX + (qrSize / 2), qrY + qrSize + 16);
 
             resolve(canvas.toDataURL("image/png"));
           };
@@ -865,6 +862,7 @@
         }
       });
     }
+    
 
     // Tombol Download Single Desain Kartu di Modal QR
     async function downloadCompleteCardDesignModal() {
