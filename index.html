@@ -10,6 +10,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Html5Qrcode Scanner CDN -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <!-- Google Maps Places API (Ganti YOUR_GOOGLE_MAPS_API_KEY dengan API Key Anda) -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script>
   <style>
     @keyframes modalFadeIn {
       from { opacity: 0; transform: scale(0.95) translateY(10px); }
@@ -90,6 +92,7 @@
     let failedPinAttempts = 0;
     let isPinLocked = false;
     let pinLockTimer = null;
+    let selectedReviewUrl = '';
 
     const translations = {
       id: {
@@ -123,8 +126,7 @@
         activationTitle: "Aktivasi Kartu",
         activationDesc: (code) => `Anda sedang menyiapkan kartu <span class="font-bold text-slate-900">${code}</span>. Lengkapi detail berikut agar kartu siap digunakan.`,
         bizNameLabel: "Nama Bisnis",
-        bizNamePlaceholder: "Contoh: Warung Kopi",
-        bizUrlLabel: "Link Google Review atau Place ID",
+        bizNamePlaceholder: "Ketik nama bisnis atau toko...",
         ownerPhoneLabel: "No. WhatsApp Owner Bisnis (Penerima Laporan Bintang 1-3)",
         ownerPhonePlaceholder: "Contoh: 628123456789 (Awali dengan 62)",
         bizPinLabel: "Buat PIN (4 Digit Angka)",
@@ -180,8 +182,7 @@
         activationTitle: "Card Activation",
         activationDesc: (code) => `You are setting up card <span class="font-bold text-slate-900">${code}</span>. Fill in the details below to make it ready.`,
         bizNameLabel: "Business Name",
-        bizNamePlaceholder: "Example: Coffee Shop",
-        bizUrlLabel: "Google Review Link or Place ID",
+        bizNamePlaceholder: "Type business name...",
         ownerPhoneLabel: "Business Owner WhatsApp (For 1-3 Star Alerts)",
         ownerPhonePlaceholder: "Example: 628123456789 (Start with 62)",
         bizPinLabel: "Create PIN (4 Digits)",
@@ -307,6 +308,43 @@
             created_at: new Date().toISOString()
           });
       } catch (err) {}
+    }
+
+    // Google Maps Places Autocomplete Integration
+    function initAutocomplete(inputId, hiddenUrlId, infoBoxId, nameSpanId, addrSpanId) {
+      const input = document.getElementById(inputId);
+      if (!input || typeof google === 'undefined' || !google.maps || !google.maps.places) return;
+
+      const options = {
+        componentRestrictions: { country: "id" },
+        fields: ["place_id", "name", "formatted_address"]
+      };
+
+      const autocomplete = new google.maps.places.Autocomplete(input, options);
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place.place_id) {
+          selectedReviewUrl = `https://search.google.com/local/writereview?placeid=${place.place_id}`;
+          const hiddenInput = document.getElementById(hiddenUrlId);
+          if (hiddenInput) hiddenInput.value = selectedReviewUrl;
+
+          if (infoBoxId) {
+            const infoBox = document.getElementById(infoBoxId);
+            if (infoBox) {
+              infoBox.classList.remove('hidden');
+              if (nameSpanId && document.getElementById(nameSpanId)) {
+                document.getElementById(nameSpanId).innerText = place.name;
+              }
+              if (addrSpanId && document.getElementById(addrSpanId)) {
+                document.getElementById(addrSpanId).innerText = place.formatted_address;
+              } else if (!nameSpanId) {
+                infoBox.innerHTML = `<p class="font-bold">Lokasi Dipilih: <span class="font-semibold">${place.name}</span></p><p class="text-[11px] text-emerald-700 mt-0.5">${place.formatted_address}</p>`;
+              }
+            }
+          }
+        }
+      });
     }
 
     window.startQrScanner = function() {
@@ -722,9 +760,10 @@
 
     window.renderManageWithCode = function(code) { window.renderManage(code); }
 
-    // 4. FORM AKTIVASI
+    // 4. FORM AKTIVASI (Google Places Autocomplete di Nama Bisnis)
     function renderActivationForm(code) {
       const t = translations[currentLang];
+      selectedReviewUrl = '';
       document.getElementById('app-content').innerHTML = `
         <div class="mb-6">
           <h1 class="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">${t.activationTitle}</h1>
@@ -734,21 +773,11 @@
         <div class="space-y-4 mb-6">
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.bizNameLabel}</label>
-            <input id="bizName" type="text" placeholder="${t.bizNamePlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-          </div>
-
-          <div>
-            <div class="flex justify-between items-center mb-1.5">
-              <label class="block text-xs font-semibold text-slate-700">${t.bizUrlLabel}</label>
-              <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" class="text-[11px] font-bold text-blue-600 hover:underline">🔍 Cari Place ID</a>
-            </div>
-            <input id="bizUrl" type="text" placeholder="ChIJXanaDyrDaC4RTkdVD1FTIyc" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-            
-            <div class="bg-blue-50/60 border border-blue-100 rounded-xl p-2.5 mt-2 text-[11px] text-slate-600 space-y-1">
-              <p class="font-bold text-blue-700 mb-0.5">Cara dapatkan Place ID:</p>
-              <p>1. Klik link <span class="font-semibold text-blue-600">"🔍 Cari Place ID"</span> di atas.</p>
-              <p>2. Cari nama toko / bisnis Anda di peta.</p>
-              <p>3. Salin kode <span class="font-mono font-bold text-slate-800 bg-white px-1 py-0.5 rounded border border-slate-200">Place ID</span> (berawalan <span class="font-mono font-semibold text-blue-700">ChIJ...</span>) lalu tempel di atas.</p>
+            <input id="bizName" type="text" placeholder="${t.bizNamePlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all" autocomplete="off">
+            <input type="hidden" id="hiddenReviewUrl" value="">
+            <div id="selectedPlaceInfo" class="hidden mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-800">
+              <p class="font-bold">Terpilih: <span id="selectedName"></span></p>
+              <p id="selectedAddress" class="text-[11px] text-emerald-700 mt-0.5"></p>
             </div>
           </div>
 
@@ -768,6 +797,7 @@
           <button onclick="window.renderHome()" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-2.5 transition-all">${t.backBtn}</button>
         </div>
       `;
+      initAutocomplete('bizName', 'hiddenReviewUrl', 'selectedPlaceInfo', 'selectedName', 'selectedAddress');
     }
 
     window.handleCheckCard = async function() {
@@ -805,16 +835,21 @@
 
     window.submitActivation = async function(code) {
       const name = document.getElementById('bizName').value.trim();
-      const rawInput = document.getElementById('bizUrl').value.trim();
+      const hiddenUrl = document.getElementById('hiddenReviewUrl').value.trim();
       const rawOwnerPhone = document.getElementById('ownerPhone').value.trim();
       const pin = document.getElementById('bizPin').value.trim();
 
-      if (!name || !rawInput || !rawOwnerPhone || pin.length !== 4) {
+      if (!name || !rawOwnerPhone || pin.length !== 4) {
         showNotification('Notice', 'Lengkapi seluruh data termasuk No. WhatsApp Owner dan PIN 4 digit.', 'info');
         return;
       }
 
-      const formattedReviewUrl = formatReviewUrl(rawInput);
+      if (!hiddenUrl && !selectedReviewUrl) {
+        showNotification('Pilih Lokasi', 'Mohon ketik dan pilih nama bisnis dari saran dropdown Google Maps.', 'info');
+        return;
+      }
+
+      const finalReviewUrl = hiddenUrl || selectedReviewUrl;
       const sanitizedPhone = sanitizePhoneNumber(rawOwnerPhone);
 
       setButtonLoading('activateCardBtn', true, translations[currentLang].activateBtn);
@@ -824,7 +859,7 @@
         .upsert({ 
           card_code: code,
           business_name: name, 
-          google_review_url: formattedReviewUrl, 
+          google_review_url: finalReviewUrl, 
           owner_phone: sanitizedPhone,
           pin: pin, 
           is_activated: true,
@@ -914,7 +949,7 @@
       }
     }
 
-    // 5. FORM EDIT INFO KARTU
+    // 5. FORM EDIT INFO KARTU (Google Places Autocomplete di Nama Bisnis)
     function renderEditForm(card) {
       if (!isAuthenticated) {
         window.renderManage(card.card_code);
@@ -923,6 +958,7 @@
 
       resetSessionTimer();
 
+      selectedReviewUrl = card.google_review_url || '';
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
         <div class="mb-6">
@@ -933,21 +969,11 @@
         <div class="space-y-4 mb-6">
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.bizNameLabel}</label>
-            <input id="editName" type="text" value="${card.business_name || ''}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-          </div>
-
-          <div>
-            <div class="flex justify-between items-center mb-1.5">
-              <label class="block text-xs font-semibold text-slate-700">${t.bizUrlLabel}</label>
-              <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" class="text-[11px] font-bold text-blue-600 hover:underline">🔍 Cari Place ID</a>
-            </div>
-            <input id="editUrl" type="text" value="${card.google_review_url || ''}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
-            
-            <div class="bg-blue-50/60 border border-blue-100 rounded-xl p-2.5 mt-2 text-[11px] text-slate-600 space-y-1">
-              <p class="font-bold text-blue-700 mb-0.5">Cara dapatkan Place ID:</p>
-              <p>1. Klik link <span class="font-semibold text-blue-600">"🔍 Cari Place ID"</span> di atas.</p>
-              <p>2. Cari nama toko / bisnis Anda di peta.</p>
-              <p>3. Salin kode <span class="font-mono font-bold text-slate-800 bg-white px-1 py-0.5 rounded border border-slate-200">Place ID</span> (berawalan <span class="font-mono font-semibold text-blue-700">ChIJ...</span>) lalu tempel di atas.</p>
+            <input id="editName" type="text" value="${card.business_name || ''}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all" autocomplete="off">
+            <input type="hidden" id="hiddenEditReviewUrl" value="${card.google_review_url || ''}">
+            <div id="editSelectedPlaceInfo" class="mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-800">
+              <p class="font-bold">Google Review URL Aktif:</p>
+              <p class="text-[11px] text-emerald-700 mt-0.5 break-all font-mono">${card.google_review_url || '-'}</p>
             </div>
           </div>
 
@@ -968,16 +994,17 @@
           <button onclick="window.handleCancelEdit('${card.card_code}')" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-2.5 transition-all">${t.cancelBtn}</button>
         </div>
       `;
+      initAutocomplete('editName', 'hiddenEditReviewUrl', 'editSelectedPlaceInfo', null, null);
     }
 
     window.submitEdit = async function(cardCode, currentPin) {
       const name = document.getElementById('editName').value.trim();
-      const rawInput = document.getElementById('editUrl').value.trim();
+      const hiddenUrl = document.getElementById('hiddenEditReviewUrl').value.trim();
       const rawOwnerPhone = document.getElementById('editOwnerPhone').value.trim();
       const newPin = document.getElementById('editPin').value.trim();
 
-      if (!name || !rawInput || !rawOwnerPhone) {
-        showNotification('Notice', 'Semua kolom wajib diisi.', 'info');
+      if (!name || !rawOwnerPhone) {
+        showNotification('Notice', 'Nama bisnis dan No. WhatsApp Owner wajib diisi.', 'info');
         return;
       }
 
@@ -990,14 +1017,14 @@
         isPinChanged = true;
       }
 
-      const formattedReviewUrl = formatReviewUrl(rawInput);
+      const finalReviewUrl = hiddenUrl || selectedReviewUrl;
       const sanitizedPhone = sanitizePhoneNumber(rawOwnerPhone);
 
       setButtonLoading('saveChangesBtn', true, translations[currentLang].saveChangesBtn);
 
       const { error } = await supabaseClient
         .from('cards')
-        .update({ business_name: name, google_review_url: formattedReviewUrl, owner_phone: sanitizedPhone, pin: finalPin })
+        .update({ business_name: name, google_review_url: finalReviewUrl, owner_phone: sanitizedPhone, pin: finalPin })
         .eq('card_code', cardCode);
 
       setButtonLoading('saveChangesBtn', false, translations[currentLang].saveChangesBtn);
