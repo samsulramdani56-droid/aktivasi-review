@@ -97,7 +97,7 @@
             <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px]">1</span>
             <span>Isi Nama Bisnis & Klik Link Pencari Place ID</span>
           </div>
-          <p>Ketik nama bisnis Anda, lalu klik tautan **Cari Place ID Toko Anda (Gratis)**[span_0](start_span)[span_0](end_span).</p>
+          <p>Ketik nama bisnis Anda, lalu klik tautan <strong>Cari Place ID Toko Anda (Gratis)</strong>.</p>
           <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm mt-2">
             <img src="FOTO LANGKAH 1.jpg" alt="Langkah 1" class="w-full h-auto object-cover">
           </div>
@@ -109,7 +109,7 @@
             <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px]">2</span>
             <span>Cari Nama Bisnis pada Peta Google</span>
           </div>
-          <p>Pada halaman peta Google Place ID Finder, ketik nama bisnis Anda di kolom pencarian[span_1](start_span)[span_1](end_span).</p>
+          <p>Pada halaman peta Google Place ID Finder, ketik nama bisnis Anda di kolom pencarian.</p>
           <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm mt-2">
             <img src="FOTO LANGKAH 2.jpg" alt="Langkah 2" class="w-full h-auto object-cover">
           </div>
@@ -121,7 +121,7 @@
             <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px]">3</span>
             <span>Pilih Alamat Bisnis yang Tepat</span>
           </div>
-          <p>Pilih alamat lokasi bisnis Anda yang paling sesuai dari daftar yang muncul[span_2](start_span)[span_2](end_span).</p>
+          <p>Pilih alamat lokasi bisnis Anda yang paling sesuai dari daftar yang muncul.</p>
           <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm mt-2">
             <img src="FOTO LANGKAH 3.png" alt="Langkah 3" class="w-full h-auto object-cover">
           </div>
@@ -133,7 +133,7 @@
             <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px]">4</span>
             <span>Salin Kode Unik Place ID</span>
           </div>
-          <p>Salin kode unik **Place ID** yang muncul di layar (misal: dimulai dengan `ChIJ...`)[span_3](start_span)[span_3](end_span).</p>
+          <p>Salin kode unik <strong>Place ID</strong> yang muncul di layar (misal: dimulai dengan <code>ChIJ...</code>).</p>
           <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm mt-2">
             <img src="FOTO LANGKAH 4.jpg" alt="Langkah 4" class="w-full h-auto object-cover">
           </div>
@@ -145,7 +145,7 @@
             <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px]">5</span>
             <span>Tempelkan Kode & Aktifkan Kartu</span>
           </div>
-          <p>Kembali ke halaman aktivasi, tempelkan kode yang telah disalin ke kolom, lalu klik **Aktifkan Kartu**[span_4](start_span)[span_4](end_span).</p>
+          <p>Kembali ke halaman aktivasi, tempelkan kode yang telah disalin ke kolom, lalu klik <strong>Aktifkan Kartu</strong>.</p>
           <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm mt-2">
             <img src="FOTO LANGKAH 5.jpg" alt="Langkah 5" class="w-full h-auto object-cover">
           </div>
@@ -817,7 +817,7 @@
 
     window.renderManageWithCode = function(code) { window.renderManage(code); }
 
-    // FORM AKTIVASI KARTU (Dilengkapi Tombol Panduan)
+    // FORM AKTIVASI KARTU
     function renderActivationForm(code) {
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
@@ -1007,7 +1007,7 @@
       }
     }
 
-    // FORM EDIT INFO KARTU (Dilengkapi Tombol Panduan)
+    // FORM EDIT INFO KARTU
     function renderEditForm(card) {
       if (!isAuthenticated) {
         window.renderManage(card.card_code);
