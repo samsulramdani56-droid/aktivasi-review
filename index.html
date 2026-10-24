@@ -679,11 +679,11 @@
         const waOwnerUrl = `https://wa.me/${targetWa}?text=${waMessage}`;
 
         showNotification(
-          'Terima Kasih!', 
-          'Masukan Anda telah berhasil terkirim kepada manajemen toko.', 
-          'success',
-          () => { window.location.href = waOwnerUrl; }
-        );
+  'Terima Kasih!', 
+  'Masukan Anda telah dicatat. Selanjutnya, Anda akan diarahkan ke WhatsApp untuk mengirim pesan langsung ke Owner.', 
+  'success',
+  () => { window.location.href = waOwnerUrl; }
+);
       } else {
         showNotification('Gagal Mengirim', 'Terjadi kesalahan sistem, silakan coba lagi.', 'error');
       }
