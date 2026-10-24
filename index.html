@@ -231,7 +231,46 @@
         custPhonePlaceholder: "08123456789",
         feedbackTextLabel: "Kritik & Saran",
         feedbackTextPlaceholder: "Tuliskan keluhan atau saran Anda di sini...",
-        sendFeedbackBtn: "Kirim Masukan Privat"
+        sendFeedbackBtn: "Kirim Masukan Privat",
+
+        processingText: "Memproses...",
+        errFormatTitle: "Format Salah",
+        errFormatMsg: "QR Code tidak valid.",
+        camDeniedTitle: "Akses Kamera Ditolak",
+        camDeniedMsg: "Berikan izin kamera pada browser.",
+        sysErrorTitle: "System Error",
+        failLoadData: "Gagal memuat data.",
+        errorTitle: "Error",
+        dbError: "Database error.",
+        failSendTitle: "Gagal Mengirim",
+        failSendMsg: "Terjadi kesalahan sistem, silakan coba lagi.",
+        noticeTitle: "Notice",
+        enterCardCodeNotice: "Masukkan kode kartu.",
+        cardNotFoundTitle: "Kartu Tidak Ditemukan",
+        cardNotRegistered: (code) => `Kode kartu "${code}" tidak terdaftar.`,
+        completeAllDataNotice: "Lengkapi seluruh data termasuk Nama Bisnis, Link Review / Place ID, No. WhatsApp, dan PIN 4 digit.",
+        enterCodePinNotice: "Masukkan kode & PIN.",
+        editRequiredNotice: "Nama bisnis, Link Review/Place ID, dan No. WhatsApp Owner wajib diisi.",
+        pin4DigitsNotice: "PIN harus 4 digit.",
+        successTitle: "Success!",
+        cardActivatedSuccess: "Kartu berhasil diaktifkan.",
+        successTitleShort: "Success",
+        dataUpdatedSuccess: "Data berhasil diperbarui.",
+        sessionExpiredTitle: "Sesi Berakhir",
+        sessionExpiredMsg: "Sesi Anda telah berakhir demi keamanan. Silakan masukkan PIN kembali.",
+        lockedTemporaryTitle: "Terkunci Sementara",
+        lockedTemporaryMsg: "Terlalu banyak percobaan PIN salah. Coba lagi dalam beberapa detik.",
+        accessRestrictedTitle: "Akses Dibatasi",
+        accessRestrictedMsg: (lockSeconds) => `PIN salah 3 kali berturut-turut! Akses dikunci sementara selama ${lockSeconds} detik untuk keamanan.`,
+        accessDeniedTitle: "Access Denied",
+        accessDeniedMsg: (attempts) => `Kode atau PIN salah! (Percobaan ${attempts}/3)`,
+        lockedButton: (sec) => `Terkunci (${sec}s)...`,
+        privateFeedbackThanksTitleId: "Terima Kasih!",
+        privateFeedbackThanksMsgId: "Masukan Anda telah dicatat. Selanjutnya, Anda akan diarahkan ke WhatsApp untuk mengirim pesan langsung ke Owner.",
+        infoTitle: "Informasi",
+        reviewUrlNotConfigured: "Link Google Review belum dikonfigurasi.",
+        feedbackInputNoticeTitle: "Mohon Isi Saran",
+        feedbackInputNoticeMsg: "Silakan tuliskan kritik atau saran Anda terlebih dahulu."
       },
       en: {
         brandTitle: "Render Project Card",
@@ -291,7 +330,46 @@
         custPhonePlaceholder: "08123456789",
         feedbackTextLabel: "Feedback & Suggestions",
         feedbackTextPlaceholder: "Write your feedback or suggestions here...",
-        sendFeedbackBtn: "Send Private Feedback"
+        sendFeedbackBtn: "Send Private Feedback",
+
+        processingText: "Processing...",
+        errFormatTitle: "Invalid Format",
+        errFormatMsg: "Invalid QR Code.",
+        camDeniedTitle: "Camera Access Denied",
+        camDeniedMsg: "Please grant camera permission in your browser.",
+        sysErrorTitle: "System Error",
+        failLoadData: "Failed to load data.",
+        errorTitle: "Error",
+        dbError: "Database error.",
+        failSendTitle: "Failed to Send",
+        failSendMsg: "A system error occurred, please try again.",
+        noticeTitle: "Notice",
+        enterCardCodeNotice: "Enter card code.",
+        cardNotFoundTitle: "Card Not Found",
+        cardNotRegistered: (code) => `Card code "${code}" is not registered.`,
+        completeAllDataNotice: "Complete all data including Business Name, Review Link / Place ID, WhatsApp No., and 4-digit PIN.",
+        enterCodePinNotice: "Enter code & PIN.",
+        editRequiredNotice: "Business Name, Review Link/Place ID, and Owner WhatsApp No. are required.",
+        pin4DigitsNotice: "PIN must be 4 digits.",
+        successTitle: "Success!",
+        cardActivatedSuccess: "Card activated successfully.",
+        successTitleShort: "Success",
+        dataUpdatedSuccess: "Data updated successfully.",
+        sessionExpiredTitle: "Session Expired",
+        sessionExpiredMsg: "Your session has expired for security reasons. Please enter your PIN again.",
+        lockedTemporaryTitle: "Temporarily Locked",
+        lockedTemporaryMsg: "Too many incorrect PIN attempts. Try again in a few seconds.",
+        accessRestrictedTitle: "Access Restricted",
+        accessRestrictedMsg: (lockSeconds) => `3 consecutive incorrect PINs! Access temporarily locked for ${lockSeconds} seconds for security.`,
+        accessDeniedTitle: "Access Denied",
+        accessDeniedMsg: (attempts) => `Incorrect code or PIN! (Attempt ${attempts}/3)`,
+        lockedButton: (sec) => `Locked (${sec}s)...`,
+        privateFeedbackThanksTitleId: "Thank You!",
+        privateFeedbackThanksMsgId: "Your feedback has been recorded. You will now be redirected to WhatsApp to send your message directly to the Owner.",
+        infoTitle: "Information",
+        reviewUrlNotConfigured: "Google Review link has not been configured.",
+        feedbackInputNoticeTitle: "Please Enter Feedback",
+        feedbackInputNoticeMsg: "Please write your feedback or suggestions first."
       }
     };
 
@@ -308,7 +386,8 @@
       if (isAuthenticated) {
         sessionTimeoutTimer = setTimeout(() => {
           isAuthenticated = false;
-          showNotification('Sesi Berakhir', 'Sesi Anda telah berakhir demi keamanan. Silakan masukkan PIN kembali.', 'info', () => {
+          const t = translations[currentLang];
+          showNotification(t.sessionExpiredTitle, t.sessionExpiredMsg, 'info', () => {
             window.renderHome();
           });
         }, SESSION_TIMEOUT_MS);
@@ -375,6 +454,7 @@
     function setButtonLoading(btnId, isLoading, originalHtml) {
       const btn = document.getElementById(btnId);
       if (!btn) return;
+      const t = translations[currentLang];
       if (isLoading) {
         btn.disabled = true;
         btn.dataset.originalContent = originalHtml || btn.innerHTML;
@@ -383,7 +463,7 @@
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          Memproses...
+          ${t.processingText}
         `;
       } else {
         btn.disabled = false;
@@ -419,11 +499,12 @@
           try {
             const urlObj = new URL(decodedText);
             const scannedCode = urlObj.searchParams.get('code');
+            const t = translations[currentLang];
             if (scannedCode) {
               document.getElementById('cardInput').value = scannedCode;
               window.handleCheckCard();
             } else {
-              showNotification('Format Salah', 'QR Code tidak valid.', 'error');
+              showNotification(t.errFormatTitle, t.errFormatMsg, 'error');
             }
           } catch (e) {
             document.getElementById('cardInput').value = decodedText.trim();
@@ -432,7 +513,8 @@
         },
         (errorMessage) => {}
       ).catch((err) => {
-        showNotification('Akses Kamera Ditolak', 'Berikan izin kamera pada browser.', 'error');
+        const t = translations[currentLang];
+        showNotification(t.camDeniedTitle, t.camDeniedMsg, 'error');
         closeQrScanner();
       });
     };
@@ -530,7 +612,8 @@
           .maybeSingle();
 
         if (error) {
-          showNotification('System Error', 'Gagal memuat data.', 'error', () => window.renderHome());
+          const t = translations[currentLang];
+          showNotification(t.sysErrorTitle, t.failLoadData, 'error', () => window.renderHome());
           return;
         }
 
@@ -619,12 +702,13 @@
         }
       });
 
+      const t = translations[currentLang];
       if (starCount >= 4) {
         const reviewUrl = formatReviewUrl(decodeURIComponent(encodedReviewUrl));
         if (reviewUrl) {
           window.location.href = reviewUrl;
         } else {
-          showNotification('Informasi', 'Link Google Review belum dikonfigurasi.', 'info');
+          showNotification(t.infoTitle, t.reviewUrlNotConfigured, 'info');
         }
       } else {
         const formContainer = document.getElementById('feedbackFormContainer');
@@ -636,13 +720,14 @@
       const name = document.getElementById('feedbackName').value.trim();
       const phoneInput = document.getElementById('feedbackPhone').value.trim();
       const text = document.getElementById('feedbackText').value.trim();
+      const t = translations[currentLang];
 
       if (!text) {
-        showNotification('Mohon Isi Saran', 'Silakan tuliskan kritik atau saran Anda terlebih dahulu.', 'info');
+        showNotification(t.feedbackInputNoticeTitle, t.feedbackInputNoticeMsg, 'info');
         return;
       }
 
-      setButtonLoading('sendFeedbackBtn', true, translations[currentLang].sendFeedbackBtn);
+      setButtonLoading('sendFeedbackBtn', true, t.sendFeedbackBtn);
 
       const sanitizedCustPhone = sanitizePhoneNumber(phoneInput);
 
@@ -657,7 +742,7 @@
           feedback_message: text
         });
 
-      setButtonLoading('sendFeedbackBtn', false, translations[currentLang].sendFeedbackBtn);
+      setButtonLoading('sendFeedbackBtn', false, t.sendFeedbackBtn);
 
       if (!error) {
         const targetWa = ownerPhone ? sanitizePhoneNumber(ownerPhone) : RENDER_SUPPORT_WHATSAPP;
@@ -679,13 +764,13 @@
         const waOwnerUrl = `https://wa.me/${targetWa}?text=${waMessage}`;
 
         showNotification(
-  'Terima Kasih!', 
-  'Masukan Anda telah dicatat. Selanjutnya, Anda akan diarahkan ke WhatsApp untuk mengirim pesan langsung ke Owner.', 
-  'success',
-  () => { window.location.href = waOwnerUrl; }
-);
+          t.privateFeedbackThanksTitleId, 
+          t.privateFeedbackThanksMsgId, 
+          'success',
+          () => { window.location.href = waOwnerUrl; }
+        );
       } else {
-        showNotification('Gagal Mengirim', 'Terjadi kesalahan sistem, silakan coba lagi.', 'error');
+        showNotification(t.failSendTitle, t.failSendMsg, 'error');
       }
     }
 
@@ -808,7 +893,7 @@
 
         <div class="space-y-2.5">
           <button id="openCardBtn" onclick="window.handleManageLogin()" ${isPinLocked ? 'disabled' : ''} class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/25 transition-all text-sm flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
-            ${isPinLocked ? 'Terkuci Sementara...' : t.openCardBtn}
+            ${isPinLocked ? t.lockedButton(30) : t.openCardBtn}
           </button>
           <button onclick="window.renderHome()" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-2.5 transition-all">${t.backBtn}</button>
         </div>
@@ -865,12 +950,13 @@
 
     window.handleCheckCard = async function() {
       const code = document.getElementById('cardInput').value.trim().toUpperCase();
+      const t = translations[currentLang];
       if (!code) {
-        showNotification('Notice', 'Masukkan kode kartu.', 'info');
+        showNotification(t.noticeTitle, t.enterCardCodeNotice, 'info');
         return;
       }
 
-      setButtonLoading('nextBtn', true, translations[currentLang].nextBtn);
+      setButtonLoading('nextBtn', true, t.nextBtn);
 
       const { data: card, error } = await supabaseClient
         .from('cards')
@@ -878,10 +964,10 @@
         .eq('card_code', code)
         .maybeSingle();
 
-      setButtonLoading('nextBtn', false, translations[currentLang].nextBtn);
+      setButtonLoading('nextBtn', false, t.nextBtn);
 
       if (error) {
-        showNotification('Error', 'Database error.', 'error');
+        showNotification(t.errorTitle, t.dbError, 'error');
         return;
       }
 
@@ -892,7 +978,7 @@
           renderActivationForm(card.card_code); 
         }
       } else {
-        showNotification('Kartu Tidak Ditemukan', `Kode kartu "${code}" tidak terdaftar.`, 'error');
+        showNotification(t.cardNotFoundTitle, t.cardNotRegistered(code), 'error');
       }
     }
 
@@ -901,16 +987,17 @@
       const rawReviewUrl = document.getElementById('bizReviewUrl').value.trim();
       const rawOwnerPhone = document.getElementById('ownerPhone').value.trim();
       const pin = document.getElementById('bizPin').value.trim();
+      const t = translations[currentLang];
 
       if (!name || !rawReviewUrl || !rawOwnerPhone || pin.length !== 4) {
-        showNotification('Notice', 'Lengkapi seluruh data termasuk Nama Bisnis, Link Review / Place ID, No. WhatsApp, dan PIN 4 digit.', 'info');
+        showNotification(t.noticeTitle, t.completeAllDataNotice, 'info');
         return;
       }
 
       const finalReviewUrl = formatReviewUrl(rawReviewUrl);
       const sanitizedPhone = sanitizePhoneNumber(rawOwnerPhone);
 
-      setButtonLoading('activateCardBtn', true, translations[currentLang].activateBtn);
+      setButtonLoading('activateCardBtn', true, t.activateBtn);
 
       const { error } = await supabaseClient
         .from('cards')
@@ -924,22 +1011,23 @@
           enable_routing: true
         }, { onConflict: 'card_code' });
 
-      setButtonLoading('activateCardBtn', false, translations[currentLang].activateBtn);
+      setButtonLoading('activateCardBtn', false, t.activateBtn);
 
       if (!error) {
         isAuthenticated = true; 
         logActivity(code, 'ACTIVATION', `Aktivasi kartu baru untuk: ${name}`);
-        showNotification('Success!', 'Kartu berhasil diaktifkan.', 'success', () => {
+        showNotification(t.successTitle, t.cardActivatedSuccess, 'success', () => {
           window.renderActiveCardStatusByCode(code);
         });
       } else {
-        showNotification('Error', error.message, 'error');
+        showNotification(t.errorTitle, error.message, 'error');
       }
     }
 
     window.handleManageLogin = async function() {
+      const t = translations[currentLang];
       if (isPinLocked) {
-        showNotification('Terkunci Sementara', 'Terlalu banyak percobaan PIN salah. Coba lagi dalam beberapa detik.', 'error');
+        showNotification(t.lockedTemporaryTitle, t.lockedTemporaryMsg, 'error');
         return;
       }
 
@@ -947,11 +1035,11 @@
       const pin = document.getElementById('managePin').value.trim();
 
       if (!code || !pin) {
-        showNotification('Notice', 'Masukkan kode & PIN.', 'info');
+        showNotification(t.noticeTitle, t.enterCodePinNotice, 'info');
         return;
       }
 
-      setButtonLoading('openCardBtn', true, translations[currentLang].openCardBtn);
+      setButtonLoading('openCardBtn', true, t.openCardBtn);
 
       const { data: card, error } = await supabaseClient
         .from('cards')
@@ -960,7 +1048,7 @@
         .eq('pin', pin)
         .maybeSingle();
 
-      setButtonLoading('openCardBtn', false, translations[currentLang].openCardBtn);
+      setButtonLoading('openCardBtn', false, t.openCardBtn);
 
       if (card) { 
         failedPinAttempts = 0;
@@ -980,15 +1068,16 @@
           let lockSeconds = 30;
           
           showNotification(
-            'Akses Dibatasi', 
-            `PIN salah 3 kali berturut-turut! Akses dikunci sementara selama ${lockSeconds} detik untuk keamanan.`, 
+            t.accessRestrictedTitle, 
+            t.accessRestrictedMsg(lockSeconds), 
             'error'
           );
 
           const lockInterval = setInterval(() => {
             lockSeconds--;
             const btn = document.getElementById('openCardBtn');
-            if (btn) btn.innerText = `Terkunci (${lockSeconds}s)...`;
+            const currT = translations[currentLang];
+            if (btn) btn.innerText = currT.lockedButton(lockSeconds);
 
             if (lockSeconds <= 0) {
               clearInterval(lockInterval);
@@ -996,13 +1085,13 @@
               failedPinAttempts = 0;
               if (btn) {
                 btn.disabled = false;
-                btn.innerText = translations[currentLang].openCardBtn;
+                btn.innerText = currT.openCardBtn;
               }
             }
           }, 1000);
 
         } else {
-          showNotification('Access Denied', `Kode atau PIN salah! (Percobaan ${failedPinAttempts}/3)`, 'error'); 
+          showNotification(t.accessDeniedTitle, t.accessDeniedMsg(failedPinAttempts), 'error'); 
         }
       }
     }
@@ -1066,9 +1155,10 @@
       const rawReviewUrl = document.getElementById('editReviewUrl').value.trim();
       const rawOwnerPhone = document.getElementById('editOwnerPhone').value.trim();
       const newPin = document.getElementById('editPin').value.trim();
+      const t = translations[currentLang];
 
       if (!name || !rawReviewUrl || !rawOwnerPhone) {
-        showNotification('Notice', 'Nama bisnis, Link Review/Place ID, dan No. WhatsApp Owner wajib diisi.', 'info');
+        showNotification(t.noticeTitle, t.editRequiredNotice, 'info');
         return;
       }
 
@@ -1076,7 +1166,7 @@
       let isPinChanged = false;
 
       if (newPin) {
-        if (newPin.length !== 4) { showNotification('Notice', 'PIN harus 4 digit.', 'info'); return; }
+        if (newPin.length !== 4) { showNotification(t.noticeTitle, t.pin4DigitsNotice, 'info'); return; }
         finalPin = newPin;
         isPinChanged = true;
       }
@@ -1084,22 +1174,22 @@
       const finalReviewUrl = formatReviewUrl(rawReviewUrl);
       const sanitizedPhone = sanitizePhoneNumber(rawOwnerPhone);
 
-      setButtonLoading('saveChangesBtn', true, translations[currentLang].saveChangesBtn);
+      setButtonLoading('saveChangesBtn', true, t.saveChangesBtn);
 
       const { error } = await supabaseClient
         .from('cards')
         .update({ business_name: name, google_review_url: finalReviewUrl, owner_phone: sanitizedPhone, pin: finalPin })
         .eq('card_code', cardCode);
 
-      setButtonLoading('saveChangesBtn', false, translations[currentLang].saveChangesBtn);
+      setButtonLoading('saveChangesBtn', false, t.saveChangesBtn);
 
       if (!error) {
         logActivity(cardCode, 'UPDATE_INFO', `Perbarui data ${name}. ${isPinChanged ? '(PIN Diubah)' : ''}`);
-        showNotification('Success', 'Data berhasil diperbarui.', 'success', () => {
+        showNotification(t.successTitleShort, t.dataUpdatedSuccess, 'success', () => {
           window.renderActiveCardStatusByCode(cardCode);
         });
       } else {
-        showNotification('Error', error.message, 'error');
+        showNotification(t.errorTitle, error.message, 'error');
       }
     }
 
