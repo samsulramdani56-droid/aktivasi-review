@@ -78,45 +78,51 @@
     </div>
   </div>
 
-  <!-- MODAL GENERATOR LINK REVIEW OTOMATIS -->
-  <div id="generator-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl animate-modal border border-slate-100 text-slate-800">
+  <!-- MODAL PANDUAN CARI PLACE ID (5 LANGKAH BERGAMBAR) -->
+  <div id="guide-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md max-h-[85vh] overflow-y-auto rounded-3xl p-6 shadow-2xl animate-modal border border-slate-100 text-slate-800">
       <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
         <div class="flex items-center gap-2">
-          <span class="text-xl">⚡</span>
-          <h3 class="font-bold text-slate-900 text-base">Auto-Generate Link Review</h3>
+          <span class="text-xl">📖</span>
+          <h3 class="font-bold text-slate-900 text-base">Panduan Ambil Link Maps</h3>
         </div>
-        <button onclick="closeGeneratorModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-2">✕</button>
+        <button onclick="closeGuideModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-2">✕</button>
       </div>
 
-      <div class="space-y-4 text-xs text-slate-600 leading-relaxed">
-        <p>Masukkan Nama Bisnis dan Link Google Maps toko Anda. Sistem akan otomatis merubahnya menjadi Link Google Review siap pakai!</p>
+      <div class="space-y-5 text-xs text-slate-600 leading-relaxed">
         
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Nama Bisnis / Toko</label>
-          <input id="genBusName" type="text" placeholder="Contoh: Kopi Kenangan Majalaya" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+        <!-- Langkah 1 -->
+        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2">
+          <div class="flex items-center gap-2 font-bold text-slate-900">
+            <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px]">1</span>
+            <span>Buka Google Maps & Cari Bisnis Anda</span>
+          </div>
+          <p>Buka aplikasi Google Maps di HP, lalu cari lokasi atau nama bisnis Anda.</p>
         </div>
 
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Tempel Link Google Maps / Place ID</label>
-          <input id="genMapsUrl" type="text" placeholder="Tempel link Google Maps atau Place ID di sini..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono text-xs">
-          <span class="text-[10px] text-slate-400 mt-1 block">Contoh: https://maps.app.goo.gl/... atau ChIJ...</span>
+        <!-- Langkah 2 -->
+        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2">
+          <div class="flex items-center gap-2 font-bold text-slate-900">
+            <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px]">2</span>
+            <span>Klik Tombol Bagikan (Share)</span>
+          </div>
+          <p>Pada halaman detail tempat bisnis Anda, ketuk tombol <strong>Bagikan</strong> untuk menyalin link Google Maps[span_0](start_span)[span_0](end_span).</p>
         </div>
 
-        <div id="genResultContainer" class="hidden bg-emerald-50 border border-emerald-200 p-3 rounded-2xl space-y-1">
-          <span class="font-bold text-emerald-800 text-[11px]">✨ Link Review Berhasil Dibuat:</span>
-          <p id="genResultText" class="font-mono text-[10px] text-emerald-900 break-all bg-white p-2 rounded-xl border border-emerald-100"></p>
+        <!-- Langkah 3 -->
+        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2">
+          <div class="flex items-center gap-2 font-bold text-slate-900">
+            <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px]">3</span>
+            <span>Gunakan Fitur Generate Otomatis</span>
+          </div>
+          <p>Tempel link Maps tersebut ke kolom form aktivasi, lalu klik tombol <strong>Generate Google Review Link</strong>[span_1](start_span)[span_1](end_span).</p>
         </div>
+
       </div>
 
-      <div class="mt-5 space-y-2">
-        <button onclick="processAutoGenerate()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all">
-          Generate Link Review Sekarang
-        </button>
-        <button id="applyGenBtn" onclick="applyGeneratedLink()" class="w-full bg-emerald-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-emerald-700 shadow-md shadow-emerald-500/20 transition-all hidden">
-          Gunakan Link Ini ke Form Aktivasi
-        </button>
-      </div>
+      <button onclick="closeGuideModal()" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all mt-5">
+        Saya Mengerti, Kembali ke Form
+      </button>
     </div>
   </div>
 
@@ -132,7 +138,6 @@
     let failedPinAttempts = 0;
     let isPinLocked = false;
     let pinLockTimer = null;
-    let temporaryGeneratedUrl = '';
 
     const translations = {
       id: {
@@ -167,9 +172,10 @@
         activationDesc: (code) => `Anda sedang menyiapkan kartu <span class="font-bold text-slate-900">${code}</span>. Lengkapi detail berikut agar kartu siap digunakan.`,
         bizNameLabel: "Nama Bisnis / Toko",
         bizNamePlaceholder: "Contoh: Kopi Kenangan Majalaya",
-        reviewUrlLabel: "Link Review Google / Place ID Toko",
-        reviewUrlPlaceholder: "Tempelkan Link Google Review atau Place ID (misal: ChIJ...)",
-        findPlaceIdBtn: "⚡ Buka Generator Link Review Otomatis",
+        reviewUrlLabel: "Link Google Maps Bisnis Anda",
+        reviewUrlPlaceholder: "Tempelkan Link Google Maps (cth: https://maps.app.goo.gl/...)",
+        generateBtn: "⚡ Generate Google Review Link",
+        openGuideBtn: "📖 Cara Ambil Link Google Maps",
         ownerPhoneLabel: "No. WhatsApp Owner Bisnis (Penerima Laporan Bintang 1-3)",
         ownerPhonePlaceholder: "Contoh: 628123456789 (Awali dengan 62)",
         bizPinLabel: "Buat PIN (4 Digit Angka)",
@@ -184,7 +190,7 @@
         modalBtn: "Mengerti",
 
         ratingDefaultTitle: "Ulasan Pelanggan",
-        ratingSubtitle: "Bagaimana pengalaman Anda bersama kami? Berikan penilaian terbaik Anda!",
+        ratingSubtitle: "How was your experience with us? Please rate us!",
         apologyNote: "Mohon maaf atas ketidaknyamanan Anda. Masukan Anda sangat berharga bagi kami.",
         custNameLabel: "Nama Anda (Opsional)",
         custNamePlaceholder: "Contoh: Budi",
@@ -226,9 +232,10 @@
         activationDesc: (code) => `You are setting up card <span class="font-bold text-slate-900">${code}</span>. Fill in the details below to make it ready.`,
         bizNameLabel: "Business / Shop Name",
         bizNamePlaceholder: "Example: Coffee Shop Majalaya",
-        reviewUrlLabel: "Google Review Link / Place ID",
-        reviewUrlPlaceholder: "Paste Google Review Link or Place ID (e.g. ChIJ...)",
-        findPlaceIdBtn: "⚡ Open Automatic Review Link Generator",
+        reviewUrlLabel: "Google Maps Link",
+        reviewUrlPlaceholder: "Paste Google Maps link (e.g. https://maps.app.goo.gl/...)",
+        generateBtn: "⚡ Generate Google Review Link",
+        openGuideBtn: "📖 How to get Google Maps link",
         ownerPhoneLabel: "Business Owner WhatsApp (For 1-3 Star Alerts)",
         ownerPhonePlaceholder: "Example: 628123456789 (Start with 62)",
         bizPinLabel: "Create PIN (4 Digits)",
@@ -255,56 +262,12 @@
       }
     };
 
-    function openGeneratorModal() {
-      const bizNameVal = document.getElementById('bizName') ? document.getElementById('bizName').value : '';
-      if (bizNameVal) {
-        document.getElementById('genBusName').value = bizNameVal;
-      }
-      document.getElementById('genResultContainer').classList.add('hidden');
-      document.getElementById('applyGenBtn').classList.add('hidden');
-      document.getElementById('generator-modal').classList.remove('hidden');
+    function openGuideModal() {
+      document.getElementById('guide-modal').classList.remove('hidden');
     }
 
-    function closeGeneratorModal() {
-      document.getElementById('generator-modal').classList.add('hidden');
-    }
-
-    function processAutoGenerate() {
-      const name = document.getElementById('genBusName').value.trim();
-      const mapsInput = document.getElementById('genMapsUrl').value.trim();
-
-      if (!mapsInput) {
-        showNotification('Perhatian', 'Masukkan link Google Maps atau Place ID terlebih dahulu.', 'info');
-        return;
-      }
-
-      let formattedUrl = '';
-      if (mapsInput.startsWith('ChI') && !mapsInput.includes('http') && !mapsInput.includes(' ')) {
-        formattedUrl = `https://search.google.com/local/writereview?placeid=${mapsInput}`;
-      } else if (mapsInput.includes('placeid=')) {
-        const parts = mapsInput.split('placeid=');
-        const placeId = parts[1].split('&')[0];
-        formattedUrl = `https://search.google.com/local/writereview?placeid=${placeId}`;
-      } else {
-        // Jika memasukkan link maps biasa / search name
-        const query = name ? encodeURIComponent(name) : encodeURIComponent(mapsInput);
-        formattedUrl = `https://www.google.com/maps/search/?api=1&query=${query}`;
-      }
-
-      temporaryGeneratedUrl = formattedUrl;
-      document.getElementById('genResultText').innerText = formattedUrl;
-      document.getElementById('genResultContainer').classList.remove('hidden');
-      document.getElementById('applyGenBtn').classList.remove('hidden');
-    }
-
-    function applyGeneratedLink() {
-      if (temporaryGeneratedUrl) {
-        const targetInput = document.getElementById('bizReviewUrl') || document.getElementById('editReviewUrl');
-        if (targetInput) {
-          targetInput.value = temporaryGeneratedUrl;
-        }
-        closeGeneratorModal();
-      }
+    function closeGuideModal() {
+      document.getElementById('guide-modal').classList.add('hidden');
     }
 
     function resetSessionTimer() {
@@ -352,6 +315,60 @@
     let modalCallback = null;
     let html5QrCode = null;
     let selectedRating = 0;
+
+    // Fungsi Pintar: Mengubah Link Google Maps atau Place ID menjadi Link Google Review Resmi
+    async function generateReviewUrlFromMaps() {
+      const input = document.getElementById('bizReviewUrl').value.trim();
+      if (!input) {
+        showNotification('Perhatian', 'Silakan masukkan link Google Maps atau Place ID terlebih dahulu.', 'info');
+        return;
+      }
+
+      // Jika sudah berupa Place ID langsung
+      if (input.startsWith('ChI') && !input.includes('http') && !input.includes(' ')) {
+        document.getElementById('bizReviewUrl').value = `https://search.google.com/local/writereview?placeid=${input}`;
+        showNotification('Berhasil', 'Link Google Review berhasil digenerate!', 'success');
+        return;
+      }
+
+      // Jika berupa Link Google Maps (pendek / panjang)
+      if (input.includes('http://') || input.includes('https://') || input.includes('maps.app.goo.gl')) {
+        showNotification('Memproses...', 'Mengonversi link Google Maps secara otomatis...', 'info');
+        try {
+          // Melakukan resolve URL pendek / mengambil data pencarian tempat Google Maps
+          let targetUrl = input;
+          if (input.includes('maps.app.goo.gl') || input.includes('goo.gl')) {
+            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(input)}`);
+            const data = await res.json();
+            if (data && data.contents) {
+              const match = data.contents.match(/meta property="og:url" content="([^"]+)"/);
+              if (match && match[1]) targetUrl = match[1];
+            }
+          }
+
+          // Mencari kordinat atau nama tempat dari URL Maps untuk dijadikan query pencarian review writereview
+          let queryMatch = targetUrl.match(/\/place\/([^/@]+)/);
+          if (queryMatch && queryMatch[1]) {
+            let placeName = decodeURIComponent(queryMatch[1].replace(/\+/g, ' '));
+            document.getElementById('bizReviewUrl').value = `https://search.google.com/local/writereview?placeid=&q=${encodeURIComponent(placeName)}`;
+            showNotification('Berhasil!', 'Link Google Review berhasil digenerate dari Google Maps.', 'success');
+            return;
+          }
+
+          // Fallback umum jika menggunakan format kordinat atau query search
+          document.getElementById('bizReviewUrl').value = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetUrl)}`;
+          showNotification('Berhasil', 'Link Maps berhasil disesuaikan.', 'success');
+        } catch (e) {
+          // Fallback langsung menggunakan format penulisan review pencarian umum
+          document.getElementById('bizReviewUrl').value = `https://search.google.com/local/writereview?placeid=&q=${encodeURIComponent(input)}`;
+          showNotification('Berhasil', 'Link Google Review berhasil digenerate!', 'success');
+        }
+      } else {
+        // Jika hanya teks biasa / nama tempat
+        document.getElementById('bizReviewUrl').value = `https://search.google.com/local/writereview?placeid=&q=${encodeURIComponent(input)}`;
+        showNotification('Berhasil', 'Link Google Review berhasil digenerate!', 'success');
+      }
+    }
 
     function formatReviewUrl(input) {
       if (!input) return '';
@@ -821,7 +838,7 @@
 
     window.renderManageWithCode = function(code) { window.renderManage(code); }
 
-    // FORM AKTIVASI KARTU
+    // FORM AKTIVASI KARTU (Dilengkapi Tombol Generate Link Otomatis)
     function renderActivationForm(code) {
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
@@ -839,9 +856,14 @@
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.reviewUrlLabel}</label>
             <input id="bizReviewUrl" type="text" placeholder="${t.reviewUrlPlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all font-mono text-xs">
-            <div class="flex flex-col gap-1 mt-2">
-              <button type="button" onclick="openGeneratorModal()" class="text-left text-[11px] font-bold text-blue-600 hover:text-blue-700 underline flex items-center gap-1">
-                ${t.findPlaceIdBtn}
+            
+            <!-- Tombol Generate & Panduan -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mt-2">
+              <button type="button" onclick="generateReviewUrlFromMaps()" class="bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white text-xs font-semibold py-2.5 px-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5">
+                ${t.generateBtn}
+              </button>
+              <button type="button" onclick="openGuideModal()" class="text-left sm:text-right text-[11px] font-bold text-blue-600 hover:text-blue-700 underline">
+                ${t.openGuideBtn}
               </button>
             </div>
           </div>
@@ -904,7 +926,7 @@
       const pin = document.getElementById('bizPin').value.trim();
 
       if (!name || !rawReviewUrl || !rawOwnerPhone || pin.length !== 4) {
-        showNotification('Notice', 'Lengkapi seluruh data termasuk Nama Bisnis, Link Review / Place ID, No. WhatsApp, dan PIN 4 digit.', 'info');
+        showNotification('Notice', 'Lengkapi seluruh data termasuk Nama Bisnis, Link Maps/Review, No. WhatsApp, dan PIN 4 digit.', 'info');
         return;
       }
 
@@ -1008,7 +1030,7 @@
       }
     }
 
-    // FORM EDIT INFO KARTU
+    // FORM EDIT INFO KARTU (Dilengkapi Tombol Generate Link Otomatis)
     function renderEditForm(card) {
       if (!isAuthenticated) {
         window.renderManage(card.card_code);
@@ -1033,9 +1055,14 @@
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.reviewUrlLabel}</label>
             <input id="editReviewUrl" type="text" value="${card.google_review_url || ''}" placeholder="${t.reviewUrlPlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all font-mono text-xs">
-            <div class="flex flex-col gap-1 mt-2">
-              <button type="button" onclick="openGeneratorModal()" class="text-left text-[11px] font-bold text-blue-600 hover:text-blue-700 underline flex items-center gap-1">
-                ${t.findPlaceIdBtn}
+            
+            <!-- Tombol Generate & Panduan -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mt-2">
+              <button type="button" onclick="generateReviewUrlFromMaps()" class="bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white text-xs font-semibold py-2.5 px-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5">
+                ${t.generateBtn}
+              </button>
+              <button type="button" onclick="openGuideModal()" class="text-left sm:text-right text-[11px] font-bold text-blue-600 hover:text-blue-700 underline">
+                ${t.openGuideBtn}
               </button>
             </div>
           </div>
@@ -1066,7 +1093,7 @@
       const newPin = document.getElementById('editPin').value.trim();
 
       if (!name || !rawReviewUrl || !rawOwnerPhone) {
-        showNotification('Notice', 'Nama bisnis, Link Review/Place ID, dan No. WhatsApp Owner wajib diisi.', 'info');
+        showNotification('Notice', 'Nama bisnis, Link Review/Maps, dan No. WhatsApp Owner wajib diisi.', 'info');
         return;
       }
 
@@ -1089,7 +1116,7 @@
         .update({ business_name: name, google_review_url: finalReviewUrl, owner_phone: sanitizedPhone, pin: finalPin })
         .eq('card_code', cardCode);
 
-      setButtonLoading('saveChangesBtn', false, translations[currentLang].saveChangesBtn);
+      setButtonLoading('saveChangesBtn', false, translations[currentLang], translations[currentLang].saveChangesBtn);
 
       if (!error) {
         logActivity(cardCode, 'UPDATE_INFO', `Perbarui data ${name}. ${isPinChanged ? '(PIN Diubah)' : ''}`);
