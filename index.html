@@ -10,8 +10,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Html5Qrcode Scanner CDN -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <!-- Google Maps Places API (Sudah diperbaiki parameternya menjadi libraries=places) -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCgrgLMCkFvMzDXR_mJv1diFtqiUF7RjvY&libraries=places"></script>
   <style>
     @keyframes modalFadeIn {
       from { opacity: 0; transform: scale(0.95) translateY(10px); }
@@ -92,7 +90,6 @@
     let failedPinAttempts = 0;
     let isPinLocked = false;
     let pinLockTimer = null;
-    let selectedReviewUrl = '';
 
     const translations = {
       id: {
@@ -125,8 +122,11 @@
 
         activationTitle: "Aktivasi Kartu",
         activationDesc: (code) => `Anda sedang menyiapkan kartu <span class="font-bold text-slate-900">${code}</span>. Lengkapi detail berikut agar kartu siap digunakan.`,
-        bizNameLabel: "Nama Bisnis",
-        bizNamePlaceholder: "Ketik nama bisnis atau toko...",
+        bizNameLabel: "Nama Bisnis / Toko",
+        bizNamePlaceholder: "Contoh: Kopi Kenangan Majalaya",
+        reviewUrlLabel: "Link Review Google / Place ID Toko",
+        reviewUrlPlaceholder: "Tempelkan Link Google Review atau Place ID (misal: ChIJ...)",
+        findPlaceIdBtn: "🔍 Cari Place ID Toko Anda (Gratis)",
         ownerPhoneLabel: "No. WhatsApp Owner Bisnis (Penerima Laporan Bintang 1-3)",
         ownerPhonePlaceholder: "Contoh: 628123456789 (Awali dengan 62)",
         bizPinLabel: "Buat PIN (4 Digit Angka)",
@@ -181,8 +181,11 @@
 
         activationTitle: "Card Activation",
         activationDesc: (code) => `You are setting up card <span class="font-bold text-slate-900">${code}</span>. Fill in the details below to make it ready.`,
-        bizNameLabel: "Business Name",
-        bizNamePlaceholder: "Type business name...",
+        bizNameLabel: "Business / Shop Name",
+        bizNamePlaceholder: "Example: Coffee Shop Majalaya",
+        reviewUrlLabel: "Google Review Link / Place ID",
+        reviewUrlPlaceholder: "Paste Google Review Link or Place ID (e.g. ChIJ...)",
+        findPlaceIdBtn: "🔍 Find Your Shop's Place ID (Free)",
         ownerPhoneLabel: "Business Owner WhatsApp (For 1-3 Star Alerts)",
         ownerPhonePlaceholder: "Example: 628123456789 (Start with 62)",
         bizPinLabel: "Create PIN (4 Digits)",
@@ -308,43 +311,6 @@
             created_at: new Date().toISOString()
           });
       } catch (err) {}
-    }
-
-    // Google Maps Places Autocomplete Integration
-    function initAutocomplete(inputId, hiddenUrlId, infoBoxId, nameSpanId, addrSpanId) {
-      const input = document.getElementById(inputId);
-      if (!input || typeof google === 'undefined' || !google.maps || !google.maps.places) return;
-
-      const options = {
-        componentRestrictions: { country: "id" },
-        fields: ["place_id", "name", "formatted_address"]
-      };
-
-      const autocomplete = new google.maps.places.Autocomplete(input, options);
-
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (place.place_id) {
-          selectedReviewUrl = `https://search.google.com/local/writereview?placeid=${place.place_id}`;
-          const hiddenInput = document.getElementById(hiddenUrlId);
-          if (hiddenInput) hiddenInput.value = selectedReviewUrl;
-
-          if (infoBoxId) {
-            const infoBox = document.getElementById(infoBoxId);
-            if (infoBox) {
-              infoBox.classList.remove('hidden');
-              if (nameSpanId && document.getElementById(nameSpanId)) {
-                document.getElementById(nameSpanId).innerText = place.name;
-              }
-              if (addrSpanId && document.getElementById(addrSpanId)) {
-                document.getElementById(addrSpanId).innerText = place.formatted_address;
-              } else if (!nameSpanId) {
-                infoBox.innerHTML = `<p class="font-bold">Lokasi Dipilih: <span class="font-semibold">${place.name}</span></p><p class="text-[11px] text-emerald-700 mt-0.5">${place.formatted_address}</p>`;
-              }
-            }
-          }
-        }
-      });
     }
 
     window.startQrScanner = function() {
@@ -760,10 +726,9 @@
 
     window.renderManageWithCode = function(code) { window.renderManage(code); }
 
-    // 4. FORM AKTIVASI (Google Places Autocomplete di Nama Bisnis)
+    // FORM AKTIVASI KARTU (Versi Bebas Google API / Gratis)
     function renderActivationForm(code) {
       const t = translations[currentLang];
-      selectedReviewUrl = '';
       document.getElementById('app-content').innerHTML = `
         <div class="mb-6">
           <h1 class="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">${t.activationTitle}</h1>
@@ -773,12 +738,15 @@
         <div class="space-y-4 mb-6">
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.bizNameLabel}</label>
-            <input id="bizName" type="text" placeholder="${t.bizNamePlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all" autocomplete="off">
-            <input type="hidden" id="hiddenReviewUrl" value="">
-            <div id="selectedPlaceInfo" class="hidden mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-800">
-              <p class="font-bold">Terpilih: <span id="selectedName"></span></p>
-              <p id="selectedAddress" class="text-[11px] text-emerald-700 mt-0.5"></p>
-            </div>
+            <input id="bizName" type="text" placeholder="${t.bizNamePlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.reviewUrlLabel}</label>
+            <input id="bizReviewUrl" type="text" placeholder="${t.reviewUrlPlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all font-mono text-xs">
+            <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" class="inline-block mt-2 text-[11px] font-semibold text-blue-600 hover:text-blue-800 underline">
+              ${t.findPlaceIdBtn} ↗
+            </a>
           </div>
 
           <div>
@@ -797,7 +765,6 @@
           <button onclick="window.renderHome()" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-2.5 transition-all">${t.backBtn}</button>
         </div>
       `;
-      initAutocomplete('bizName', 'hiddenReviewUrl', 'selectedPlaceInfo', 'selectedName', 'selectedAddress');
     }
 
     window.handleCheckCard = async function() {
@@ -835,21 +802,16 @@
 
     window.submitActivation = async function(code) {
       const name = document.getElementById('bizName').value.trim();
-      const hiddenUrl = document.getElementById('hiddenReviewUrl').value.trim();
+      const rawReviewUrl = document.getElementById('bizReviewUrl').value.trim();
       const rawOwnerPhone = document.getElementById('ownerPhone').value.trim();
       const pin = document.getElementById('bizPin').value.trim();
 
-      if (!name || !rawOwnerPhone || pin.length !== 4) {
-        showNotification('Notice', 'Lengkapi seluruh data termasuk No. WhatsApp Owner dan PIN 4 digit.', 'info');
+      if (!name || !rawReviewUrl || !rawOwnerPhone || pin.length !== 4) {
+        showNotification('Notice', 'Lengkapi seluruh data termasuk Nama Bisnis, Link Review / Place ID, No. WhatsApp, dan PIN 4 digit.', 'info');
         return;
       }
 
-      if (!hiddenUrl && !selectedReviewUrl) {
-        showNotification('Pilih Lokasi', 'Mohon ketik dan pilih nama bisnis dari saran dropdown Google Maps.', 'info');
-        return;
-      }
-
-      const finalReviewUrl = hiddenUrl || selectedReviewUrl;
+      const finalReviewUrl = formatReviewUrl(rawReviewUrl);
       const sanitizedPhone = sanitizePhoneNumber(rawOwnerPhone);
 
       setButtonLoading('activateCardBtn', true, translations[currentLang].activateBtn);
@@ -949,7 +911,7 @@
       }
     }
 
-    // 5. FORM EDIT INFO KARTU (Google Places Autocomplete di Nama Bisnis)
+    // FORM EDIT INFO KARTU (Versi Bebas Google API / Gratis)
     function renderEditForm(card) {
       if (!isAuthenticated) {
         window.renderManage(card.card_code);
@@ -958,7 +920,6 @@
 
       resetSessionTimer();
 
-      selectedReviewUrl = card.google_review_url || '';
       const t = translations[currentLang];
       document.getElementById('app-content').innerHTML = `
         <div class="mb-6">
@@ -969,12 +930,15 @@
         <div class="space-y-4 mb-6">
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.bizNameLabel}</label>
-            <input id="editName" type="text" value="${card.business_name || ''}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all" autocomplete="off">
-            <input type="hidden" id="hiddenEditReviewUrl" value="${card.google_review_url || ''}">
-            <div id="editSelectedPlaceInfo" class="mt-2 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-800">
-              <p class="font-bold">Google Review URL Aktif:</p>
-              <p class="text-[11px] text-emerald-700 mt-0.5 break-all font-mono">${card.google_review_url || '-'}</p>
-            </div>
+            <input id="editName" type="text" value="${card.business_name || ''}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">${t.reviewUrlLabel}</label>
+            <input id="editReviewUrl" type="text" value="${card.google_review_url || ''}" placeholder="${t.reviewUrlPlaceholder}" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all font-mono text-xs">
+            <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" class="inline-block mt-2 text-[11px] font-semibold text-blue-600 hover:text-blue-800 underline">
+              ${t.findPlaceIdBtn} ↗
+            </a>
           </div>
 
           <div>
@@ -994,17 +958,16 @@
           <button onclick="window.handleCancelEdit('${card.card_code}')" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-2.5 transition-all">${t.cancelBtn}</button>
         </div>
       `;
-      initAutocomplete('editName', 'hiddenEditReviewUrl', 'editSelectedPlaceInfo', null, null);
     }
 
     window.submitEdit = async function(cardCode, currentPin) {
       const name = document.getElementById('editName').value.trim();
-      const hiddenUrl = document.getElementById('hiddenEditReviewUrl').value.trim();
+      const rawReviewUrl = document.getElementById('editReviewUrl').value.trim();
       const rawOwnerPhone = document.getElementById('editOwnerPhone').value.trim();
       const newPin = document.getElementById('editPin').value.trim();
 
-      if (!name || !rawOwnerPhone) {
-        showNotification('Notice', 'Nama bisnis dan No. WhatsApp Owner wajib diisi.', 'info');
+      if (!name || !rawReviewUrl || !rawOwnerPhone) {
+        showNotification('Notice', 'Nama bisnis, Link Review/Place ID, dan No. WhatsApp Owner wajib diisi.', 'info');
         return;
       }
 
@@ -1017,7 +980,7 @@
         isPinChanged = true;
       }
 
-      const finalReviewUrl = hiddenUrl || selectedReviewUrl;
+      const finalReviewUrl = formatReviewUrl(rawReviewUrl);
       const sanitizedPhone = sanitizePhoneNumber(rawOwnerPhone);
 
       setButtonLoading('saveChangesBtn', true, translations[currentLang].saveChangesBtn);
