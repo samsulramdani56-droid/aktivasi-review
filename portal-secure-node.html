@@ -139,6 +139,20 @@
             </div>
           </div>
 
+          <!-- BULK ACTIONS TOOLBAR (Muncul otomatis saat ada kartu yang dicentang) -->
+          <div id="bulkToolbar" class="hidden bg-blue-50 border border-blue-200 rounded-2xl p-3 mb-4 flex flex-wrap items-center justify-between gap-3 animate-modal">
+            <div class="flex items-center gap-2 text-xs font-bold text-blue-900">
+              <span id="selectedCount" class="bg-blue-600 text-white px-2 py-0.5 rounded-lg">0</span> kartu dipilih
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="bulkToggleRoutingSelected(true)" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">ON Smart Routing</button>
+              <button onclick="bulkToggleRoutingSelected(false)" class="bg-slate-700 hover:bg-slate-800 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">OFF Smart Routing</button>
+              <button onclick="bulkDownloadQrSelectedZip()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">📦 ZIP QR Terpilih</button>
+              <button onclick="bulkDownloadDesignSelectedZip()" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🖼️ ZIP Desain Terpilih</button>
+              <button onclick="bulkDeleteSelected()" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🗑️ Hapus Terpilih</button>
+            </div>
+          </div>
+
           <div class="overflow-x-auto rounded-2xl border border-slate-100">
             <table class="w-full text-left text-sm">
               <thead>
@@ -638,14 +652,141 @@
     function toggleSelectAllCards(source) {
       const checkboxes = document.querySelectorAll('.card-checkbox');
       checkboxes.forEach(cb => cb.checked = source.checked);
+      updateBulkToolbar();
+    }
+
+    // Fungsi Update Status Toolbar Aksi Massal
+    function updateBulkToolbar() {
+      const selectedCheckboxes = document.querySelectorAll('.card-checkbox:checked');
+      const toolbar = document.getElementById('bulkToolbar');
+      const countEl = document.getElementById('selectedCount');
+      
+      countEl.innerText = selectedCheckboxes.length;
+      if (selectedCheckboxes.length > 0) {
+        toolbar.classList.remove('hidden');
+      } else {
+        toolbar.classList.add('hidden');
+      }
+    }
+
+    // Mengambil Array Kode Kartu yang Sedang Dicentang
+    function getSelectedCardCodes() {
+      const checkboxes = document.querySelectorAll('.card-checkbox:checked');
+      return Array.from(checkboxes).map(cb => cb.value);
+    }
+
+    // Aksi Massal: Ubah Smart Routing
+    async function bulkToggleRoutingSelected(enable) {
+      const codes = getSelectedCardCodes();
+      if (codes.length === 0) return;
+
+      if (!confirm(`Yakin ingin mengubah Smart Routing ke ${enable ? 'ON' : 'OFF'} untuk ${codes.length} kartu terpilih?`)) return;
+
+      for (let code of codes) {
+        await supabaseClient.from('cards').update({ enable_routing: enable }).eq('card_code', code);
+      }
+      showNotification('Berhasil', `Smart Routing untuk ${codes.length} kartu berhasil diperbarui!`, 'success');
+      fetchCards();
+    }
+
+    // Aksi Massal: Hapus Kartu Terpilih
+    async function bulkDeleteSelected() {
+      const codes = getSelectedCardCodes();
+      if (codes.length === 0) return;
+
+      if (!confirm(`PERINGATAN: Yakin ingin menghapus ${codes.length} kartu terpilih secara permanen?`)) return;
+
+      for (let code of codes) {
+        await supabaseClient.from('cards').delete().eq('card_code', code);
+      }
+      showNotification('Berhasil', `${codes.length} kartu berhasil dihapus!`, 'success');
+      fetchCards();
+    }
+
+    // Aksi Massal: Download ZIP QR Mentahan Terpilih
+    async function bulkDownloadQrSelectedZip() {
+      const codes = getSelectedCardCodes();
+      if (codes.length === 0) return;
+
+      const zipModal = document.getElementById('zip-modal');
+      const progressText = document.getElementById('zipProgressText');
+      zipModal.classList.remove('hidden');
+
+      const zip = new JSZip();
+      const folder = zip.folder("QR_Mentahan_Terpilih");
+
+      let hiddenContainer = document.getElementById('hidden-qr-render');
+      if (!hiddenContainer) {
+        hiddenContainer = document.createElement('div');
+        hiddenContainer.id = 'hidden-qr-render';
+        hiddenContainer.style.display = 'none';
+        document.body.appendChild(hiddenContainer);
+      }
+
+      for (let i = 0; i < codes.length; i++) {
+        const code = codes[i];
+        progressText.innerText = `Memproses QR (${i + 1}/${codes.length}): ${code}`;
+        hiddenContainer.innerHTML = '';
+        await new Promise((resolve) => {
+          new QRCode(hiddenContainer, { text: `${DOMAIN_BASE}/?code=${code}`, width: 300, height: 300, colorDark: "#0f172a", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H });
+          setTimeout(resolve, 80);
+        });
+        const img = hiddenContainer.querySelector('img');
+        const canvas = hiddenContainer.querySelector('canvas');
+        let dataUrl = img && img.src ? img.src : (canvas ? canvas.toDataURL("image/png") : '');
+        if (dataUrl) folder.file(`QR_${code}.png`, dataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+      }
+
+      progressText.innerText = "Mengompres ke ZIP...";
+      const content = await zip.generateAsync({ type: "blob" });
+      zipModal.classList.add('hidden');
+      saveAs(content, `QR_Mentahan_Terpilih_${codes.length}_Kartu.zip`);
+      showNotification('Berhasil', 'ZIP QR Mentahan terpilih berhasil diunduh!', 'success');
+    }
+
+    // Aksi Massal: Download ZIP Desain Lengkap Terpilih
+    async function bulkDownloadDesignSelectedZip() {
+      const codes = getSelectedCardCodes();
+      if (codes.length === 0) return;
+
+      const zipModal = document.getElementById('zip-modal');
+      const progressText = document.getElementById('zipProgressText');
+      zipModal.classList.remove('hidden');
+
+      try {
+        const zip = new JSZip();
+        const folder = zip.folder("Desain_Kartu_Terpilih");
+
+        for (let i = 0; i < codes.length; i++) {
+          const code = codes[i];
+          progressText.innerText = `Membuat Desain (${i + 1}/${codes.length}): ${code}`;
+          
+          const qrUrl = `${DOMAIN_BASE}/?code=${code}`;
+          const dataUrl = await downloadCompleteCardDesign(code, qrUrl);
+          
+          if (dataUrl) {
+            folder.file(`Desain_${code}.png`, dataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+          }
+        }
+
+        progressText.innerText = "Mengompres ke ZIP...";
+        const content = await zip.generateAsync({ type: "blob" });
+        zipModal.classList.add('hidden');
+
+        saveAs(content, `Desain_Terpilih_${codes.length}_Kartu.zip`);
+        showNotification('Berhasil', 'ZIP Desain Kartu Terpilih berhasil diunduh!', 'success');
+      } catch (err) {
+        zipModal.classList.add('hidden');
+        showNotification('Gagal', err.message, 'error');
+      }
     }
 
     function renderCardsTable(data) {
       const tbody = document.getElementById('cardsTableBody');
       tbody.innerHTML = '';
-      // Reset Select All checkbox
       const selectAllCheckbox = document.getElementById('selectAllCards');
       if (selectAllCheckbox) selectAllCheckbox.checked = false;
+      updateBulkToolbar();
 
       if (data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu.</td></tr>`;
@@ -657,7 +798,7 @@
         const resellerBadge = card.reseller_id ? `<br><span class="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded">ID: ${card.reseller_id}</span>` : '';
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50/80 transition-all">
-            <td class="py-3.5 px-4 text-center"><input type="checkbox" class="card-checkbox w-4 h-4 text-blue-600 rounded cursor-pointer" value="${card.card_code}"></td>
+            <td class="py-3.5 px-4 text-center"><input type="checkbox" class="card-checkbox w-4 h-4 text-blue-600 rounded cursor-pointer" value="${card.card_code}" onchange="updateBulkToolbar()"></td>
             <td class="py-3.5 px-4 font-bold text-slate-900 font-mono">${card.card_code}</td>
             <td class="py-3.5 px-4 text-xs font-medium text-slate-600"><span class="bg-slate-100 px-2 py-1 rounded-lg">${card.category || 'Retail Local'}</span>${resellerBadge}</td>
             <td class="py-3.5 px-4 font-semibold text-slate-700">${card.business_name || '-'}</td>
@@ -987,7 +1128,7 @@
       document.getElementById('batchStart').value = '';
       document.getElementById('batchCount').value = '';
       document.getElementById('batchPin').value = '';
-      document.getElementById('batchEnableRouting').checked = false; // Default false (sesuai aturan bahwa admin yang atur)
+      document.getElementById('batchEnableRouting').checked = false;
       document.getElementById('batch-modal').classList.remove('hidden');
     }
     function closeBatchModal() { document.getElementById('batch-modal').classList.add('hidden'); }
@@ -1000,7 +1141,7 @@
       const startNum = parseInt(document.getElementById('batchStart').value);
       const count = parseInt(document.getElementById('batchCount').value);
       const defaultPin = document.getElementById('batchPin').value.trim() || null;
-      const enableRouting = document.getElementById('batchEnableRouting').checked; // Status smart routing dari checkbox massal
+      const enableRouting = document.getElementById('batchEnableRouting').checked;
 
       if (!prefix || isNaN(startNum) || isNaN(count) || count <= 0) {
         showNotification('Perhatian', 'Mohon isi Prefix, Angka Awal, dan Jumlah kartu dengan benar.', 'info');
