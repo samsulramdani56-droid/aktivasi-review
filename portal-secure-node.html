@@ -1074,58 +1074,69 @@
       saveAs(content, `QR_Mentahan_${selectedCat !== 'all' ? selectedCat.replace(/[^a-zA-Z0-9]/g, '_') : 'Range'}.zip`);
     }
 
-    async function downloadCompleteCardDesign(cardCode, qrText) {
-      return new Promise(async (resolve, reject) => {
-        try {
-          const templateImg = new Image();
-          templateImg.crossOrigin = "anonymous";
-          templateImg.src = "card-template.png";
-          
-          templateImg.onload = async () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = templateImg.naturalWidth || 1000;
-            canvas.height = templateImg.naturalHeight || 1000;
-            const ctx = canvas.getContext('2d');
-            
-            ctx.drawImage(templateImg, 0, 0);
+    // Sistem Caching Template Background untuk Mencegah Kegagalan Pemuatan Beruntun
+    let cachedTemplateImage = null;
 
-            const tempDiv = document.createElement('div');
-            new QRCode(tempDiv, {
-              text: qrText,
-              width: 500,
-              height: 500,
-              colorDark: "#0f172a",
-              colorLight: "#ffffff",
-              correctLevel: QRCode.CorrectLevel.H
-            });
-
-            await new Promise(r => setTimeout(r, 100));
-            const qrCanvas = tempDiv.querySelector('canvas') || tempDiv.querySelector('img');
-            if (!qrCanvas) {
-              reject(new Error("Gagal merender QR Code."));
-              return;
-            }
-
-            if (qrCanvas.tagName === 'IMG' && !qrCanvas.complete) {
-              await new Promise(res => qrCanvas.onload = res);
-            }
-
-            let qrSize = canvas.width * 0.262;
-            let qrX = canvas.width * 0.602;
-            let qrY = canvas.height * 0.468;
-
-            ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-
-            resolve(canvas.toDataURL("image/png"));
-          };
-
-          templateImg.onerror = () => {
-            reject(new Error("File 'card-template.png' tidak ditemukan di folder!"));
-          };
-        } catch (err) {
-          reject(err);
+    function getCachedTemplate() {
+      return new Promise((resolve, reject) => {
+        if (cachedTemplateImage && cachedTemplateImage.complete) {
+          resolve(cachedTemplateImage);
+          return;
         }
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = "card-template.png";
+        img.onload = () => {
+          cachedTemplateImage = img;
+          resolve(img);
+        };
+        img.onerror = () => {
+          reject(new Error("File 'card-template.png' tidak ditemukan di folder!"));
+        };
       });
+    }
+
+    async function downloadCompleteCardDesign(cardCode, qrText) {
+      try {
+        const templateImg = await getCachedTemplate();
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = templateImg.naturalWidth || 1000;
+        canvas.height = templateImg.naturalHeight || 1000;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.drawImage(templateImg, 0, 0);
+
+        const tempDiv = document.createElement('div');
+        new QRCode(tempDiv, {
+          text: qrText,
+          width: 500,
+          height: 500,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+
+        await new Promise(r => setTimeout(r, 60));
+        const qrCanvas = tempDiv.querySelector('canvas') || tempDiv.querySelector('img');
+        if (!qrCanvas) {
+          throw new Error("Gagal merender QR Code.");
+        }
+
+        if (qrCanvas.tagName === 'IMG' && !qrCanvas.complete) {
+          await new Promise(res => qrCanvas.onload = res);
+        }
+
+        let qrSize = canvas.width * 0.262;
+        let qrX = canvas.width * 0.602;
+        let qrY = canvas.height * 0.468;
+
+        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+        return canvas.toDataURL("image/png");
+      } catch (err) {
+        throw err;
+      }
     }
 
     async function downloadCompleteCardDesignModal() {
