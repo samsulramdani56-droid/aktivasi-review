@@ -149,6 +149,7 @@
               <button onclick="bulkToggleRoutingSelected(false)" class="bg-slate-700 hover:bg-slate-800 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">OFF Smart Routing</button>
               <button onclick="bulkDownloadQrSelectedZip()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">📦 ZIP QR Terpilih</button>
               <button onclick="bulkDownloadDesignSelectedZip()" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🖼️ ZIP Desain Terpilih</button>
+              <button onclick="bulkDownloadA3SheetZip()" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🖨️ Print A3+ (10x10)</button>
               <button onclick="bulkDeleteSelected()" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🗑️ Hapus Terpilih</button>
             </div>
           </div>
@@ -775,6 +776,127 @@
 
         saveAs(content, `Desain_Terpilih_${codes.length}_Kartu.zip`);
         showNotification('Berhasil', 'ZIP Desain Kartu Terpilih berhasil diunduh!', 'success');
+      } catch (err) {
+        zipModal.classList.add('hidden');
+        showNotification('Gagal', err.message, 'error');
+      }
+    }
+
+    // Helper Sudut Tumpul (12R) untuk Canvas
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    // Aksi Massal: Auto-Layout Print A3+ Sheet Imposition (10x10 cm, 12R, max 12 per sheet)
+    async function bulkDownloadA3SheetZip() {
+      const codes = getSelectedCardCodes();
+      if (codes.length === 0) {
+        showNotification('Informasi', 'Pilih minimal satu kartu untuk dicetak pada lembar A3+.', 'info');
+        return;
+      }
+
+      const zipModal = document.getElementById('zip-modal');
+      const progressText = document.getElementById('zipProgressText');
+      zipModal.classList.remove('hidden');
+
+      try {
+        const zip = new JSZip();
+        const folder = zip.folder("Print_Layout_A3_Plus");
+
+        const itemsPerSheet = 12; // 3 cols x 4 rows
+        const totalSheets = Math.ceil(codes.length / itemsPerSheet);
+
+        const sheetWidth = 3948;
+        const sheetHeight = 5796;
+        const cols = 3;
+        const rows = 4;
+        const cardSize = 1200;
+        const gapX = 150;
+        const gapY = 150;
+        const marginLeft = 24;
+        const marginTop = 273;
+        const cornerRadius = 144; // Radius 12R disesuaikan dengan skala resolusi cetak
+
+        for (let sheetIdx = 0; sheetIdx < totalSheets; sheetIdx++) {
+          progressText.innerText = `Membuat Lembar A3+ (${sheetIdx + 1}/${totalSheets})...`;
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = sheetWidth;
+          canvas.height = sheetHeight;
+          const ctx = canvas.getContext('2d');
+
+          // Background Kertas A3+ Putih Bersih
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, sheetWidth, sheetHeight);
+
+          // Info Header Lembar Cetak
+          ctx.fillStyle = '#1e293b';
+          ctx.font = 'bold 44px sans-serif';
+          ctx.fillText(`SHEET A3+ CETAK AKRILIK / STIKER 10x10 (12R) - LEMBAR ${sheetIdx + 1} dari ${totalSheets}`, 100, 160);
+
+          const sheetCardCodes = codes.slice(sheetIdx * itemsPerSheet, (sheetIdx + 1) * itemsPerSheet);
+
+          for (let i = 0; i < sheetCardCodes.length; i++) {
+            const code = sheetCardCodes[i];
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+
+            const x = marginLeft + col * (cardSize + gapX);
+            const y = marginTop + row * (cardSize + gapY);
+
+            const qrUrl = `${DOMAIN_BASE}/?code=${code}`;
+            const cardDataUrl = await downloadCompleteCardDesign(code, qrUrl);
+            
+            if (cardDataUrl) {
+              const cardImg = new Image();
+              cardImg.src = cardDataUrl;
+              await new Promise((res, rej) => {
+                cardImg.onload = res;
+                cardImg.onerror = rej;
+              });
+
+              // Clip gambar dengan sudut tumpul 12R
+              ctx.save();
+              roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+              ctx.clip();
+              ctx.drawImage(cardImg, x, y, cardSize, cardSize);
+              ctx.restore();
+
+              // Garis potong / border luar sudut tumpul 12R untuk cutting guide
+              ctx.save();
+              ctx.strokeStyle = '#475569';
+              ctx.lineWidth = 4;
+              roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+              ctx.stroke();
+              ctx.restore();
+
+              // Teks Kode Kartu Kecil di Dalam / Bawah Kartu
+              ctx.fillStyle = '#0f172a';
+              ctx.font = 'bold 36px monospace';
+              ctx.fillText(code, x + 50, y + cardSize - 50);
+            }
+          }
+
+          const sheetDataUrl = canvas.toDataURL("image/png");
+          folder.file(`Layout_A3_Plus_Sheet_${sheetIdx + 1}.png`, sheetDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+        }
+
+        progressText.innerText = "Mengompres ke ZIP...";
+        const content = await zip.generateAsync({ type: "blob" });
+        zipModal.classList.add('hidden');
+
+        saveAs(content, `Print_Layout_A3_Plus_${codes.length}_Kartu.zip`);
+        showNotification('Berhasil', 'File Layout Cetak A3+ berhasil diunduh dalam bentuk ZIP!', 'success');
       } catch (err) {
         zipModal.classList.add('hidden');
         showNotification('Gagal', err.message, 'error');
