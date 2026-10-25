@@ -1074,7 +1074,7 @@
       saveAs(content, `QR_Mentahan_${selectedCat !== 'all' ? selectedCat.replace(/[^a-zA-Z0-9]/g, '_') : 'Range'}.zip`);
     }
 
-    // Sistem Caching Template Background untuk Mencegah Kegagalan Pemuatan Beruntun
+    // Sistem Caching Template Background & Stable Rendering dengan DOM Polling
     let cachedTemplateImage = null;
 
     function getCachedTemplate() {
@@ -1107,7 +1107,12 @@
         
         ctx.drawImage(templateImg, 0, 0);
 
+        // Tambahkan container QR sementara ke DOM agar browser stabil merender elemen canvas/img QR Code
         const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        document.body.appendChild(tempDiv);
+
         new QRCode(tempDiv, {
           text: qrText,
           width: 500,
@@ -1117,14 +1122,21 @@
           correctLevel: QRCode.CorrectLevel.H
         });
 
-        await new Promise(r => setTimeout(r, 60));
-        const qrCanvas = tempDiv.querySelector('canvas') || tempDiv.querySelector('img');
+        // Polling hingga elemen QR benar-benar siap ter-render sempurna
+        let qrCanvas = null;
+        for (let attempt = 0; attempt < 30; attempt++) {
+          qrCanvas = tempDiv.querySelector('canvas') || tempDiv.querySelector('img');
+          if (qrCanvas) break;
+          await new Promise(r => setTimeout(r, 40));
+        }
+
         if (!qrCanvas) {
-          throw new Error("Gagal merender QR Code.");
+          document.body.removeChild(tempDiv);
+          throw new Error("Gagal merender QR Code untuk " + cardCode);
         }
 
         if (qrCanvas.tagName === 'IMG' && !qrCanvas.complete) {
-          await new Promise(res => qrCanvas.onload = res);
+          await new Promise(res => { qrCanvas.onload = res; qrCanvas.onerror = res; });
         }
 
         let qrSize = canvas.width * 0.262;
@@ -1132,6 +1144,7 @@
         let qrY = canvas.height * 0.468;
 
         ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+        document.body.removeChild(tempDiv);
 
         return canvas.toDataURL("image/png");
       } catch (err) {
