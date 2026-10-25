@@ -143,6 +143,7 @@
             <table class="w-full text-left text-sm">
               <thead>
                 <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                  <th class="py-3.5 px-4 w-10 text-center"><input type="checkbox" id="selectAllCards" onclick="toggleSelectAllCards(this)" class="w-4 h-4 text-blue-600 rounded cursor-pointer"></th>
                   <th class="py-3.5 px-4">Kode Kartu</th>
                   <th class="py-3.5 px-4">Kategori & Reseller</th>
                   <th class="py-3.5 px-4">Nama Bisnis</th>
@@ -284,7 +285,7 @@
     </div>
   </div>
 
-  <!-- MODAL DOWNLOAD ZIP DESAIN KARTU LENGKAP (BARU) -->
+  <!-- MODAL DOWNLOAD ZIP DESAIN KARTU LENGKAP -->
   <div id="design-zip-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
       <h3 class="font-extrabold text-slate-900 text-lg mb-1">🖼️ Download ZIP Desain Kartu Lengkap</h3>
@@ -318,7 +319,7 @@
     </div>
   </div>
 
-  <!-- MODAL GENERATE KARTU MASSAL -->
+  <!-- MODAL GENERATE KARTU MASSAL (DENGAN OPSI SMART ROUTING) -->
   <div id="batch-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100 max-h-[90vh] overflow-y-auto">
       <h3 class="font-extrabold text-slate-900 text-lg mb-1">⚡ Generate Kartu Massal</h3>
@@ -350,7 +351,7 @@
       <label class="block text-xs font-semibold text-slate-700 mb-1.5">Prefix Kode</label>
       <input id="batchPrefix" type="text" placeholder="Contoh: RPC- atau RSL-" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
       
-      <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="grid grid-cols-2 gap-3 mb-4">
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1.5">Angka Awal</label>
           <input id="batchStart" type="number" placeholder="1" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm">
@@ -359,6 +360,12 @@
           <label class="block text-xs font-semibold text-slate-700 mb-1.5">Jumlah</label>
           <input id="batchCount" type="number" placeholder="10" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm">
         </div>
+      </div>
+
+      <!-- Opsi Aktif / Nonaktif Smart Routing pada Generate Massal -->
+      <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 mb-6">
+        <input id="batchEnableRouting" type="checkbox" class="w-4 h-4 text-emerald-600 rounded cursor-pointer">
+        <label for="batchEnableRouting" class="text-xs font-semibold text-slate-700 cursor-pointer select-none">Aktifkan Smart Routing saat Generate Massal</label>
       </div>
       
       <div class="flex gap-2">
@@ -421,7 +428,7 @@
     </div>
   </div>
 
-  <!-- MODAL QR (DENGAN 2 OPSI: MENTAHAN & DESAIN KARTU) -->
+  <!-- MODAL QR -->
   <div id="qr-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
       <h3 id="qrModalTitle" class="font-extrabold text-slate-900 text-lg mb-1">QR Code Kartu</h3>
@@ -627,11 +634,21 @@
       renderCardsTable(filtered);
     }
 
+    // Fungsi Pilih Semua Kartu via Checkbox Header
+    function toggleSelectAllCards(source) {
+      const checkboxes = document.querySelectorAll('.card-checkbox');
+      checkboxes.forEach(cb => cb.checked = source.checked);
+    }
+
     function renderCardsTable(data) {
       const tbody = document.getElementById('cardsTableBody');
       tbody.innerHTML = '';
+      // Reset Select All checkbox
+      const selectAllCheckbox = document.getElementById('selectAllCards');
+      if (selectAllCheckbox) selectAllCheckbox.checked = false;
+
       if (data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu.</td></tr>`;
         return;
       }
       data.forEach(card => {
@@ -640,6 +657,7 @@
         const resellerBadge = card.reseller_id ? `<br><span class="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded">ID: ${card.reseller_id}</span>` : '';
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50/80 transition-all">
+            <td class="py-3.5 px-4 text-center"><input type="checkbox" class="card-checkbox w-4 h-4 text-blue-600 rounded cursor-pointer" value="${card.card_code}"></td>
             <td class="py-3.5 px-4 font-bold text-slate-900 font-mono">${card.card_code}</td>
             <td class="py-3.5 px-4 text-xs font-medium text-slate-600"><span class="bg-slate-100 px-2 py-1 rounded-lg">${card.category || 'Retail Local'}</span>${resellerBadge}</td>
             <td class="py-3.5 px-4 font-semibold text-slate-700">${card.business_name || '-'}</td>
@@ -750,7 +768,6 @@
     }
     function closeZipFilterModal() { document.getElementById('zip-filter-modal').classList.add('hidden'); }
 
-    // DOWNLOAD ZIP QR MENTAHAN
     async function processFilteredZipDownload() {
       const selectedCat = document.getElementById('zipCategorySelect').value;
       const startCode = document.getElementById('zipStartCode').value.trim().toUpperCase();
@@ -799,13 +816,12 @@
       saveAs(content, `QR_Mentahan_${selectedCat !== 'all' ? selectedCat.replace(/[^a-zA-Z0-9]/g, '_') : 'Range'}.zip`);
     }
 
-    // FUNGSI UTAMA: GENERATE DESAIN KARTU OTOMATIS (PRESISI SESUAI CONTOH KARTU)
     async function downloadCompleteCardDesign(cardCode, qrText) {
       return new Promise(async (resolve, reject) => {
         try {
           const templateImg = new Image();
           templateImg.crossOrigin = "anonymous";
-          templateImg.src = "card-template.png"; // Memuat file mentahan background PNG
+          templateImg.src = "card-template.png";
           
           templateImg.onload = async () => {
             const canvas = document.createElement('canvas');
@@ -813,10 +829,8 @@
             canvas.height = templateImg.naturalHeight || 1000;
             const ctx = canvas.getContext('2d');
             
-            // 1. Gambar Background Template
             ctx.drawImage(templateImg, 0, 0);
 
-            // 2. Buat QR Code secara temporal
             const tempDiv = document.createElement('div');
             new QRCode(tempDiv, {
               text: qrText,
@@ -838,10 +852,9 @@
               await new Promise(res => qrCanvas.onload = res);
             }
 
-            // 3. Posisi & Ukuran Presisi Pas di Dalam Frame Siku (Biru, Merah, Hijau, Kuning)
-            let qrSize = canvas.width * 0.262; // Ukuran diperbesar pas mengisi siku
-            let qrX = canvas.width * 0.602;    // Posisi X tepat di dalam siku kiri
-            let qrY = canvas.height * 0.468;   // Posisi Y tepat di dalam siku atas
+            let qrSize = canvas.width * 0.262;
+            let qrX = canvas.width * 0.602;
+            let qrY = canvas.height * 0.468;
 
             ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
 
@@ -849,16 +862,14 @@
           };
 
           templateImg.onerror = () => {
-            reject(new Error("File 'card-template.png' tidak ditemukan di folder! Pastikan file berada di direktori yang sama."));
+            reject(new Error("File 'card-template.png' tidak ditemukan di folder!"));
           };
         } catch (err) {
           reject(err);
         }
       });
     }
-    
 
-    // Tombol Download Single Desain Kartu di Modal QR
     async function downloadCompleteCardDesignModal() {
       try {
         const dataUrl = await downloadCompleteCardDesign(activeCardCodeForDownload, currentQrUrl);
@@ -874,7 +885,6 @@
       }
     }
 
-    // Modal Download ZIP Desain Kartu Massal
     function openCardDesignZipModal() {
       document.getElementById('designZipCategorySelect').value = 'all';
       document.getElementById('designZipStartCode').value = '';
@@ -977,6 +987,7 @@
       document.getElementById('batchStart').value = '';
       document.getElementById('batchCount').value = '';
       document.getElementById('batchPin').value = '';
+      document.getElementById('batchEnableRouting').checked = false; // Default false (sesuai aturan bahwa admin yang atur)
       document.getElementById('batch-modal').classList.remove('hidden');
     }
     function closeBatchModal() { document.getElementById('batch-modal').classList.add('hidden'); }
@@ -989,6 +1000,7 @@
       const startNum = parseInt(document.getElementById('batchStart').value);
       const count = parseInt(document.getElementById('batchCount').value);
       const defaultPin = document.getElementById('batchPin').value.trim() || null;
+      const enableRouting = document.getElementById('batchEnableRouting').checked; // Status smart routing dari checkbox massal
 
       if (!prefix || isNaN(startNum) || isNaN(count) || count <= 0) {
         showNotification('Perhatian', 'Mohon isi Prefix, Angka Awal, dan Jumlah kartu dengan benar.', 'info');
@@ -1006,7 +1018,7 @@
           reseller_notes: resellerNotes,
           pin: defaultPin, 
           is_activated: false, 
-          enable_routing: true 
+          enable_routing: enableRouting 
         });
       }
       const { error } = await supabaseClient.from('cards').upsert(batchPayload, { onConflict: 'card_code' });
@@ -1036,7 +1048,7 @@
       document.getElementById('formReviewUrl').value = '';
       document.getElementById('formOwnerPhone').value = '';
       document.getElementById('formPin').value = '';
-      document.getElementById('formEnableRouting').checked = true;
+      document.getElementById('formEnableRouting').checked = false;
       document.getElementById('card-modal').classList.remove('hidden');
     }
 
