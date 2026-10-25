@@ -872,18 +872,13 @@
               ctx.drawImage(cardImg, x, y, cardSize, cardSize);
               ctx.restore();
 
-              // Garis potong / border luar sudut tumpul 12R untuk cutting guide
+              // Garis potong / border luar sudut tumpul 12R untuk cutting guide yang rapih tanpa teks kode
               ctx.save();
               ctx.strokeStyle = '#475569';
               ctx.lineWidth = 4;
               roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
               ctx.stroke();
               ctx.restore();
-
-              // Teks Kode Kartu Kecil di Dalam / Bawah Kartu
-              ctx.fillStyle = '#0f172a';
-              ctx.font = 'bold 36px monospace';
-              ctx.fillText(code, x + 50, y + cardSize - 50);
             }
           }
 
