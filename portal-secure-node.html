@@ -763,7 +763,15 @@
           progressText.innerText = `Membuat Desain (${i + 1}/${codes.length}): ${code}`;
           
           const qrUrl = `${DOMAIN_BASE}/?code=${code}`;
-          const dataUrl = await downloadCompleteCardDesign(code, qrUrl);
+          let dataUrl = null;
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              dataUrl = await downloadCompleteCardDesign(code, qrUrl);
+              if (dataUrl) break;
+            } catch (e) {
+              await new Promise(r => setTimeout(r, 150));
+            }
+          }
           
           if (dataUrl) {
             folder.file(`Desain_${code}.png`, dataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
@@ -856,42 +864,62 @@
 
             const qrUrl = `${DOMAIN_BASE}/?code=${code}`;
             
-            try {
-              const cardDataUrl = await downloadCompleteCardDesign(code, qrUrl);
-              
-              if (cardDataUrl) {
-                const cardImg = new Image();
-                cardImg.src = cardDataUrl;
-                await new Promise((res, rej) => {
-                  cardImg.onload = res;
-                  cardImg.onerror = rej;
-                });
-
-                // Clip gambar dengan sudut tumpul 12R
-                ctx.save();
-                roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
-                ctx.clip();
-                ctx.drawImage(cardImg, x, y, cardSize, cardSize);
-                ctx.restore();
-
-                // Garis potong / border luar sudut tumpul 12R untuk cutting guide yang rapih tanpa teks kode
-                ctx.save();
-                ctx.strokeStyle = '#475569';
-                ctx.lineWidth = 4;
-                roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
-                ctx.stroke();
-                ctx.restore();
+            let cardDataUrl = null;
+            // Mekanisme Auto-Retry otomatis hingga 3 kali jika terjadi timeout render QR
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                cardDataUrl = await downloadCompleteCardDesign(code, qrUrl);
+                if (cardDataUrl) break;
+              } catch (retryErr) {
+                if (attempt === 3) console.error(`Gagal total merender kartu ${code}:`, retryErr);
+                await new Promise(r => setTimeout(r, 200));
               }
-            } catch (cardErr) {
-              console.error(`Gagal merender kartu ${code}:`, cardErr);
+            }
+
+            if (cardDataUrl) {
+              const cardImg = new Image();
+              cardImg.src = cardDataUrl;
+              await new Promise((res) => {
+                cardImg.onload = res;
+                cardImg.onerror = res; // Lanjut meskipun error agar proses batch tidak macet
+              });
+
+              // Clip gambar dengan sudut tumpul 12R
+              ctx.save();
+              roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+              ctx.clip();
+              ctx.drawImage(cardImg, x, y, cardSize, cardSize);
+              ctx.restore();
+
+              // Garis potong / border luar sudut tumpul 12R untuk cutting guide yang rapih tanpa teks kode
+              ctx.save();
+              ctx.strokeStyle = '#475569';
+              ctx.lineWidth = 4;
+              roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+              ctx.stroke();
+              ctx.restore();
+            } else {
+              // Fallback Visual jika gagal total (kotak peringatan agar mudah diidentifikasi)
+              ctx.save();
+              ctx.fillStyle = '#fee2e2';
+              roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+              ctx.fill();
+              ctx.strokeStyle = '#ef4444';
+              ctx.lineWidth = 6;
+              roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+              ctx.stroke();
+              ctx.fillStyle = '#991b1b';
+              ctx.font = 'bold 48px monospace';
+              ctx.textAlign = 'center';
+              ctx.fillText(`GAGAL: ${code}`, x + cardSize / 2, y + cardSize / 2);
+              ctx.restore();
             }
           }
 
           const sheetDataUrl = canvas.toDataURL("image/png");
           folder.file(`Layout_A3_Plus_Sheet_${sheetIdx + 1}.png`, sheetDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
           
-          // Jeda per lembar sedikit ditingkatkan untuk memastikan pembersihan memori browser tuntas di sheet tinggi
-          await new Promise(r => setTimeout(r, 250));
+          await new Promise(r => setTimeout(r, 300));
         }
 
         progressText.innerText = "Mengompres ke ZIP...";
@@ -1082,7 +1110,7 @@
       saveAs(content, `QR_Mentahan_${selectedCat !== 'all' ? selectedCat.replace(/[^a-zA-Z0-9]/g, '_') : 'Range'}.zip`);
     }
 
-    // Sistem Caching Template Background & Stable Rendering dengan DOM Polling yang Diperkuat
+    // Sistem Caching Template Background & Validasi Kematangan QR Code yang Diperkuat
     let cachedTemplateImage = null;
 
     function getCachedTemplate() {
@@ -1116,7 +1144,7 @@
         
         ctx.drawImage(templateImg, 0, 0);
 
-        // Buat container QR sementara dan masukkan ke DOM
+        // Buat container QR sementara di luar layar
         tempDiv = document.createElement('div');
         tempDiv.style.position = 'absolute';
         tempDiv.style.left = '-9999px';
@@ -1131,38 +1159,44 @@
           correctLevel: QRCode.CorrectLevel.H
         });
 
-        // Polling diperpanjang hingga 80 percobaan untuk memastikan kesiapan render pada batch tinggi
-        let qrCanvas = null;
-        for (let attempt = 0; attempt < 80; attempt++) {
-          qrCanvas = tempDiv.querySelector('canvas') || tempDiv.querySelector('img');
-          if (qrCanvas) break;
+        // Polling ketat hingga elemen QR benar-benar matang (selesai digambar browser)
+        let qrEl = null;
+        for (let attempt = 0; attempt < 100; attempt++) {
+          qrEl = tempDiv.querySelector('canvas') || tempDiv.querySelector('img');
+          if (qrEl) {
+            if (qrEl.tagName === 'IMG' && qrEl.complete && qrEl.naturalWidth > 0) break;
+            if (qrEl.tagName === 'CANVAS') break;
+          }
           await new Promise(r => setTimeout(r, 40));
         }
 
-        if (!qrCanvas) {
+        if (!qrEl) {
           throw new Error("Gagal merender QR Code untuk " + cardCode);
         }
 
-        if (qrCanvas.tagName === 'IMG' && !qrCanvas.complete) {
-          await new Promise(res => { qrCanvas.onload = res; qrCanvas.onerror = res; });
+        if (qrEl.tagName === 'IMG' && !qrEl.complete) {
+          await new Promise((resolve, reject) => {
+            qrEl.onload = resolve;
+            qrEl.onerror = reject;
+            setTimeout(resolve, 2000);
+          });
         }
 
         let qrSize = canvas.width * 0.262;
         let qrX = canvas.width * 0.602;
         let qrY = canvas.height * 0.468;
 
-        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+        ctx.drawImage(qrEl, qrX, qrY, qrSize, qrSize);
 
         const dataUrl = canvas.toDataURL("image/png");
         
-        // Bersihkan DOM segera setelah selesai untuk menjaga kestabilan memori
         if (tempDiv && tempDiv.parentNode) {
           tempDiv.innerHTML = '';
           document.body.removeChild(tempDiv);
           tempDiv = null;
         }
 
-        await new Promise(r => setTimeout(r, 25));
+        await new Promise(r => setTimeout(r, 30));
         return dataUrl;
       } catch (err) {
         if (tempDiv && tempDiv.parentNode) {
@@ -1225,7 +1259,15 @@
           progressText.innerText = `Membuat Desain (${i + 1}/${filteredCards.length}): ${card.card_code}`;
           
           const qrUrl = `${DOMAIN_BASE}/?code=${card.card_code}`;
-          const dataUrl = await downloadCompleteCardDesign(card.card_code, qrUrl);
+          let dataUrl = null;
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              dataUrl = await downloadCompleteCardDesign(card.card_code, qrUrl);
+              if (dataUrl) break;
+            } catch (e) {
+              await new Promise(r => setTimeout(r, 150));
+            }
+          }
           
           if (dataUrl) {
             folder.file(`Desain_${card.card_code}.png`, dataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
