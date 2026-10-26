@@ -855,35 +855,43 @@
             const y = marginTop + row * (cardSize + gapY);
 
             const qrUrl = `${DOMAIN_BASE}/?code=${code}`;
-            const cardDataUrl = await downloadCompleteCardDesign(code, qrUrl);
             
-            if (cardDataUrl) {
-              const cardImg = new Image();
-              cardImg.src = cardDataUrl;
-              await new Promise((res, rej) => {
-                cardImg.onload = res;
-                cardImg.onerror = rej;
-              });
+            try {
+              const cardDataUrl = await downloadCompleteCardDesign(code, qrUrl);
+              
+              if (cardDataUrl) {
+                const cardImg = new Image();
+                cardImg.src = cardDataUrl;
+                await new Promise((res, rej) => {
+                  cardImg.onload = res;
+                  cardImg.onerror = rej;
+                });
 
-              // Clip gambar dengan sudut tumpul 12R
-              ctx.save();
-              roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
-              ctx.clip();
-              ctx.drawImage(cardImg, x, y, cardSize, cardSize);
-              ctx.restore();
+                // Clip gambar dengan sudut tumpul 12R
+                ctx.save();
+                roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+                ctx.clip();
+                ctx.drawImage(cardImg, x, y, cardSize, cardSize);
+                ctx.restore();
 
-              // Garis potong / border luar sudut tumpul 12R untuk cutting guide yang rapih tanpa teks kode
-              ctx.save();
-              ctx.strokeStyle = '#475569';
-              ctx.lineWidth = 4;
-              roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
-              ctx.stroke();
-              ctx.restore();
+                // Garis potong / border luar sudut tumpul 12R untuk cutting guide yang rapih tanpa teks kode
+                ctx.save();
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 4;
+                roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+                ctx.stroke();
+                ctx.restore();
+              }
+            } catch (cardErr) {
+              console.error(`Gagal merender kartu ${code}:`, cardErr);
             }
           }
 
           const sheetDataUrl = canvas.toDataURL("image/png");
           folder.file(`Layout_A3_Plus_Sheet_${sheetIdx + 1}.png`, sheetDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+          
+          // Jeda per lembar agar memori browser stabil dan tidak jenuh di sheet tinggi
+          await new Promise(r => setTimeout(r, 150));
         }
 
         progressText.innerText = "Mengompres ke ZIP...";
@@ -891,7 +899,7 @@
         zipModal.classList.add('hidden');
 
         saveAs(content, `Print_Layout_A3_Plus_${codes.length}_Kartu.zip`);
-        showNotification('Berhasil', 'File Layout Cetak A3+ berhasil diunduh dalam bentuk ZIP!', 'success');
+        showNotification('Berhasil', 'File Layout Cetak A3+ berhasil diunduh dalam bentuk ZIP tanpa kosong!', 'success');
       } catch (err) {
         zipModal.classList.add('hidden');
         showNotification('Gagal', err.message, 'error');
@@ -1122,12 +1130,12 @@
           correctLevel: QRCode.CorrectLevel.H
         });
 
-        // Polling hingga elemen QR benar-benar siap ter-render sempurna
+        // Polling diperpanjang hingga 60 percobaan (total ~3 detik) untuk mengantisipasi beban berat batch besar
         let qrCanvas = null;
-        for (let attempt = 0; attempt < 30; attempt++) {
+        for (let attempt = 0; attempt < 60; attempt++) {
           qrCanvas = tempDiv.querySelector('canvas') || tempDiv.querySelector('img');
           if (qrCanvas) break;
-          await new Promise(r => setTimeout(r, 40));
+          await new Promise(r => setTimeout(r, 50));
         }
 
         if (!qrCanvas) {
@@ -1145,6 +1153,9 @@
 
         ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
         document.body.removeChild(tempDiv);
+
+        // Jeda mikro agar memori canvas sempat bernapas
+        await new Promise(r => setTimeout(r, 20));
 
         return canvas.toDataURL("image/png");
       } catch (err) {
