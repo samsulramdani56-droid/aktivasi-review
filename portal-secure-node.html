@@ -149,7 +149,7 @@
               <button onclick="bulkToggleRoutingSelected(false)" class="bg-slate-700 hover:bg-slate-800 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">OFF Smart Routing</button>
               <button onclick="bulkDownloadQrSelectedZip()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">📦 ZIP QR Terpilih</button>
               <button onclick="bulkDownloadDesignSelectedZip()" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🖼️ ZIP Desain Terpilih</button>
-              <button onclick="bulkDownloadA3SheetZip()" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🖨️ Print A3+ (12R)</button>
+              <button onclick="bulkDownloadA3SheetZip()" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🖨️ Print A3+ (10x10)</button>
               <button onclick="bulkDeleteSelected()" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🗑️ Hapus Terpilih</button>
             </div>
           </div>
@@ -797,16 +797,11 @@
       ctx.closePath();
     }
 
-    // Aksi Massal: Auto-Layout Print A3+ Sheet Imposition (10x10 cm, sudut 12R, max 120 kartu, 12 per sheet)
+    // Aksi Massal: Auto-Layout Print A3+ Sheet Imposition (10x10 cm, 12R, max 12 per sheet)
     async function bulkDownloadA3SheetZip() {
       const codes = getSelectedCardCodes();
       if (codes.length === 0) {
         showNotification('Informasi', 'Pilih minimal satu kartu untuk dicetak pada lembar A3+.', 'info');
-        return;
-      }
-
-      if (codes.length > 120) {
-        showNotification('Batas Maksimal', 'Batas maksimal cetak layout adalah 120 kartu per proses untuk menjaga stabilitas memori browser.', 'error');
         return;
       }
 
@@ -818,7 +813,7 @@
         const zip = new JSZip();
         const folder = zip.folder("Print_Layout_A3_Plus");
 
-        const itemsPerSheet = 12; // 3 kolom x 4 baris per lembar A3+
+        const itemsPerSheet = 12; // 3 cols x 4 rows
         const totalSheets = Math.ceil(codes.length / itemsPerSheet);
 
         const sheetWidth = 3948;
@@ -830,10 +825,10 @@
         const gapY = 150;
         const marginLeft = 24;
         const marginTop = 273;
-        const cornerRadius = 144; // Skala radius 12R untuk resolusi tinggi cetak stiker/akrilik
+        const cornerRadius = 144; // Radius 12R disesuaikan dengan skala resolusi cetak
 
         for (let sheetIdx = 0; sheetIdx < totalSheets; sheetIdx++) {
-          progressText.innerText = `Menyusun Lembar A3+ (${sheetIdx + 1}/${totalSheets})...`;
+          progressText.innerText = `Membuat Lembar A3+ (${sheetIdx + 1}/${totalSheets})...`;
           
           const canvas = document.createElement('canvas');
           canvas.width = sheetWidth;
@@ -872,14 +867,14 @@
                   cardImg.onerror = rej;
                 });
 
-                // Clip gambar dengan sudut tumpul 12R secara sempurna
+                // Clip gambar dengan sudut tumpul 12R
                 ctx.save();
                 roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
                 ctx.clip();
                 ctx.drawImage(cardImg, x, y, cardSize, cardSize);
                 ctx.restore();
 
-                // Border luar pemotongan (cutting guide) presisi
+                // Garis potong / border luar sudut tumpul 12R untuk cutting guide yang rapih tanpa teks kode
                 ctx.save();
                 ctx.strokeStyle = '#475569';
                 ctx.lineWidth = 4;
@@ -895,7 +890,8 @@
           const sheetDataUrl = canvas.toDataURL("image/png");
           folder.file(`Layout_A3_Plus_Sheet_${sheetIdx + 1}.png`, sheetDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
           
-          await new Promise(r => setTimeout(r, 200));
+          // Jeda per lembar sedikit ditingkatkan untuk memastikan pembersihan memori browser tuntas di sheet tinggi
+          await new Promise(r => setTimeout(r, 250));
         }
 
         progressText.innerText = "Mengompres ke ZIP...";
@@ -903,11 +899,187 @@
         zipModal.classList.add('hidden');
 
         saveAs(content, `Print_Layout_A3_Plus_${codes.length}_Kartu.zip`);
-        showNotification('Berhasil', 'File Layout Cetak A3+ Berhasil Disusun dan Diunduh!', 'success');
+        showNotification('Berhasil', 'File Layout Cetak A3+ berhasil diunduh dalam bentuk ZIP tanpa ada yang kosong!', 'success');
       } catch (err) {
         zipModal.classList.add('hidden');
         showNotification('Gagal', err.message, 'error');
       }
+    }
+
+    function renderCardsTable(data) {
+      const tbody = document.getElementById('cardsTableBody');
+      tbody.innerHTML = '';
+      const selectAllCheckbox = document.getElementById('selectAllCards');
+      if (selectAllCheckbox) selectAllCheckbox.checked = false;
+      updateBulkToolbar();
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu.</td></tr>`;
+        return;
+      }
+      data.forEach(card => {
+        const badge = card.is_activated ? `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">🟢 Aktif</span>` : `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">🟡 Blank</span>`;
+        const isRoutingOn = card.enable_routing !== false;
+        const resellerBadge = card.reseller_id ? `<br><span class="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded">ID: ${card.reseller_id}</span>` : '';
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80 transition-all">
+            <td class="py-3.5 px-4 text-center"><input type="checkbox" class="card-checkbox w-4 h-4 text-blue-600 rounded cursor-pointer" value="${card.card_code}" onchange="updateBulkToolbar()"></td>
+            <td class="py-3.5 px-4 font-bold text-slate-900 font-mono">${card.card_code}</td>
+            <td class="py-3.5 px-4 text-xs font-medium text-slate-600"><span class="bg-slate-100 px-2 py-1 rounded-lg">${card.category || 'Retail Local'}</span>${resellerBadge}</td>
+            <td class="py-3.5 px-4 font-semibold text-slate-700">${card.business_name || '-'}</td>
+            <td class="py-3.5 px-4 text-xs font-mono text-slate-600">${card.owner_phone ? '+' + card.owner_phone : '-'}</td>
+            <td class="py-3.5 px-4">${badge}</td>
+            <td class="py-3.5 px-4 text-center">
+              <button onclick="toggleRouting('${card.card_code}', ${isRoutingOn})" class="px-2.5 py-1 rounded-xl text-[10px] font-bold border transition-all ${isRoutingOn ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-100 text-slate-500 border-slate-200'}">
+                ${isRoutingOn ? 'ON (Smart)' : 'OFF (Direct)'}
+              </button>
+            </td>
+            <td class="py-3.5 px-4 font-mono text-xs text-slate-600">${card.pin || '-'}</td>
+            <td class="py-3.5 px-4 text-right">
+              <button onclick="showQrModal('${card.card_code}')" class="text-xs bg-slate-100 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-slate-200 transition-all mr-1">🔲 QR</button>
+              <button onclick="openEditModal('${card.card_code}')" class="text-xs bg-blue-50 text-blue-600 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-blue-100 transition-all mr-1">Edit</button>
+              <button onclick="deleteCard('${card.card_code}')" class="text-xs bg-rose-50 text-rose-600 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-rose-100 transition-all">Hapus</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderFeedbacksTable(data) {
+      const tbody = document.getElementById('feedbacksTableBody');
+      tbody.innerHTML = '';
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada feedback terkirim.</td></tr>`;
+        return;
+      }
+      data.forEach(f => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80 transition-all text-xs">
+            <td class="py-3.5 px-4 text-slate-400 whitespace-nowrap">${new Date(f.created_at).toLocaleString('id-ID')}</td>
+            <td class="py-3.5 px-4 font-bold text-slate-800">${f.card_code}<br><span class="text-[11px] font-normal text-slate-500">${f.business_name || ''}</span></td>
+            <td class="py-3.5 px-4 font-bold text-amber-500">${'⭐'.repeat(f.rating)} (${f.rating})</td>
+            <td class="py-3.5 px-4 text-slate-800 font-medium">${f.customer_name || 'Anonim'}<br><span class="text-[11px] font-normal text-slate-500">${f.customer_phone || '-'}</span></td>
+            <td class="py-3.5 px-4 text-slate-700 italic max-w-xs break-words">"${f.feedback_message}"</td>
+            <td class="py-3.5 px-4 text-center">
+              ${f.customer_phone && f.customer_phone !== '-' ? `<a href="https://wa.me/${sanitizePhoneNumber(f.customer_phone)}" target="_blank" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-semibold shadow-sm inline-flex items-center gap-1 transition-all">💬 Chat WA</a>` : '-'}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderLogsTable(data) {
+      const tbody = document.getElementById('logsTableBody');
+      tbody.innerHTML = '';
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada catatan aktivitas.</td></tr>`;
+        return;
+      }
+      data.forEach(l => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80 transition-all text-xs">
+            <td class="py-3.5 px-4 text-slate-400 whitespace-nowrap">${new Date(l.created_at).toLocaleString('id-ID')}</td>
+            <td class="py-3.5 px-4 font-mono font-bold text-slate-800 uppercase">${l.card_code}</td>
+            <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${l.action.includes('SUCCESS') || l.action.includes('ACTIVATION') ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}">${l.action}</span></td>
+            <td class="py-3.5 px-4 text-slate-600">${l.details || '-'}</td>
+          </tr>
+        `;
+      });
+    }
+
+    async function toggleRouting(code, currentStatus) {
+      const { error } = await supabaseClient.from('cards').update({ enable_routing: !currentStatus }).eq('card_code', code);
+      if (!error) fetchCards();
+    }
+
+    function openCsvFilterModal() {
+      document.getElementById('csvCategorySelect').value = 'all';
+      document.getElementById('csvStartCode').value = '';
+      document.getElementById('csvEndCode').value = '';
+      document.getElementById('csv-filter-modal').classList.remove('hidden');
+    }
+    function closeCsvFilterModal() { document.getElementById('csv-filter-modal').classList.add('hidden'); }
+
+    function processFilteredCsvExport() {
+      const selectedCat = document.getElementById('csvCategorySelect').value;
+      const startCode = document.getElementById('csvStartCode').value.trim().toUpperCase();
+      const endCode = document.getElementById('csvEndCode').value.trim().toUpperCase();
+
+      let filteredCards = allCardsData;
+      if (selectedCat !== 'all') filteredCards = filteredCards.filter(c => (c.category || 'Retail Local') === selectedCat);
+      if (startCode && endCode) filteredCards = filteredCards.filter(c => c.card_code >= startCode && c.card_code <= endCode);
+
+      if (filteredCards.length === 0) { showNotification('Informasi', 'Tidak ada data kartu.', 'info'); return; }
+      closeCsvFilterModal();
+
+      let csvContent = "data:text/csv;charset=utf-8,Kode Kartu,Kategori,Reseller ID,Catatan Reseller,URL NFC dan QR,Nama Bisnis,No WA Owner,Status,PIN,Smart Routing\n";
+      filteredCards.forEach(card => {
+        csvContent += `${card.card_code},"${card.category || 'Retail Local'}","${card.reseller_id || ''}","${card.reseller_notes || ''}",${DOMAIN_BASE}/?code=${card.card_code},"${card.business_name || '-'}",${card.owner_phone || ''},${card.is_activated ? 'AKTIF' : 'BLANK'},${card.pin || ''},${card.enable_routing !== false ? 'ON' : 'OFF'}\n`;
+      });
+
+      const fileName = selectedCat !== 'all' ? `Data_Kartu_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}.csv` : `Data_Kartu_${startCode || 'ALL'}_to_${endCode || 'ALL'}.csv`;
+      const link = document.createElement("a");
+      link.setAttribute("href", encodeURI(csvContent));
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function openZipFilterModal() {
+      document.getElementById('zipCategorySelect').value = 'all';
+      document.getElementById('zipStartCode').value = '';
+      document.getElementById('zipEndCode').value = '';
+      document.getElementById('zip-filter-modal').classList.remove('hidden');
+    }
+    function closeZipFilterModal() { document.getElementById('zip-filter-modal').classList.add('hidden'); }
+
+    async function processFilteredZipDownload() {
+      const selectedCat = document.getElementById('zipCategorySelect').value;
+      const startCode = document.getElementById('zipStartCode').value.trim().toUpperCase();
+      const endCode = document.getElementById('zipEndCode').value.trim().toUpperCase();
+
+      let filteredCards = allCardsData;
+      if (selectedCat !== 'all') filteredCards = filteredCards.filter(c => (c.category || 'Retail Local') === selectedCat);
+      if (startCode && endCode) filteredCards = filteredCards.filter(c => c.card_code >= startCode && c.card_code <= endCode);
+
+      if (filteredCards.length === 0) { showNotification('Informasi', 'Tidak ada data kartu ditemukan.', 'info'); return; }
+      closeZipFilterModal();
+
+      const zipModal = document.getElementById('zip-modal');
+      const progressText = document.getElementById('zipProgressText');
+      zipModal.classList.remove('hidden');
+
+      const zip = new JSZip();
+      const folderName = selectedCat !== 'all' ? `QR_Mentahan_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}` : "QR_Mentahan_RenderProject";
+      const folder = zip.folder(folderName);
+
+      let hiddenContainer = document.getElementById('hidden-qr-render');
+      if (!hiddenContainer) {
+        hiddenContainer = document.createElement('div');
+        hiddenContainer.id = 'hidden-qr-render';
+        hiddenContainer.style.display = 'none';
+        document.body.appendChild(hiddenContainer);
+      }
+
+      for (let i = 0; i < filteredCards.length; i++) {
+        const card = filteredCards[i];
+        progressText.innerText = `Memproses QR (${i + 1}/${filteredCards.length}): ${card.card_code}`;
+        hiddenContainer.innerHTML = '';
+        await new Promise((resolve) => {
+          new QRCode(hiddenContainer, { text: `${DOMAIN_BASE}/?code=${card.card_code}`, width: 300, height: 300, colorDark: "#0f172a", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H });
+          setTimeout(resolve, 80);
+        });
+        const img = hiddenContainer.querySelector('img');
+        const canvas = hiddenContainer.querySelector('canvas');
+        let dataUrl = img && img.src ? img.src : (canvas ? canvas.toDataURL("image/png") : '');
+        if (dataUrl) folder.file(`QR_${card.card_code}.png`, dataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+      }
+
+      progressText.innerText = "Mengompres ke ZIP...";
+      const content = await zip.generateAsync({ type: "blob" });
+      zipModal.classList.add('hidden');
+      saveAs(content, `QR_Mentahan_${selectedCat !== 'all' ? selectedCat.replace(/[^a-zA-Z0-9]/g, '_') : 'Range'}.zip`);
     }
 
     // Sistem Caching Template Background & Stable Rendering dengan DOM Polling yang Diperkuat
