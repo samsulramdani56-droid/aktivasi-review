@@ -489,7 +489,7 @@
     const DOMAIN_BASE = window.location.origin;
 
     const SUPABASE_URL = 'https://lzudrzpcahjyeqdvkyto.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6dWRyenBjYWhqeWVxZHZreXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDYyODcsImV4cCI6MjEwNzgyMjI4N30.nI_84CyPRp-sv6_VJvpUB1bk7XWN0NCtSotwztl_lEY';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6dWRyenBjYWhqeWVxZHZreXRvIiwicm9sZSI6ImFub24iOiJpYXQiOjE3OTIyNDYyODcsImV4cCI6MjEwNzgyMjI4N30.nI_84CyPRp-sv6_VJvpUB1bk7XWN0NCtSotwztl_lEY';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let allCardsData = [];
@@ -890,8 +890,8 @@
           const sheetDataUrl = canvas.toDataURL("image/png");
           folder.file(`Layout_A3_Plus_Sheet_${sheetIdx + 1}.png`, sheetDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
           
-          // Jeda per lembar agar memori browser stabil dan tidak jenuh di sheet tinggi
-          await new Promise(r => setTimeout(r, 150));
+          // Jeda per lembar sedikit ditingkatkan untuk memastikan pembersihan memori browser tuntas di sheet tinggi
+          await new Promise(r => setTimeout(r, 250));
         }
 
         progressText.innerText = "Mengompres ke ZIP...";
@@ -899,7 +899,7 @@
         zipModal.classList.add('hidden');
 
         saveAs(content, `Print_Layout_A3_Plus_${codes.length}_Kartu.zip`);
-        showNotification('Berhasil', 'File Layout Cetak A3+ berhasil diunduh dalam bentuk ZIP tanpa kosong!', 'success');
+        showNotification('Berhasil', 'File Layout Cetak A3+ berhasil diunduh dalam bentuk ZIP tanpa ada yang kosong!', 'success');
       } catch (err) {
         zipModal.classList.add('hidden');
         showNotification('Gagal', err.message, 'error');
@@ -1082,7 +1082,7 @@
       saveAs(content, `QR_Mentahan_${selectedCat !== 'all' ? selectedCat.replace(/[^a-zA-Z0-9]/g, '_') : 'Range'}.zip`);
     }
 
-    // Sistem Caching Template Background & Stable Rendering dengan DOM Polling
+    // Sistem Caching Template Background & Stable Rendering dengan DOM Polling yang Diperkuat
     let cachedTemplateImage = null;
 
     function getCachedTemplate() {
@@ -1105,6 +1105,7 @@
     }
 
     async function downloadCompleteCardDesign(cardCode, qrText) {
+      let tempDiv = null;
       try {
         const templateImg = await getCachedTemplate();
         
@@ -1115,8 +1116,8 @@
         
         ctx.drawImage(templateImg, 0, 0);
 
-        // Tambahkan container QR sementara ke DOM agar browser stabil merender elemen canvas/img QR Code
-        const tempDiv = document.createElement('div');
+        // Buat container QR sementara dan masukkan ke DOM
+        tempDiv = document.createElement('div');
         tempDiv.style.position = 'absolute';
         tempDiv.style.left = '-9999px';
         document.body.appendChild(tempDiv);
@@ -1130,16 +1131,15 @@
           correctLevel: QRCode.CorrectLevel.H
         });
 
-        // Polling diperpanjang hingga 60 percobaan (total ~3 detik) untuk mengantisipasi beban berat batch besar
+        // Polling diperpanjang hingga 80 percobaan untuk memastikan kesiapan render pada batch tinggi
         let qrCanvas = null;
-        for (let attempt = 0; attempt < 60; attempt++) {
+        for (let attempt = 0; attempt < 80; attempt++) {
           qrCanvas = tempDiv.querySelector('canvas') || tempDiv.querySelector('img');
           if (qrCanvas) break;
-          await new Promise(r => setTimeout(r, 50));
+          await new Promise(r => setTimeout(r, 40));
         }
 
         if (!qrCanvas) {
-          document.body.removeChild(tempDiv);
           throw new Error("Gagal merender QR Code untuk " + cardCode);
         }
 
@@ -1152,13 +1152,23 @@
         let qrY = canvas.height * 0.468;
 
         ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-        document.body.removeChild(tempDiv);
 
-        // Jeda mikro agar memori canvas sempat bernapas
-        await new Promise(r => setTimeout(r, 20));
+        const dataUrl = canvas.toDataURL("image/png");
+        
+        // Bersihkan DOM segera setelah selesai untuk menjaga kestabilan memori
+        if (tempDiv && tempDiv.parentNode) {
+          tempDiv.innerHTML = '';
+          document.body.removeChild(tempDiv);
+          tempDiv = null;
+        }
 
-        return canvas.toDataURL("image/png");
+        await new Promise(r => setTimeout(r, 25));
+        return dataUrl;
       } catch (err) {
+        if (tempDiv && tempDiv.parentNode) {
+          tempDiv.innerHTML = '';
+          document.body.removeChild(tempDiv);
+        }
         throw err;
       }
     }
