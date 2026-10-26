@@ -1309,7 +1309,7 @@
         showNotification('Perhatian', 'Mohon isi Prefix, Angka Awal, dan Jumlah kartu dengan benar.', 'info');
         return;
       }
-      if (count > 500) { showNotification('Batas Maksimal', 'Maksimal 500 kartu sekali generate!', 'info'); return; }
+      if (count > 120) { showNotification('Batas Maksimal', 'Maksimal 120 kartu sekali generate!', 'info'); return; }
       
       setButtonLoading('batchSubmitBtn', true, 'Proses Massal');
       const batchPayload = [];
