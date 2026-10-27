@@ -515,17 +515,17 @@
         }
         this.templateImg = new Image();
         this.templateImg.crossOrigin = 'anonymous';
-        this.templateImg.src = 'card-template.png';
         await new Promise((resolve, reject) => {
           this.templateImg.onload = resolve;
           this.templateImg.onerror = () => reject(new Error("File 'card-template.png' tidak dapat dimuat. Pastikan file ada di folder utama."));
+          this.templateImg.src = 'card-template.png';
         });
         if ('decode' in this.templateImg) {
           try { await this.templateImg.decode(); } catch (e) {}
         }
       }
 
-      generateQrDataUrl(text) {
+      generateQrElement(text) {
         return new Promise((resolve, reject) => {
           const tempDiv = document.createElement('div');
           tempDiv.style.position = 'absolute';
@@ -547,43 +547,37 @@
             attempts++;
             const canvasEl = tempDiv.querySelector('canvas');
             const imgEl = tempDiv.querySelector('img');
-            let dataUrl = null;
 
             if (canvasEl && canvasEl.width > 0) {
-              dataUrl = canvasEl.toDataURL('image/png');
-            } else if (imgEl && imgEl.complete && imgEl.naturalWidth > 0) {
-              dataUrl = imgEl.src;
-            }
-
-            if (dataUrl) {
               clearInterval(interval);
               if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
-              resolve(dataUrl);
+              resolve(canvasEl);
+            } else if (imgEl && imgEl.complete && imgEl.naturalWidth > 0) {
+              clearInterval(interval);
+              if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+              resolve(imgEl);
             } else if (attempts > 50) {
               clearInterval(interval);
               if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
-              reject(new Error("Timeout saat membuat QR code."));
+              reject(new Error(`Timeout saat membuat QR code untuk ${text}`));
             }
           }, 20);
         });
       }
 
+      async generateQrDataUrl(text) {
+        const elem = await this.generateQrElement(text);
+        if (elem instanceof HTMLCanvasElement) {
+          return elem.toDataURL('image/png');
+        } else if (elem instanceof HTMLImageElement) {
+          return elem.src;
+        }
+        return '';
+      }
+
       async renderSingleCard(cardCode) {
         await this.init();
-
-        const qrDataUrl = await this.generateQrDataUrl(`${DOMAIN_BASE}/?code=${cardCode}`);
-        
-        const qrImg = new Image();
-        qrImg.src = qrDataUrl;
-        await new Promise((resolve, reject) => {
-          if (qrImg.complete && qrImg.naturalWidth > 0) return resolve();
-          qrImg.onload = resolve;
-          qrImg.onerror = () => reject(new Error(`Gagal memuat QR Code untuk ${cardCode}`));
-        });
-
-        if ('decode' in qrImg) {
-          try { await qrImg.decode(); } catch (e) {}
-        }
+        const qrSource = await this.generateQrElement(`${DOMAIN_BASE}/?code=${cardCode}`);
 
         const canvas = document.createElement('canvas');
         const w = this.templateImg.naturalWidth || 1200;
@@ -600,12 +594,38 @@
         const qrSize = w * 0.262;
         const qrX = w * 0.602;
         const qrY = h * 0.468;
-        ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+        ctx.drawImage(qrSource, qrX, qrY, qrSize, qrSize);
 
         const resultDataUrl = canvas.toDataURL('image/png');
         canvas.width = 0;
         canvas.height = 0;
         return resultDataUrl;
+      }
+
+      // RENDER LANGSUNG KE CONTEXT SHEET (ZERO LATENCY, TANPA KARTU BLANK)
+      async renderCardDirectToContext(ctx, x, y, cardSize, cornerRadius, cardCode) {
+        await this.init();
+        const qrSource = await this.generateQrElement(`${DOMAIN_BASE}/?code=${cardCode}`);
+
+        const qrSize = cardSize * 0.262;
+        const qrX = x + cardSize * 0.602;
+        const qrY = y + cardSize * 0.468;
+
+        // Potong sudut tumpul
+        ctx.save();
+        roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+        ctx.clip();
+        ctx.drawImage(this.templateImg, x, y, cardSize, cardSize);
+        ctx.drawImage(qrSource, qrX, qrY, qrSize, qrSize);
+        ctx.restore();
+
+        // Garis bantu potong
+        ctx.save();
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 4;
+        roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+        ctx.stroke();
+        ctx.restore();
       }
     }
 
@@ -889,7 +909,7 @@
     }
 
     // ============================================================
-    // SISTEM CETAK A3+ OPTIMAL (SHEET-CHUNK & MEMORY RECYCLING)
+    // SISTEM CETAK A3+ OPTIMAL (DIRECT CANVAS - 100% BEBAS BLANK)
     // ============================================================
     async function bulkDownloadA3SheetZip() {
       const codes = getSelectedCardCodes();
@@ -945,7 +965,7 @@
 
           const sheetCardCodes = codes.slice(sheetIdx * itemsPerSheet, (sheetIdx + 1) * itemsPerSheet);
 
-          // Render hanya 12 kartu per sheet secara sekuensial
+          // Render 12 kartu per sheet secara sekuensial & langsung tanpa lag reload
           for (let i = 0; i < sheetCardCodes.length; i++) {
             const code = sheetCardCodes[i];
             const col = i % cols;
@@ -956,46 +976,16 @@
 
             progressText.innerText = `[Sheet ${sheetIdx + 1}/${totalSheets}] Memproses kartu (${i + 1}/${sheetCardCodes.length}): ${code}`;
 
-            // Render desain tunggal
-            const cardDataUrl = await renderPipeline.renderSingleCard(code);
-
-            const cardImg = new Image();
-            cardImg.src = cardDataUrl;
-            await new Promise((resolve, reject) => {
-              if (cardImg.complete && cardImg.naturalWidth > 0) return resolve();
-              cardImg.onload = resolve;
-              cardImg.onerror = () => reject(new Error(`Gagal memuat kartu ${code}`));
-            });
-
-            if ('decode' in cardImg) {
-              try { await cardImg.decode(); } catch (e) {}
-            }
-
-            // Potong sudut tumpul
-            ctx.save();
-            roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
-            ctx.clip();
-            ctx.drawImage(cardImg, x, y, cardSize, cardSize);
-            ctx.restore();
-
-            // Garis bantu potong
-            ctx.save();
-            ctx.strokeStyle = '#475569';
-            ctx.lineWidth = 4;
-            roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
-            ctx.stroke();
-            ctx.restore();
-
-            // Lepaskan referensi memori gambar kartu tunggal
-            cardImg.src = '';
+            // Draw kartu langsung ke Sheet Canvas (Solusi Utama Masalah Blank)
+            await renderPipeline.renderCardDirectToContext(ctx, x, y, cardSize, cornerRadius, code);
           }
 
           // Simpan hasil sheet ke ZIP
           const sheetDataUrl = sheetCanvas.toDataURL("image/png");
           folder.file(`Layout_A3_Plus_Sheet_${sheetIdx + 1}.png`, sheetDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
 
-          // Beri jeda kecil agar Browser melakukan Garbage Collection
-          await new Promise(r => setTimeout(r, 360));
+          // Jeda kecil untuk Garbage Collection
+          await new Promise(r => setTimeout(r, 40));
         }
 
         // Hancurkan referensi canvas utama
@@ -1288,7 +1278,7 @@
           if (cardDataUrl) {
             folder.file(`Desain_${card.card_code}.png`, cardDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
           }
-          await new Promise(r => setTimeout(r, 300));
+          await new Promise(r => setTimeout(r, 30));
         }
 
         progressText.innerText = "Mengompres ke ZIP...";
