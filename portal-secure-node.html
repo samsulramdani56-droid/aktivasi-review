@@ -510,7 +510,7 @@
         this.templateImg.src = 'card-template.png';
         await new Promise((resolve, reject) => {
           this.templateImg.onload = resolve;
-          this.templateImg.onerror = () => reject(new Error("File 'card-template.png' tidak dapat dimuat."));
+          this.templateImg.onerror = () => reject(new Error("File 'card-template.png' tidak dapat dimuat. Pastikan file ada di folder utama."));
         });
         if ('decode' in this.templateImg) {
           try { await this.templateImg.decode(); } catch (e) {}
@@ -862,7 +862,9 @@
       ctx.closePath();
     }
 
-    // PRINT LAYOUT A3+ SHEET IMPOSITION INTEGRATED WITH PIPELINE
+    // ============================================================
+    // SISTEM CETAK PRINT LAYOUT A3+ (2-PHASE ISOLATED PIPELINE)
+    // ============================================================
     async function bulkDownloadA3SheetZip() {
       const codes = getSelectedCardCodes();
       if (codes.length === 0) {
@@ -875,12 +877,44 @@
       zipModal.classList.remove('hidden');
 
       try {
+        // Inisialisasi gambar template background
         await renderPipeline.init();
 
+        // TAHAP 1: PRE-RENDER SELURUH DESAIN KARTU KE MEMORI RAM
+        const preparedCardImages = new Map();
+
+        for (let i = 0; i < codes.length; i++) {
+          const code = codes[i];
+          progressText.innerText = `[Tahap 1/2] Menyiapkan Desain (${i + 1}/${codes.length}): ${code}`;
+
+          // Render paduan template + QR ke format DataURL
+          const cardDataUrl = await renderPipeline.renderSingleCard(code);
+
+          // Muat ke elemen HTMLImageElement dan validasi dekode
+          const cardImg = new Image();
+          cardImg.src = cardDataUrl;
+          await new Promise((resolve, reject) => {
+            if (cardImg.complete && cardImg.naturalWidth > 0) return resolve();
+            cardImg.onload = resolve;
+            cardImg.onerror = () => reject(new Error(`Gagal memuat hasil render kartu ${code}`));
+          });
+
+          if ('decode' in cardImg) {
+            try { await cardImg.decode(); } catch (e) {}
+          }
+
+          // Simpan elemen gambar yang sudah 100% matang ke memori Map
+          preparedCardImages.set(code, cardImg);
+
+          // Jeda penstabilan memori singkat antar render
+          await new Promise(r => setTimeout(r, 40));
+        }
+
+        // TAHAP 2: PROSES IMPOSITION & PENYUSUNAN KE SHEET A3+
         const zip = new JSZip();
         const folder = zip.folder("Print_Layout_A3_Plus");
 
-        const itemsPerSheet = 12;
+        const itemsPerSheet = 12; // 3 kolom x 4 baris (Ukuran 10x10 cm)
         const totalSheets = Math.ceil(codes.length / itemsPerSheet);
 
         const sheetWidth = 3948;
@@ -891,19 +925,21 @@
         const gapY = 150;
         const marginLeft = 24;
         const marginTop = 273;
-        const cornerRadius = 144;
+        const cornerRadius = 144; // Radius 12R untuk pemotongan akrilik/stiker
 
         for (let sheetIdx = 0; sheetIdx < totalSheets; sheetIdx++) {
-          progressText.innerText = `Membuat Lembar A3+ (${sheetIdx + 1}/${totalSheets})...`;
+          progressText.innerText = `[Tahap 2/2] Menyusun Lembar A3+ (${sheetIdx + 1}/${totalSheets})...`;
           
           const canvas = document.createElement('canvas');
           canvas.width = sheetWidth;
           canvas.height = sheetHeight;
           const ctx = canvas.getContext('2d');
 
+          // Kertas A3+ Putih Bersih
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(0, 0, sheetWidth, sheetHeight);
 
+          // Header Judul Sheet Cetak
           ctx.fillStyle = '#1e293b';
           ctx.font = 'bold 44px sans-serif';
           ctx.fillText(`SHEET A3+ CETAK AKRILIK / STIKER 10x10 (12R) - LEMBAR ${sheetIdx + 1} dari ${totalSheets}`, 100, 160);
@@ -918,43 +954,43 @@
             const x = marginLeft + col * (cardSize + gapX);
             const y = marginTop + row * (cardSize + gapY);
 
-            // Eksekusi Pemrosesan kartu via Pipeline Mandiri
-            const cardDataUrl = await renderPipeline.renderSingleCard(code);
+            // Ambil gambar yang SUDAH 100% SIAP dari Tahap 1
+            const cardImg = preparedCardImages.get(code);
 
-            const cardImg = new Image();
-            cardImg.src = cardDataUrl;
-            await new Promise((resolve) => { cardImg.onload = resolve; });
-            if ('decode' in cardImg) {
-              try { await cardImg.decode(); } catch (e) {}
+            if (cardImg && cardImg.naturalWidth > 0) {
+              // Potong dengan sudut tumpul (Corner Radius 12R)
+              ctx.save();
+              roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+              ctx.clip();
+              ctx.drawImage(cardImg, x, y, cardSize, cardSize);
+              ctx.restore();
+
+              // Garis bantu potong (Cutting Guide Border)
+              ctx.save();
+              ctx.strokeStyle = '#475569';
+              ctx.lineWidth = 4;
+              roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+              ctx.stroke();
+              ctx.restore();
             }
-
-            ctx.save();
-            roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
-            ctx.clip();
-            ctx.drawImage(cardImg, x, y, cardSize, cardSize);
-            ctx.restore();
-
-            ctx.save();
-            ctx.strokeStyle = '#475569';
-            ctx.lineWidth = 4;
-            roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
-            ctx.stroke();
-            ctx.restore();
           }
 
           const sheetDataUrl = canvas.toDataURL("image/png");
           folder.file(`Layout_A3_Plus_Sheet_${sheetIdx + 1}.png`, sheetDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
           
+          // Bersihkan memori canvas sheet
           canvas.width = 0;
           canvas.height = 0;
+
+          await new Promise(r => setTimeout(r, 100));
         }
 
-        progressText.innerText = "Mengompres ke ZIP...";
+        progressText.innerText = "Mengompres file ke ZIP...";
         const content = await zip.generateAsync({ type: "blob" });
         zipModal.classList.add('hidden');
 
         saveAs(content, `Print_Layout_A3_Plus_${codes.length}_Kartu.zip`);
-        showNotification('Berhasil', 'File Layout Cetak A3+ berhasil diunduh tanpa ada yang kosong!', 'success');
+        showNotification('Berhasil', 'File Layout Cetak A3+ berhasil dibuat sempurna tanpa ada gambar kosong!', 'success');
       } catch (err) {
         zipModal.classList.add('hidden');
         showNotification('Gagal', err.message, 'error');
