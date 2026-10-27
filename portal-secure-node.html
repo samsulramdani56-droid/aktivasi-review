@@ -17,6 +17,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <!-- FileSaver.js untuk Menyimpan File ZIP -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <!-- jsPDF CDN untuk Export File PDF Siap Cetak -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
     @keyframes modalFadeIn {
       from { opacity: 0; transform: scale(0.95) translateY(10px); }
@@ -144,7 +147,7 @@
               <button onclick="bulkToggleRoutingSelected(false)" class="bg-slate-700 hover:bg-slate-800 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">OFF Smart Routing</button>
               <button onclick="bulkDownloadQrSelectedZip()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">📦 ZIP QR Terpilih</button>
               <button onclick="bulkDownloadDesignSelectedZip()" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🖼️ ZIP Desain Terpilih</button>
-              <button onclick="bulkDownloadA3SheetZip()" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🖨️ Print A3+ (10x10)</button>
+              <button onclick="openPrintLayoutModal()" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🖨️ Print / Cetak Layout</button>
               <button onclick="bulkDeleteSelected()" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🗑️ Hapus Terpilih</button>
             </div>
           </div>
@@ -228,6 +231,32 @@
     <footer class="py-4 text-center text-xs text-slate-400 font-medium">
       © 2026 Create Render Project. System Management Node.
     </footer>
+  </div>
+
+  <!-- MODAL PENGATURAN CETAK & LAYOUT (A4/A3/A3+ & PDF/ZIP) -->
+  <div id="print-layout-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
+      <h3 class="font-extrabold text-slate-900 text-lg mb-1">🖨️ Pengaturan Cetak & Layout</h3>
+      <p class="text-xs text-slate-500 mb-6">Pilih ukuran kertas cetak dan format file output yang diinginkan.</p>
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Ukuran Kertas (Media Cetak)</label>
+      <select id="printPaperSize" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+        <option value="A3+">📄 A3+ (32.9 x 48.3 cm) - 12 Kartu / Lembar (3x4)</option>
+        <option value="A3">📄 A3 (29.7 x 42.0 cm) - 9 Kartu / Lembar (3x3)</option>
+        <option value="A4">📄 A4 (21.0 x 29.7 cm) - 4 Kartu / Lembar (2x2)</option>
+      </select>
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Format File Output</label>
+      <select id="printOutputFormat" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-6 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+        <option value="PDF">📕 File PDF Siap Cetak (Multi-Halaman)</option>
+        <option value="ZIP">📦 File ZIP Gambar PNG (Per Lembar)</option>
+      </select>
+
+      <div class="flex gap-2">
+        <button onclick="closePrintLayoutModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
+        <button onclick="processPrintLayoutDownload()" class="w-1/2 bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 rounded-2xl text-sm shadow-md transition-all">Generate & Cetak</button>
+      </div>
+    </div>
   </div>
 
   <!-- MODAL EXPORT CSV -->
@@ -909,14 +938,29 @@
     }
 
     // ============================================================
-    // SISTEM CETAK A3+ OPTIMAL (DIRECT CANVAS - 100% BEBAS BLANK)
+    // MODAL & HANDLER PENGATURAN CETAK (A4 / A3 / A3+ & PDF / ZIP)
     // ============================================================
-    async function bulkDownloadA3SheetZip() {
+    function openPrintLayoutModal() {
       const codes = getSelectedCardCodes();
       if (codes.length === 0) {
-        showNotification('Informasi', 'Pilih minimal satu kartu untuk dicetak pada lembar A3+.', 'info');
+        showNotification('Informasi', 'Pilih minimal satu kartu untuk dicetak.', 'info');
         return;
       }
+      document.getElementById('print-layout-modal').classList.remove('hidden');
+    }
+
+    function closePrintLayoutModal() {
+      document.getElementById('print-layout-modal').classList.add('hidden');
+    }
+
+    async function processPrintLayoutDownload() {
+      const codes = getSelectedCardCodes();
+      if (codes.length === 0) return;
+
+      const paperSize = document.getElementById('printPaperSize').value; // 'A3+', 'A3', 'A4'
+      const outputFormat = document.getElementById('printOutputFormat').value; // 'PDF', 'ZIP'
+
+      closePrintLayoutModal();
 
       const zipModal = document.getElementById('zip-modal');
       const progressText = document.getElementById('zipProgressText');
@@ -925,21 +969,69 @@
       try {
         await renderPipeline.init();
 
-        const zip = new JSZip();
-        const folder = zip.folder("Print_Layout_A3_Plus");
+        // Konfigurasi Grid berdasarkan Ukuran Kertas
+        let sheetWidth, sheetHeight, cols, rows, cardSize, gapX, gapY, marginLeft, marginTop, cornerRadius, pdfUnitWidth, pdfUnitHeight;
 
-        const itemsPerSheet = 12; // Layout 3 Kolom x 4 Baris
+        if (paperSize === 'A4') {
+          sheetWidth = 2480;
+          sheetHeight = 3508;
+          cols = 2;
+          rows = 2;
+          cardSize = 1000;
+          gapX = 120;
+          gapY = 120;
+          marginLeft = 180;
+          marginTop = 400;
+          cornerRadius = 120;
+          pdfUnitWidth = 210;
+          pdfUnitHeight = 297;
+        } else if (paperSize === 'A3') {
+          sheetWidth = 3508;
+          sheetHeight = 4960;
+          cols = 3;
+          rows = 3;
+          cardSize = 1000;
+          gapX = 120;
+          gapY = 120;
+          marginLeft = 124;
+          marginTop = 350;
+          cornerRadius = 120;
+          pdfUnitWidth = 297;
+          pdfUnitHeight = 420;
+        } else { // A3+
+          sheetWidth = 3948;
+          sheetHeight = 5796;
+          cols = 3;
+          rows = 4;
+          cardSize = 1200;
+          gapX = 150;
+          gapY = 150;
+          marginLeft = 24;
+          marginTop = 273;
+          cornerRadius = 144;
+          pdfUnitWidth = 329;
+          pdfUnitHeight = 483;
+        }
+
+        const itemsPerSheet = cols * rows;
         const totalSheets = Math.ceil(codes.length / itemsPerSheet);
 
-        const sheetWidth = 3948;
-        const sheetHeight = 5796;
-        const cols = 3;
-        const cardSize = 1200;
-        const gapX = 150;
-        const gapY = 150;
-        const marginLeft = 24;
-        const marginTop = 273;
-        const cornerRadius = 144;
+        // Inisialisasi ZIP atau PDF
+        let zip = null;
+        let folder = null;
+        let pdfDoc = null;
+
+        if (outputFormat === 'ZIP') {
+          zip = new JSZip();
+          folder = zip.folder(`Print_Layout_${paperSize}`);
+        } else {
+          const { jsPDF } = window.jspdf;
+          pdfDoc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: paperSize === 'A4' ? 'a4' : (paperSize === 'A3' ? 'a3' : [329, 483])
+          });
+        }
 
         // Reuse Canvas Tunggal untuk menghemat RAM
         const sheetCanvas = document.createElement('canvas');
@@ -950,7 +1042,7 @@
         for (let sheetIdx = 0; sheetIdx < totalSheets; sheetIdx++) {
           ctx.clearRect(0, 0, sheetWidth, sheetHeight);
 
-          // Latar Belakang Kertas A3+
+          // Latar Belakang Kertas
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(0, 0, sheetWidth, sheetHeight);
 
@@ -961,11 +1053,11 @@
           // Header Kertas
           ctx.fillStyle = '#1e293b';
           ctx.font = 'bold 44px sans-serif';
-          ctx.fillText(`SHEET A3+ CETAK AKRILIK / STIKER 10x10 (12R) - LEMBAR ${sheetIdx + 1} dari ${totalSheets}`, 100, 160);
+          ctx.fillText(`LAYOUT CETAK ${paperSize} (${cols}x${rows}) - LEMBAR ${sheetIdx + 1} dari ${totalSheets}`, 100, 160);
 
           const sheetCardCodes = codes.slice(sheetIdx * itemsPerSheet, (sheetIdx + 1) * itemsPerSheet);
 
-          // Render 12 kartu per sheet secara sekuensial & langsung tanpa lag reload
+          // Render kartu langsung ke Sheet Canvas secara sekuensial (Zero Blank)
           for (let i = 0; i < sheetCardCodes.length; i++) {
             const code = sheetCardCodes[i];
             const col = i % cols;
@@ -976,13 +1068,17 @@
 
             progressText.innerText = `[Sheet ${sheetIdx + 1}/${totalSheets}] Memproses kartu (${i + 1}/${sheetCardCodes.length}): ${code}`;
 
-            // Draw kartu langsung ke Sheet Canvas (Solusi Utama Masalah Blank)
             await renderPipeline.renderCardDirectToContext(ctx, x, y, cardSize, cornerRadius, code);
           }
 
-          // Simpan hasil sheet ke ZIP
-          const sheetDataUrl = sheetCanvas.toDataURL("image/png");
-          folder.file(`Layout_A3_Plus_Sheet_${sheetIdx + 1}.png`, sheetDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+          if (outputFormat === 'ZIP') {
+            const sheetPngUrl = sheetCanvas.toDataURL("image/png");
+            folder.file(`Layout_${paperSize}_Sheet_${sheetIdx + 1}.png`, sheetPngUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+          } else {
+            const sheetJpegUrl = sheetCanvas.toDataURL("image/jpeg", 0.92);
+            if (sheetIdx > 0) pdfDoc.addPage();
+            pdfDoc.addImage(sheetJpegUrl, 'JPEG', 0, 0, pdfUnitWidth, pdfUnitHeight);
+          }
 
           // Jeda kecil untuk Garbage Collection
           await new Promise(r => setTimeout(r, 40));
@@ -992,12 +1088,19 @@
         sheetCanvas.width = 0;
         sheetCanvas.height = 0;
 
-        progressText.innerText = "Mengompres file ke ZIP...";
-        const content = await zip.generateAsync({ type: "blob" });
-        zipModal.classList.add('hidden');
+        if (outputFormat === 'ZIP') {
+          progressText.innerText = "Mengompres file ke ZIP...";
+          const content = await zip.generateAsync({ type: "blob" });
+          zipModal.classList.add('hidden');
+          saveAs(content, `Print_Layout_${paperSize}_${codes.length}_Kartu.zip`);
+          showNotification('Berhasil', `File Layout Cetak ${paperSize} (ZIP) berhasil diunduh!`, 'success');
+        } else {
+          progressText.innerText = "Menyimpan file PDF...";
+          pdfDoc.save(`Print_Layout_${paperSize}_${codes.length}_Kartu.pdf`);
+          zipModal.classList.add('hidden');
+          showNotification('Berhasil', `File Document PDF Cetak ${paperSize} berhasil diunduh!`, 'success');
+        }
 
-        saveAs(content, `Print_Layout_A3_Plus_${codes.length}_Kartu.zip`);
-        showNotification('Berhasil', 'File Layout Cetak A3+ berhasil diunduh tanpa ada gambar kosong!', 'success');
       } catch (err) {
         zipModal.classList.add('hidden');
         showNotification('Gagal', err.message, 'error');
