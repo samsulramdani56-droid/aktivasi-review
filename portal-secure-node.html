@@ -35,20 +35,25 @@
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-slate-100 to-blue-50/30 min-h-full font-sans text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
 
-  <!-- LOGIN CONTAINER -->
+  <!-- LOGIN CONTAINER (SUPABASE AUTH: EMAIL & PASSWORD) -->
   <div id="login-section" class="min-h-screen flex items-center justify-center p-4">
     <div class="bg-white/90 backdrop-blur-xl w-full max-w-sm rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-200/60 animate-modal text-center">
-      <div class="bg-gradient-to-tr from-slate-800 to-slate-900 text-white font-bold rounded-2xl w-14 h-14 mx-auto flex items-center justify-center shadow-md text-xl tracking-wider mb-4">⚙️</div>
+      <div class="bg-gradient-to-tr from-slate-800 to-slate-900 text-white font-bold rounded-2xl w-14 h-14 mx-auto flex items-center justify-center shadow-md text-xl tracking-wider mb-4">🔐</div>
       <h2 class="font-extrabold text-slate-900 text-xl tracking-tight mb-1">System Gateway</h2>
-      <p class="text-xs text-slate-500 mb-6 leading-relaxed">Masukkan security PIN untuk mengakses konfigurasi node.</p>
+      <p class="text-xs text-slate-500 mb-6 leading-relaxed">Masukkan akun email dan password Anda untuk masuk.</p>
       
-      <div class="text-left mb-4">
-        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Security PIN</label>
-        <input id="adminPinInput" type="password" maxlength="6" autocomplete="current-password" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl p-3.5 text-center tracking-widest text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-800 transition-all" onkeypress="if(event.key === 'Enter') handleAdminLogin()">
+      <div class="text-left mb-3">
+        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Email Administrator</label>
+        <input id="adminEmailInput" type="email" autocomplete="email" placeholder="admin@domain.com" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl p-3 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-800 transition-all">
+      </div>
+
+      <div class="text-left mb-6">
+        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
+        <input id="adminPasswordInput" type="password" autocomplete="current-password" placeholder="••••••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl p-3 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-800 transition-all" onkeypress="if(event.key === 'Enter') handleAdminLogin()">
       </div>
       
-      <button onclick="handleAdminLogin()" class="w-full bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg transition-all text-sm">
-        Connect Node
+      <button id="loginBtn" onclick="handleAdminLogin()" class="w-full bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg transition-all text-sm">
+        Sign In to Node
       </button>
     </div>
   </div>
@@ -69,7 +74,7 @@
             📡 Scan Tag NFC
           </button>
           <button onclick="logoutAdmin()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all">
-            Disconnect
+            Sign Out
           </button>
         </div>
       </header>
@@ -553,7 +558,6 @@
   </div>
 
   <script>
-    const MASTER_ADMIN_PIN = "140806"; 
     const DOMAIN_BASE = window.location.origin;
 
     const SUPABASE_URL = 'https://lzudrzpcahjyeqdvkyto.supabase.co';
@@ -582,138 +586,10 @@
     // NFC READER / WRITER SESSION
     let ndefController = null;
 
-    // ==========================================
-    // MODUL TERPISAH: CARD RENDER PIPELINE
-    // ==========================================
-    class CardRenderPipeline {
-      constructor() {
-        this.templateImg = null;
-      }
-
-      async init() {
-        if (this.templateImg && this.templateImg.complete && this.templateImg.naturalWidth > 0) {
-          return;
-        }
-        this.templateImg = new Image();
-        this.templateImg.crossOrigin = 'anonymous';
-        await new Promise((resolve, reject) => {
-          this.templateImg.onload = resolve;
-          this.templateImg.onerror = () => reject(new Error("File 'card-template.png' tidak dapat dimuat. Pastikan file ada di folder utama."));
-          this.templateImg.src = 'card-template.png';
-        });
-        if ('decode' in this.templateImg) {
-          try { await this.templateImg.decode(); } catch (e) {}
-        }
-      }
-
-      generateQrElement(text) {
-        return new Promise((resolve, reject) => {
-          const tempDiv = document.createElement('div');
-          tempDiv.style.position = 'absolute';
-          tempDiv.style.left = '-9999px';
-          tempDiv.style.top = '-9999px';
-          document.body.appendChild(tempDiv);
-
-          new QRCode(tempDiv, {
-            text: text,
-            width: 500,
-            height: 500,
-            colorDark: "#0f172a",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-          });
-
-          let attempts = 0;
-          const interval = setInterval(() => {
-            attempts++;
-            const canvasEl = tempDiv.querySelector('canvas');
-            const imgEl = tempDiv.querySelector('img');
-
-            if (canvasEl && canvasEl.width > 0) {
-              clearInterval(interval);
-              if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
-              resolve(canvasEl);
-            } else if (imgEl && imgEl.complete && imgEl.naturalWidth > 0) {
-              clearInterval(interval);
-              if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
-              resolve(imgEl);
-            } else if (attempts > 50) {
-              clearInterval(interval);
-              if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
-              reject(new Error(`Timeout saat membuat QR code untuk ${text}`));
-            }
-          }, 20);
-        });
-      }
-
-      async generateQrDataUrl(text) {
-        const elem = await this.generateQrElement(text);
-        if (elem instanceof HTMLCanvasElement) {
-          return elem.toDataURL('image/png');
-        } else if (elem instanceof HTMLImageElement) {
-          return elem.src;
-        }
-        return '';
-      }
-
-      async renderSingleCard(cardCode) {
-        await this.init();
-        const qrSource = await this.generateQrElement(`${DOMAIN_BASE}/?code=${cardCode}`);
-
-        const canvas = document.createElement('canvas');
-        const w = this.templateImg.naturalWidth || 1200;
-        const h = this.templateImg.naturalHeight || 1200;
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-
-        ctx.drawImage(this.templateImg, 0, 0, w, h);
-
-        const qrSize = w * 0.262;
-        const qrX = w * 0.602;
-        const qrY = h * 0.468;
-        ctx.drawImage(qrSource, qrX, qrY, qrSize, qrSize);
-
-        const resultDataUrl = canvas.toDataURL('image/png');
-        canvas.width = 0;
-        canvas.height = 0;
-        return resultDataUrl;
-      }
-
-      // RENDER LANGSUNG KE CONTEXT SHEET (ZERO LATENCY, TANPA KARTU BLANK)
-      async renderCardDirectToContext(ctx, x, y, cardSize, cornerRadius, cardCode) {
-        await this.init();
-        const qrSource = await this.generateQrElement(`${DOMAIN_BASE}/?code=${cardCode}`);
-
-        const qrSize = cardSize * 0.262;
-        const qrX = x + cardSize * 0.602;
-        const qrY = y + cardSize * 0.468;
-
-        // Potong sudut tumpul
-        ctx.save();
-        roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
-        ctx.clip();
-        ctx.drawImage(this.templateImg, x, y, cardSize, cardSize);
-        ctx.drawImage(qrSource, qrX, qrY, qrSize, qrSize);
-        ctx.restore();
-
-        // Garis bantu potong
-        ctx.save();
-        ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 4;
-        roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
-        ctx.stroke();
-        ctx.restore();
-      }
-    }
-
-    const renderPipeline = new CardRenderPipeline();
-
-    window.addEventListener('DOMContentLoaded', () => {
-      if (sessionStorage.getItem('system_node_auth') === 'true') {
+    // CEK SESI SUPABASE AUTH SAAT HALAMAN DIMUAT
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
         document.getElementById('login-section').classList.add('hidden');
         document.getElementById('dashboard-section').classList.remove('hidden');
         fetchCards();
@@ -798,23 +674,40 @@
       }
     }
 
-    function handleAdminLogin() {
-      const pin = document.getElementById('adminPinInput').value.trim();
-      if (pin === MASTER_ADMIN_PIN) {
-        sessionStorage.setItem('system_node_auth', 'true');
+    // SUPABASE AUTHENTICATION: LOGIN DENGAN EMAIL & PASSWORD
+    async function handleAdminLogin() {
+      const email = document.getElementById('adminEmailInput').value.trim();
+      const password = document.getElementById('adminPasswordInput').value.trim();
+
+      if (!email || !password) {
+        showNotification('Perhatian', 'Email dan Password wajib diisi!', 'info');
+        return;
+      }
+
+      setButtonLoading('loginBtn', true, 'Sign In to Node');
+      
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      setButtonLoading('loginBtn', false, 'Sign In to Node');
+
+      if (error) {
+        showNotification('Login Gagal', error.message, 'error');
+      } else if (data.session) {
         document.getElementById('login-section').classList.add('hidden');
         document.getElementById('dashboard-section').classList.remove('hidden');
         fetchCards();
         fetchFeedbacks();
         fetchLogs();
-      } else {
-        showNotification('Akses Ditolak', 'Security PIN salah!', 'error');
       }
     }
 
-    function logoutAdmin() {
-      sessionStorage.removeItem('system_node_auth');
-      document.getElementById('adminPinInput').value = '';
+    async function logoutAdmin() {
+      await supabaseClient.auth.signOut();
+      document.getElementById('adminEmailInput').value = '';
+      document.getElementById('adminPasswordInput').value = '';
       document.getElementById('dashboard-section').classList.add('hidden');
       document.getElementById('login-section').classList.remove('hidden');
     }
@@ -1064,6 +957,133 @@
       ctx.closePath();
     }
 
+    // ==========================================
+    // MODUL TERPISAH: CARD RENDER PIPELINE
+    // ==========================================
+    class CardRenderPipeline {
+      constructor() {
+        this.templateImg = null;
+      }
+
+      async init() {
+        if (this.templateImg && this.templateImg.complete && this.templateImg.naturalWidth > 0) {
+          return;
+        }
+        this.templateImg = new Image();
+        this.templateImg.crossOrigin = 'anonymous';
+        await new Promise((resolve, reject) => {
+          this.templateImg.onload = resolve;
+          this.templateImg.onerror = () => reject(new Error("File 'card-template.png' tidak dapat dimuat. Pastikan file ada di folder utama."));
+          this.templateImg.src = 'card-template.png';
+        });
+        if ('decode' in this.templateImg) {
+          try { await this.templateImg.decode(); } catch (e) {}
+        }
+      }
+
+      generateQrElement(text) {
+        return new Promise((resolve, reject) => {
+          const tempDiv = document.createElement('div');
+          tempDiv.style.position = 'absolute';
+          tempDiv.style.left = '-9999px';
+          tempDiv.style.top = '-9999px';
+          document.body.appendChild(tempDiv);
+
+          new QRCode(tempDiv, {
+            text: text,
+            width: 500,
+            height: 500,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+          });
+
+          let attempts = 0;
+          const interval = setInterval(() => {
+            attempts++;
+            const canvasEl = tempDiv.querySelector('canvas');
+            const imgEl = tempDiv.querySelector('img');
+
+            if (canvasEl && canvasEl.width > 0) {
+              clearInterval(interval);
+              if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+              resolve(canvasEl);
+            } else if (imgEl && imgEl.complete && imgEl.naturalWidth > 0) {
+              clearInterval(interval);
+              if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+              resolve(imgEl);
+            } else if (attempts > 50) {
+              clearInterval(interval);
+              if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+              reject(new Error(`Timeout saat membuat QR code untuk ${text}`));
+            }
+          }, 20);
+        });
+      }
+
+      async generateQrDataUrl(text) {
+        const elem = await this.generateQrElement(text);
+        if (elem instanceof HTMLCanvasElement) {
+          return elem.toDataURL('image/png');
+        } else if (elem instanceof HTMLImageElement) {
+          return elem.src;
+        }
+        return '';
+      }
+
+      async renderSingleCard(cardCode) {
+        await this.init();
+        const qrSource = await this.generateQrElement(`${DOMAIN_BASE}/?code=${cardCode}`);
+
+        const canvas = document.createElement('canvas');
+        const w = this.templateImg.naturalWidth || 1200;
+        const h = this.templateImg.naturalHeight || 1200;
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        ctx.drawImage(this.templateImg, 0, 0, w, h);
+
+        const qrSize = w * 0.262;
+        const qrX = w * 0.602;
+        const qrY = h * 0.468;
+        ctx.drawImage(qrSource, qrX, qrY, qrSize, qrSize);
+
+        const resultDataUrl = canvas.toDataURL('image/png');
+        canvas.width = 0;
+        canvas.height = 0;
+        return resultDataUrl;
+      }
+
+      async renderCardDirectToContext(ctx, x, y, cardSize, cornerRadius, cardCode) {
+        await this.init();
+        const qrSource = await this.generateQrElement(`${DOMAIN_BASE}/?code=${cardCode}`);
+
+        const qrSize = cardSize * 0.262;
+        const qrX = x + cardSize * 0.602;
+        const qrY = y + cardSize * 0.468;
+
+        ctx.save();
+        roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+        ctx.clip();
+        ctx.drawImage(this.templateImg, x, y, cardSize, cardSize);
+        ctx.drawImage(qrSource, qrX, qrY, qrSize, qrSize);
+        ctx.restore();
+
+        ctx.save();
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 4;
+        roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    const renderPipeline = new CardRenderPipeline();
+
     // ============================================================
     // MODAL & HANDLER PENGATURAN CETAK (A4 / A3 / A3+ & PDF / ZIP)
     // ============================================================
@@ -1084,15 +1104,14 @@
       const codes = getSelectedCardCodes();
       if (codes.length === 0) return;
 
-      const paperSize = document.getElementById('printPaperSize').value; // 'A3+', 'A3', 'A4'
-      const outputFormat = document.getElementById('printOutputFormat').value; // 'PDF', 'ZIP'
+      const paperSize = document.getElementById('printPaperSize').value;
+      const outputFormat = document.getElementById('printOutputFormat').value;
 
       closePrintLayoutModal();
 
       try {
         await renderPipeline.init();
 
-        // Konfigurasi Grid berdasarkan Ukuran Kertas
         let sheetWidth, sheetHeight, cols, rows, cardSize, gapX, gapY, marginLeft, marginTop, cornerRadius, pdfUnitWidth, pdfUnitHeight;
 
         if (paperSize === 'A4') {
@@ -1225,7 +1244,6 @@
           document.getElementById('nfcScannedText').innerText = textResult || "Format data tidak teridentifikasi.";
           document.getElementById('nfcDetailsBox').classList.remove('hidden');
 
-          // Cek apakah data berisi kode kartu
           if (textResult.includes('code=')) {
             const codeExtracted = textResult.split('code=')[1].split('&')[0];
             document.getElementById('searchInput').value = codeExtracted;
@@ -1325,7 +1343,6 @@
       renderPaginationControls(totalItems, startIndex + 1, endIndex, totalPages);
     }
 
-    // NAVIGASI KOMPONEN KONTROL PAGINASI
     function renderPaginationControls(totalItems, start, end, totalPages) {
       const container = document.getElementById('paginationControls');
       if (!container) return;
