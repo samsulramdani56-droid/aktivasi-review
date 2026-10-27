@@ -995,7 +995,7 @@
           folder.file(`Layout_A3_Plus_Sheet_${sheetIdx + 1}.png`, sheetDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
 
           // Beri jeda kecil agar Browser melakukan Garbage Collection
-          await new Promise(r => setTimeout(r, 60));
+          await new Promise(r => setTimeout(r, 360));
         }
 
         // Hancurkan referensi canvas utama
