@@ -1288,7 +1288,7 @@
           if (cardDataUrl) {
             folder.file(`Desain_${card.card_code}.png`, cardDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
           }
-          await new Promise(r => setTimeout(r, 30));
+          await new Promise(r => setTimeout(r, 300));
         }
 
         progressText.innerText = "Mengompres ke ZIP...";
