@@ -54,19 +54,24 @@
   </div>
 
   <!-- DASHBOARD CONTAINER -->
-  <div id="dashboard-section" class="hidden min-h-screen p-4 sm:p-6 md:p-8 max-w-6xl mx-auto flex flex-col justify-between">
+  <div id="dashboard-section" class="hidden min-h-screen p-4 sm:p-6 md:p-8 max-w-7xl mx-auto flex flex-col justify-between">
     <div>
       <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-white/80 backdrop-blur-md p-4 sm:p-6 rounded-3xl border border-slate-200/60 shadow-sm">
         <div class="flex items-center gap-3">
           <div class="bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-bold rounded-2xl w-11 h-11 flex items-center justify-center shadow-md shadow-blue-500/20 text-lg">R</div>
           <div>
             <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">System Node Control</h1>
-            <p class="text-xs text-slate-500">Manajemen database kartu, cetak QR massal, & monitoring sistem.</p>
+            <p class="text-xs text-slate-500">Manajemen database kartu, cetak QR massal, NFC Tool, & monitoring sistem.</p>
           </div>
         </div>
-        <button onclick="logoutAdmin()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all">
-          Disconnect
-        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="openNfcScannerModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
+            📡 Scan Tag NFC
+          </button>
+          <button onclick="logoutAdmin()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all">
+            Disconnect
+          </button>
+        </div>
       </header>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -101,7 +106,7 @@
         <div class="bg-white/90 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-200/50 border border-slate-200/60 mb-8">
           <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 mb-6">
             <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-              <input id="searchInput" type="text" oninput="filterCards()" placeholder="Cari Kode Kartu / Bisnis..." autocomplete="off" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm w-full sm:w-56 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
+              <input id="searchInput" type="text" oninput="filterCards()" placeholder="Cari Kode / Bisnis / WA / Reseller..." autocomplete="off" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all">
               
               <select id="categoryFilter" onchange="filterCards()" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
                 <option value="all">📁 Semua Kategori</option>
@@ -110,6 +115,12 @@
                 <option value="TikTok Shop">🎵 TikTok Shop</option>
                 <option value="Shopee">🟠 Shopee</option>
                 <option value="Demo Sample">🧪 Demo Sample</option>
+              </select>
+
+              <select id="routingFilter" onchange="filterCards()" class="bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all">
+                <option value="all">⚡ All Routing</option>
+                <option value="on">🟢 Routing ON</option>
+                <option value="off">⚪ Routing OFF</option>
               </select>
 
               <div class="bg-slate-100 p-1 rounded-2xl flex gap-1 text-xs font-semibold">
@@ -138,9 +149,12 @@
             </div>
           </div>
 
+          <!-- TOOLBAR MASSAL PERSISTEN MULTI-HALAMAN -->
           <div id="bulkToolbar" class="hidden bg-blue-50 border border-blue-200 rounded-2xl p-3 mb-4 flex flex-wrap items-center justify-between gap-3 animate-modal">
             <div class="flex items-center gap-2 text-xs font-bold text-blue-900">
-              <span id="selectedCount" class="bg-blue-600 text-white px-2 py-0.5 rounded-lg">0</span> kartu dipilih
+              <span id="selectedCount" class="bg-blue-600 text-white px-2.5 py-0.5 rounded-lg font-mono">0</span> kartu terpilih (Multi-Halaman)
+              <button onclick="selectAllFilteredCards()" class="text-[11px] underline text-blue-700 hover:text-blue-900 ml-2 font-medium">Pilih Semua Result Filter</button>
+              <button onclick="clearCardSelection()" class="text-[11px] text-rose-600 hover:underline ml-1 font-medium">Kosongkan Seleksi</button>
             </div>
             <div class="flex flex-wrap items-center gap-2">
               <button onclick="bulkToggleRoutingSelected(true)" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">ON Smart Routing</button>
@@ -155,16 +169,16 @@
           <div class="overflow-x-auto rounded-2xl border border-slate-100">
             <table class="w-full text-left text-sm">
               <thead>
-                <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-                  <th class="py-3.5 px-4 w-10 text-center"><input type="checkbox" id="selectAllCards" onclick="toggleSelectAllCards(this)" class="w-4 h-4 text-blue-600 rounded cursor-pointer"></th>
-                  <th class="py-3.5 px-4">Kode Kartu</th>
-                  <th class="py-3.5 px-4">Kategori & Reseller</th>
-                  <th class="py-3.5 px-4">Nama Bisnis</th>
+                <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-400 font-bold uppercase tracking-wider select-none">
+                  <th class="py-3.5 px-4 w-10 text-center"><input type="checkbox" id="selectAllCardsPage" onclick="toggleSelectCurrentPageCards(this)" class="w-4 h-4 text-blue-600 rounded cursor-pointer" title="Centang Semua di Halaman Ini"></th>
+                  <th class="py-3.5 px-4 cursor-pointer hover:text-slate-700" onclick="handleSortTable('card_code')">Kode Kartu <span id="sort-icon-card_code">↕</span></th>
+                  <th class="py-3.5 px-4 cursor-pointer hover:text-slate-700" onclick="handleSortTable('category')">Kategori & Reseller <span id="sort-icon-category">↕</span></th>
+                  <th class="py-3.5 px-4 cursor-pointer hover:text-slate-700" onclick="handleSortTable('business_name')">Nama Bisnis <span id="sort-icon-business_name">↕</span></th>
                   <th class="py-3.5 px-4">WA Owner</th>
-                  <th class="py-3.5 px-4">Status</th>
+                  <th class="py-3.5 px-4 cursor-pointer hover:text-slate-700" onclick="handleSortTable('is_activated')">Status <span id="sort-icon-is_activated">↕</span></th>
                   <th class="py-3.5 px-4 text-center">Smart Routing</th>
                   <th class="py-3.5 px-4">PIN</th>
-                  <th class="py-3.5 px-4 text-right">Aksi & Print</th>
+                  <th class="py-3.5 px-4 text-right">Aksi, NFC & Print</th>
                 </tr>
               </thead>
               <tbody id="cardsTableBody" class="divide-y divide-slate-100 bg-white"></tbody>
@@ -469,7 +483,7 @@
     </div>
   </div>
 
-  <!-- MODAL QR -->
+  <!-- MODAL QR & NFC WRITER -->
   <div id="qr-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
       <h3 id="qrModalTitle" class="font-extrabold text-slate-900 text-lg mb-1">QR Code Kartu</h3>
@@ -480,6 +494,9 @@
         <p id="qrModalUrl" class="text-xs font-mono text-blue-600 break-all select-all"></p>
       </div>
       <div class="space-y-2">
+        <button onclick="writeCurrentCardToNfc()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl text-xs shadow-md flex items-center justify-center gap-1.5">
+          📡 Tulis URL ke Chip NFC Fisik
+        </button>
         <button onclick="downloadCompleteCardDesignModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-xl text-xs shadow-md">🖼️ Download Desain Kartu (Template + QR)</button>
         <button onclick="downloadQrImage()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl text-xs shadow-md">📥 Download QR Mentahan Saja</button>
         <div class="flex gap-2">
@@ -490,11 +507,36 @@
     </div>
   </div>
 
+  <!-- MODAL NFC SCANNER & WRITER -->
+  <div id="nfc-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <div id="nfcModalIcon" class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-3 animate-pulse">📡</div>
+      <h3 id="nfcModalTitle" class="font-extrabold text-slate-900 text-lg mb-1">NFC Reader & Writer</h3>
+      <p id="nfcModalStatus" class="text-xs text-slate-500 mb-4 leading-relaxed">Dekatkan chip NFC fisik ke bagian belakang HP/perangkat Anda...</p>
+      
+      <div id="nfcDetailsBox" class="bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4 hidden text-left text-xs font-mono">
+        <p class="font-bold text-slate-700 mb-1">Hasil Scan NFC:</p>
+        <p id="nfcScannedText" class="text-indigo-600 break-all"></p>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="stopNfcSession()" class="w-full bg-slate-100 text-slate-700 font-semibold py-3 rounded-2xl text-sm">Tutup / Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PROGRESS BAR REAL-TIME (0-100%) -->
   <div id="zip-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
-      <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-xl mb-3 animate-spin">⏳</div>
-      <h3 class="font-bold text-slate-900 text-base mb-1">Memproses File...</h3>
-      <p id="zipProgressText" class="text-xs text-slate-500">Menyiapkan gambar kartu.</p>
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <div id="zipSpinner" class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-xl mb-3 animate-spin">⏳</div>
+      <h3 id="zipProgressTitle" class="font-bold text-slate-900 text-base mb-1">Memproses File...</h3>
+      <p id="zipProgressText" class="text-xs text-slate-500 mb-4">Menyiapkan gambar kartu.</p>
+
+      <!-- BAR DYNAMIC 100% -->
+      <div class="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden border border-slate-200/80">
+        <div id="zipProgressBar" class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 h-3 rounded-full transition-all duration-200" style="width: 0%"></div>
+      </div>
+      <p id="zipProgressPercent" class="text-xs font-mono font-bold text-slate-700">0%</p>
     </div>
   </div>
 
@@ -526,9 +568,19 @@
     let editingOriginalCode = null;
     let modalCallback = null;
 
+    // KONTROL SORTING TABEL
+    let currentSortField = 'card_code';
+    let currentSortDirection = 'asc';
+
+    // SELEKSI CHECKBOX GLOBAL MULTI-HALAMAN
+    let selectedCardCodesSet = new Set();
+
     // VARIABLE PAGINASI
     let currentPage = 1;
     const ITEMS_PER_PAGE = 12;
+
+    // NFC READER / WRITER SESSION
+    let ndefController = null;
 
     // ==========================================
     // MODUL TERPISAH: CARD RENDER PIPELINE
@@ -702,6 +754,29 @@
       }
     }
 
+    // HELPER PROGRESS BAR REAL-TIME
+    function updateProgressBar(current, total, title = 'Memproses File...', statusText = '') {
+      const modal = document.getElementById('zip-modal');
+      const progressBar = document.getElementById('zipProgressBar');
+      const percentText = document.getElementById('zipProgressPercent');
+      const titleEl = document.getElementById('zipProgressTitle');
+      const textEl = document.getElementById('zipProgressText');
+
+      if (modal.classList.contains('hidden')) modal.classList.remove('hidden');
+
+      const pct = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+      progressBar.style.width = `${pct}%`;
+      percentText.innerText = `${pct}% (${current}/${total})`;
+      titleEl.innerText = title;
+      textEl.innerText = statusText || `Memproses item ke-${current} dari ${total}...`;
+    }
+
+    function closeProgressBar() {
+      document.getElementById('zip-modal').classList.add('hidden');
+      document.getElementById('zipProgressBar').style.width = '0%';
+      document.getElementById('zipProgressPercent').innerText = '0%';
+    }
+
     function sanitizePhoneNumber(phone) {
       if (!phone) return '';
       let clean = phone.replace(/[^0-9]/g, '');
@@ -794,37 +869,95 @@
       filterCards();
     }
 
+    function handleSortTable(field) {
+      if (currentSortField === field) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSortField = field;
+        currentSortDirection = 'asc';
+      }
+
+      ['card_code', 'category', 'business_name', 'is_activated'].forEach(f => {
+        const icon = document.getElementById(`sort-icon-${f}`);
+        if (icon) icon.innerText = f === currentSortField ? (currentSortDirection === 'asc' ? '▲' : '▼') : '↕';
+      });
+
+      filterCards(false);
+    }
+
     function filterCards(resetPage = true) {
       if (resetPage) currentPage = 1;
       const q = document.getElementById('searchInput').value.toLowerCase().trim();
       const catFilter = document.getElementById('categoryFilter').value;
+      const rFilter = document.getElementById('routingFilter').value;
 
       let filtered = allCardsData.filter(c => {
-        const matchQuery = c.card_code.toLowerCase().includes(q) || (c.business_name && c.business_name.toLowerCase().includes(q)) || (c.reseller_id && c.reseller_id.toLowerCase().includes(q));
+        const matchQuery = c.card_code.toLowerCase().includes(q) || 
+                          (c.business_name && c.business_name.toLowerCase().includes(q)) || 
+                          (c.reseller_id && c.reseller_id.toLowerCase().includes(q)) ||
+                          (c.owner_phone && c.owner_phone.includes(q));
+        
         const matchCat = (catFilter === 'all') || (c.category === catFilter);
-        return matchQuery && matchCat;
+        const matchRouting = (rFilter === 'all') || (rFilter === 'on' && c.enable_routing !== false) || (rFilter === 'off' && c.enable_routing === false);
+        
+        return matchQuery && matchCat && matchRouting;
       });
 
       if (currentFilter === 'active') filtered = filtered.filter(c => c.is_activated);
       else if (currentFilter === 'inactive') filtered = filtered.filter(c => !c.is_activated);
       
+      // LOGIKA SORTING DATA
+      filtered.sort((a, b) => {
+        let valA = a[currentSortField] || '';
+        let valB = b[currentSortField] || '';
+        if (typeof valA === 'boolean') valA = valA ? 1 : 0;
+        if (typeof valB === 'boolean') valB = valB ? 1 : 0;
+        if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+
       currentFilteredCards = filtered;
       renderCardsTable(currentFilteredCards);
     }
 
-    function toggleSelectAllCards(source) {
-      const checkboxes = document.querySelectorAll('.card-checkbox');
-      checkboxes.forEach(cb => cb.checked = source.checked);
+    // MANAGEMEN SELEKSI MULTI-HALAMAN (PERSISTEN)
+    function handleCardCheckboxChange(cardCode, isChecked) {
+      if (isChecked) {
+        selectedCardCodesSet.add(cardCode);
+      } else {
+        selectedCardCodesSet.delete(cardCode);
+      }
       updateBulkToolbar();
     }
 
+    function toggleSelectCurrentPageCards(source) {
+      const checkboxes = document.querySelectorAll('.card-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = source.checked;
+        if (source.checked) selectedCardCodesSet.add(cb.value);
+        else selectedCardCodesSet.delete(cb.value);
+      });
+      updateBulkToolbar();
+    }
+
+    function selectAllFilteredCards() {
+      currentFilteredCards.forEach(c => selectedCardCodesSet.add(c.card_code));
+      renderCardsTable(currentFilteredCards);
+    }
+
+    function clearCardSelection() {
+      selectedCardCodesSet.clear();
+      renderCardsTable(currentFilteredCards);
+    }
+
     function updateBulkToolbar() {
-      const selectedCheckboxes = document.querySelectorAll('.card-checkbox:checked');
       const toolbar = document.getElementById('bulkToolbar');
       const countEl = document.getElementById('selectedCount');
       
-      countEl.innerText = selectedCheckboxes.length;
-      if (selectedCheckboxes.length > 0) {
+      const count = selectedCardCodesSet.size;
+      countEl.innerText = count;
+      if (count > 0) {
         toolbar.classList.remove('hidden');
       } else {
         toolbar.classList.add('hidden');
@@ -832,8 +965,7 @@
     }
 
     function getSelectedCardCodes() {
-      const checkboxes = document.querySelectorAll('.card-checkbox:checked');
-      return Array.from(checkboxes).map(cb => cb.value);
+      return Array.from(selectedCardCodesSet);
     }
 
     async function bulkToggleRoutingSelected(enable) {
@@ -858,6 +990,7 @@
       for (let code of codes) {
         await supabaseClient.from('cards').delete().eq('card_code', code);
       }
+      selectedCardCodesSet.clear();
       showNotification('Berhasil', `${codes.length} kartu berhasil dihapus!`, 'success');
       fetchCards();
     }
@@ -866,24 +999,22 @@
       const codes = getSelectedCardCodes();
       if (codes.length === 0) return;
 
-      const zipModal = document.getElementById('zip-modal');
-      const progressText = document.getElementById('zipProgressText');
-      zipModal.classList.remove('hidden');
-
       const zip = new JSZip();
       const folder = zip.folder("QR_Mentahan_Terpilih");
 
       for (let i = 0; i < codes.length; i++) {
         const code = codes[i];
-        progressText.innerText = `Memproses QR (${i + 1}/${codes.length}): ${code}`;
+        updateProgressBar(i + 1, codes.length, "Generasi QR Code (ZIP)", `Memproses QR (${i + 1}/${codes.length}): ${code}`);
+        
         const dataUrl = await renderPipeline.generateQrDataUrl(`${DOMAIN_BASE}/?code=${code}`);
         if (dataUrl) folder.file(`QR_${code}.png`, dataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
         await new Promise(r => setTimeout(r, 20));
       }
 
-      progressText.innerText = "Mengompres ke ZIP...";
+      updateProgressBar(codes.length, codes.length, "Mengompres ke ZIP...", "Menyusun arsip ZIP mentahan QR...");
       const content = await zip.generateAsync({ type: "blob" });
-      zipModal.classList.add('hidden');
+      closeProgressBar();
+      
       saveAs(content, `QR_Mentahan_Terpilih_${codes.length}_Kartu.zip`);
       showNotification('Berhasil', 'ZIP QR Mentahan terpilih berhasil diunduh!', 'success');
     }
@@ -892,17 +1023,13 @@
       const codes = getSelectedCardCodes();
       if (codes.length === 0) return;
 
-      const zipModal = document.getElementById('zip-modal');
-      const progressText = document.getElementById('zipProgressText');
-      zipModal.classList.remove('hidden');
-
       try {
         const zip = new JSZip();
         const folder = zip.folder("Desain_Kartu_Terpilih");
 
         for (let i = 0; i < codes.length; i++) {
           const code = codes[i];
-          progressText.innerText = `Membuat Desain (${i + 1}/${codes.length}): ${code}`;
+          updateProgressBar(i + 1, codes.length, "Generasi Desain Kartu (ZIP)", `Merender Desain Kartu (${i + 1}/${codes.length}): ${code}`);
           
           const cardDataUrl = await renderPipeline.renderSingleCard(code);
           if (cardDataUrl) {
@@ -911,14 +1038,14 @@
           await new Promise(r => setTimeout(r, 30));
         }
 
-        progressText.innerText = "Mengompres ke ZIP...";
+        updateProgressBar(codes.length, codes.length, "Mengompres ke ZIP...", "Menyusun arsip file PNG...");
         const content = await zip.generateAsync({ type: "blob" });
-        zipModal.classList.add('hidden');
+        closeProgressBar();
 
         saveAs(content, `Desain_Terpilih_${codes.length}_Kartu.zip`);
         showNotification('Berhasil', 'ZIP Desain Kartu Terpilih berhasil diunduh!', 'success');
       } catch (err) {
-        zipModal.classList.add('hidden');
+        closeProgressBar();
         showNotification('Gagal', err.message, 'error');
       }
     }
@@ -962,10 +1089,6 @@
 
       closePrintLayoutModal();
 
-      const zipModal = document.getElementById('zip-modal');
-      const progressText = document.getElementById('zipProgressText');
-      zipModal.classList.remove('hidden');
-
       try {
         await renderPipeline.init();
 
@@ -973,50 +1096,16 @@
         let sheetWidth, sheetHeight, cols, rows, cardSize, gapX, gapY, marginLeft, marginTop, cornerRadius, pdfUnitWidth, pdfUnitHeight;
 
         if (paperSize === 'A4') {
-          sheetWidth = 2480;
-          sheetHeight = 3508;
-          cols = 2;
-          rows = 2;
-          cardSize = 1000;
-          gapX = 120;
-          gapY = 120;
-          marginLeft = 180;
-          marginTop = 400;
-          cornerRadius = 120;
-          pdfUnitWidth = 210;
-          pdfUnitHeight = 297;
+          sheetWidth = 2480; sheetHeight = 3508; cols = 2; rows = 2; cardSize = 1000; gapX = 120; gapY = 120; marginLeft = 180; marginTop = 400; cornerRadius = 120; pdfUnitWidth = 210; pdfUnitHeight = 297;
         } else if (paperSize === 'A3') {
-          sheetWidth = 3508;
-          sheetHeight = 4960;
-          cols = 3;
-          rows = 3;
-          cardSize = 1000;
-          gapX = 120;
-          gapY = 120;
-          marginLeft = 124;
-          marginTop = 350;
-          cornerRadius = 120;
-          pdfUnitWidth = 297;
-          pdfUnitHeight = 420;
+          sheetWidth = 3508; sheetHeight = 4960; cols = 3; rows = 3; cardSize = 1000; gapX = 120; gapY = 120; marginLeft = 124; marginTop = 350; cornerRadius = 120; pdfUnitWidth = 297; pdfUnitHeight = 420;
         } else { // A3+
-          sheetWidth = 3948;
-          sheetHeight = 5796;
-          cols = 3;
-          rows = 4;
-          cardSize = 1200;
-          gapX = 150;
-          gapY = 150;
-          marginLeft = 24;
-          marginTop = 273;
-          cornerRadius = 144;
-          pdfUnitWidth = 329;
-          pdfUnitHeight = 483;
+          sheetWidth = 3948; sheetHeight = 5796; cols = 3; rows = 4; cardSize = 1200; gapX = 150; gapY = 150; marginLeft = 24; marginTop = 273; cornerRadius = 144; pdfUnitWidth = 329; pdfUnitHeight = 483;
         }
 
         const itemsPerSheet = cols * rows;
         const totalSheets = Math.ceil(codes.length / itemsPerSheet);
 
-        // Inisialisasi ZIP atau PDF
         let zip = null;
         let folder = null;
         let pdfDoc = null;
@@ -1033,7 +1122,6 @@
           });
         }
 
-        // Reuse Canvas Tunggal untuk menghemat RAM
         const sheetCanvas = document.createElement('canvas');
         sheetCanvas.width = sheetWidth;
         sheetCanvas.height = sheetHeight;
@@ -1042,31 +1130,28 @@
         for (let sheetIdx = 0; sheetIdx < totalSheets; sheetIdx++) {
           ctx.clearRect(0, 0, sheetWidth, sheetHeight);
 
-          // Latar Belakang Kertas
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(0, 0, sheetWidth, sheetHeight);
 
-          // Pengaturan Kualitas Gambar
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
 
-          // Header Kertas
           ctx.fillStyle = '#1e293b';
           ctx.font = 'bold 44px sans-serif';
           ctx.fillText(`LAYOUT CETAK ${paperSize} (${cols}x${rows}) - LEMBAR ${sheetIdx + 1} dari ${totalSheets}`, 100, 160);
 
           const sheetCardCodes = codes.slice(sheetIdx * itemsPerSheet, (sheetIdx + 1) * itemsPerSheet);
 
-          // Render kartu langsung ke Sheet Canvas secara sekuensial (Zero Blank)
           for (let i = 0; i < sheetCardCodes.length; i++) {
             const code = sheetCardCodes[i];
+            const globalIndex = sheetIdx * itemsPerSheet + i + 1;
             const col = i % cols;
             const row = Math.floor(i / cols);
 
             const x = marginLeft + col * (cardSize + gapX);
             const y = marginTop + row * (cardSize + gapY);
 
-            progressText.innerText = `[Sheet ${sheetIdx + 1}/${totalSheets}] Memproses kartu (${i + 1}/${sheetCardCodes.length}): ${code}`;
+            updateProgressBar(globalIndex, codes.length, `Layout Cetak ${paperSize} (${outputFormat})`, `[Sheet ${sheetIdx + 1}/${totalSheets}] Memproses kartu (${globalIndex}/${codes.length}): ${code}`);
 
             await renderPipeline.renderCardDirectToContext(ctx, x, y, cardSize, cornerRadius, code);
           }
@@ -1080,43 +1165,120 @@
             pdfDoc.addImage(sheetJpegUrl, 'JPEG', 0, 0, pdfUnitWidth, pdfUnitHeight);
           }
 
-          // Jeda kecil untuk Garbage Collection
           await new Promise(r => setTimeout(r, 40));
         }
 
-        // Hancurkan referensi canvas utama
         sheetCanvas.width = 0;
         sheetCanvas.height = 0;
 
         if (outputFormat === 'ZIP') {
-          progressText.innerText = "Mengompres file ke ZIP...";
+          updateProgressBar(codes.length, codes.length, "Mengompresi ZIP...", "Menyimpan seluruh lembar gambar...");
           const content = await zip.generateAsync({ type: "blob" });
-          zipModal.classList.add('hidden');
+          closeProgressBar();
           saveAs(content, `Print_Layout_${paperSize}_${codes.length}_Kartu.zip`);
           showNotification('Berhasil', `File Layout Cetak ${paperSize} (ZIP) berhasil diunduh!`, 'success');
         } else {
-          progressText.innerText = "Menyimpan file PDF...";
+          updateProgressBar(codes.length, codes.length, "Menyimpan Document PDF...", "Menyusun PDF Multi-Halaman...");
           pdfDoc.save(`Print_Layout_${paperSize}_${codes.length}_Kartu.pdf`);
-          zipModal.classList.add('hidden');
+          closeProgressBar();
           showNotification('Berhasil', `File Document PDF Cetak ${paperSize} berhasil diunduh!`, 'success');
         }
 
       } catch (err) {
-        zipModal.classList.add('hidden');
+        closeProgressBar();
         showNotification('Gagal', err.message, 'error');
       }
     }
 
-    // RENDER TABEL DENGAN PAGINASI (MAX 12 KARTU PER HALAMAN)
+    // ==========================================
+    // INTEGRASI WEB NFC READER & WRITER
+    // ==========================================
+    function openNfcScannerModal() {
+      if (!('NDEFReader' in window)) {
+        showNotification('Web NFC Tidak Didukung', 'Browser ini belum mendukung Web NFC API. Gunakan Google Chrome pada perangkat Android.', 'error');
+        return;
+      }
+
+      document.getElementById('nfcModalTitle').innerText = "📡 NFC Scanner Mode";
+      document.getElementById('nfcModalStatus').innerText = "Dekatkan chip NFC ke bagian belakang ponsel Anda untuk membaca isi kartu...";
+      document.getElementById('nfcDetailsBox').classList.add('hidden');
+      document.getElementById('nfc-modal').classList.remove('hidden');
+
+      startNfcReadSession();
+    }
+
+    async function startNfcReadSession() {
+      try {
+        const ndef = new NDEFReader();
+        await ndef.scan();
+
+        ndef.addEventListener("reading", ({ message, serialNumber }) => {
+          let textResult = '';
+          for (const record of message.records) {
+            if (record.recordType === "url" || record.recordType === "text") {
+              const textDecoder = new TextDecoder(record.encoding || 'utf-8');
+              textResult += textDecoder.decode(record.data) + ' ';
+            }
+          }
+
+          document.getElementById('nfcModalStatus').innerText = `✅ Tag Terbaca! Serial: ${serialNumber || 'N/A'}`;
+          document.getElementById('nfcScannedText').innerText = textResult || "Format data tidak teridentifikasi.";
+          document.getElementById('nfcDetailsBox').classList.remove('hidden');
+
+          // Cek apakah data berisi kode kartu
+          if (textResult.includes('code=')) {
+            const codeExtracted = textResult.split('code=')[1].split('&')[0];
+            document.getElementById('searchInput').value = codeExtracted;
+            filterCards();
+          }
+        });
+      } catch (error) {
+        document.getElementById('nfcModalStatus').innerText = "⚠️ Gagal memulai NFC Reader: " + error.message;
+      }
+    }
+
+    async function writeCurrentCardToNfc() {
+      if (!activeCardCodeForDownload) return;
+      closeQrModal();
+
+      if (!('NDEFReader' in window)) {
+        showNotification('Web NFC Tidak Didukung', 'Browser ini tidak mendukung penulisan NFC. Gunakan Chrome Android.', 'error');
+        return;
+      }
+
+      const targetUrl = `${DOMAIN_BASE}/?code=${activeCardCodeForDownload}`;
+      document.getElementById('nfcModalTitle').innerText = `📡 Writing NFC (${activeCardCodeForDownload})`;
+      document.getElementById('nfcModalStatus').innerText = `Tempelkan kartu/chip NFC kosong untuk menuliskan URL:\n${targetUrl}`;
+      document.getElementById('nfcDetailsBox').classList.add('hidden');
+      document.getElementById('nfc-modal').classList.remove('hidden');
+
+      try {
+        const ndef = new NDEFReader();
+        await ndef.write({
+          records: [{ recordType: "url", data: targetUrl }]
+        });
+        document.getElementById('nfcModalStatus').innerText = "🎉 BERHASIL! URL Kartu telah dituliskan ke Chip NFC.";
+      } catch (error) {
+        document.getElementById('nfcModalStatus').innerText = "✕ Gagal Menulis ke NFC: " + error.message;
+      }
+    }
+
+    function stopNfcSession() {
+      document.getElementById('nfc-modal').classList.add('hidden');
+    }
+
+    // RENDER TABEL DENGAN PAGINASI & SELEKSI CHECKBOX PERSISTEN
     function renderCardsTable(data) {
       const tbody = document.getElementById('cardsTableBody');
       tbody.innerHTML = '';
-      const selectAllCheckbox = document.getElementById('selectAllCards');
-      if (selectAllCheckbox) selectAllCheckbox.checked = false;
+
+      const currentPageCheck = document.getElementById('selectAllCardsPage');
+      if (currentPageCheck) currentPageCheck.checked = false;
+      
       updateBulkToolbar();
 
       if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu yang cocok dengan filter.</td></tr>`;
         renderPaginationControls(0, 0, 0, 1);
         return;
       }
@@ -1130,12 +1292,16 @@
       const pageData = data.slice(startIndex, endIndex);
 
       pageData.forEach(card => {
+        const isChecked = selectedCardCodesSet.has(card.card_code);
         const badge = card.is_activated ? `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">🟢 Aktif</span>` : `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">🟡 Blank</span>`;
         const isRoutingOn = card.enable_routing !== false;
         const resellerBadge = card.reseller_id ? `<br><span class="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded">ID: ${card.reseller_id}</span>` : '';
+        
         tbody.innerHTML += `
-          <tr class="hover:bg-slate-50/80 transition-all">
-            <td class="py-3.5 px-4 text-center"><input type="checkbox" class="card-checkbox w-4 h-4 text-blue-600 rounded cursor-pointer" value="${card.card_code}" onchange="updateBulkToolbar()"></td>
+          <tr class="hover:bg-slate-50/80 transition-all ${isChecked ? 'bg-blue-50/40' : ''}">
+            <td class="py-3.5 px-4 text-center">
+              <input type="checkbox" class="card-checkbox w-4 h-4 text-blue-600 rounded cursor-pointer" value="${card.card_code}" ${isChecked ? 'checked' : ''} onchange="handleCardCheckboxChange('${card.card_code}', this.checked)">
+            </td>
             <td class="py-3.5 px-4 font-bold text-slate-900 font-mono">${card.card_code}</td>
             <td class="py-3.5 px-4 text-xs font-medium text-slate-600"><span class="bg-slate-100 px-2 py-1 rounded-lg">${card.category || 'Retail Local'}</span>${resellerBadge}</td>
             <td class="py-3.5 px-4 font-semibold text-slate-700">${card.business_name || '-'}</td>
@@ -1147,8 +1313,8 @@
               </button>
             </td>
             <td class="py-3.5 px-4 font-mono text-xs text-slate-600">${card.pin || '-'}</td>
-            <td class="py-3.5 px-4 text-right">
-              <button onclick="showQrModal('${card.card_code}')" class="text-xs bg-slate-100 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-slate-200 transition-all mr-1">🔲 QR</button>
+            <td class="py-3.5 px-4 text-right whitespace-nowrap">
+              <button onclick="showQrModal('${card.card_code}')" class="text-xs bg-slate-100 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-slate-200 transition-all mr-1">🔲 QR / NFC</button>
               <button onclick="openEditModal('${card.card_code}')" class="text-xs bg-blue-50 text-blue-600 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-blue-100 transition-all mr-1">Edit</button>
               <button onclick="deleteCard('${card.card_code}')" class="text-xs bg-rose-50 text-rose-600 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-rose-100 transition-all">Hapus</button>
             </td>
@@ -1304,25 +1470,21 @@
       if (filteredCards.length === 0) { showNotification('Informasi', 'Tidak ada data kartu ditemukan.', 'info'); return; }
       closeZipFilterModal();
 
-      const zipModal = document.getElementById('zip-modal');
-      const progressText = document.getElementById('zipProgressText');
-      zipModal.classList.remove('hidden');
-
       const zip = new JSZip();
       const folderName = selectedCat !== 'all' ? `QR_Mentahan_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}` : "QR_Mentahan_RenderProject";
       const folder = zip.folder(folderName);
 
       for (let i = 0; i < filteredCards.length; i++) {
         const card = filteredCards[i];
-        progressText.innerText = `Memproses QR (${i + 1}/${filteredCards.length}): ${card.card_code}`;
+        updateProgressBar(i + 1, filteredCards.length, "Generasi QR Mentahan", `Memproses QR (${i + 1}/${filteredCards.length}): ${card.card_code}`);
         const dataUrl = await renderPipeline.generateQrDataUrl(`${DOMAIN_BASE}/?code=${card.card_code}`);
         if (dataUrl) folder.file(`QR_${card.card_code}.png`, dataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
         await new Promise(r => setTimeout(r, 20));
       }
 
-      progressText.innerText = "Mengompres ke ZIP...";
+      updateProgressBar(filteredCards.length, filteredCards.length, "Mengompresi ZIP...", "Menyusun file...");
       const content = await zip.generateAsync({ type: "blob" });
-      zipModal.classList.add('hidden');
+      closeProgressBar();
       saveAs(content, `QR_Mentahan_${selectedCat !== 'all' ? selectedCat.replace(/[^a-zA-Z0-9]/g, '_') : 'Range'}.zip`);
     }
 
@@ -1364,9 +1526,6 @@
       }
 
       closeCardDesignZipModal();
-      const zipModal = document.getElementById('zip-modal');
-      const progressText = document.getElementById('zipProgressText');
-      zipModal.classList.remove('hidden');
 
       try {
         const zip = new JSZip();
@@ -1375,7 +1534,7 @@
 
         for (let i = 0; i < filteredCards.length; i++) {
           const card = filteredCards[i];
-          progressText.innerText = `Membuat Desain (${i + 1}/${filteredCards.length}): ${card.card_code}`;
+          updateProgressBar(i + 1, filteredCards.length, "Generasi Desain Kartu (ZIP)", `Membuat Desain (${i + 1}/${filteredCards.length}): ${card.card_code}`);
           
           const cardDataUrl = await renderPipeline.renderSingleCard(card.card_code);
           if (cardDataUrl) {
@@ -1384,15 +1543,15 @@
           await new Promise(r => setTimeout(r, 30));
         }
 
-        progressText.innerText = "Mengompres ke ZIP...";
+        updateProgressBar(filteredCards.length, filteredCards.length, "Mengompresi ke ZIP...", "Menyusun file...");
         const content = await zip.generateAsync({ type: "blob" });
-        zipModal.classList.add('hidden');
+        closeProgressBar();
 
         const zipFileName = selectedCat !== 'all' ? `Desain_Kategori_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}.zip` : `Desain_Range_${startCode || 'ALL'}_to_${endCode || 'ALL'}.zip`;
         saveAs(content, zipFileName);
         showNotification('Berhasil', 'ZIP Desain Kartu Lengkap berhasil diunduh!', 'success');
       } catch (err) {
-        zipModal.classList.add('hidden');
+        closeProgressBar();
         showNotification('Gagal', err.message, 'error');
       }
     }
@@ -1460,7 +1619,7 @@
         showNotification('Perhatian', 'Mohon isi Prefix, Angka Awal, dan Jumlah kartu dengan benar.', 'info');
         return;
       }
-      if (count > 120) { showNotification('Batas Maksimal', 'Maksimal 120 kartu sekali generate!', 'info'); return; }
+      if (count > 200) { showNotification('Batas Maksimal', 'Maksimal 200 kartu sekali generate!', 'info'); return; }
       
       setButtonLoading('batchSubmitBtn', true, 'Proses Massal');
       const batchPayload = [];
@@ -1578,6 +1737,7 @@
       if (confirm(`Yakin ingin menghapus kartu ${code}?`)) {
         const { error } = await supabaseClient.from('cards').delete().eq('card_code', code);
         if (!error) {
+          selectedCardCodesSet.delete(code);
           fetchCards();
         } else {
           showNotification('Gagal', error.message, 'error');
