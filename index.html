@@ -630,15 +630,18 @@
       }
     }
 
-    window.sendLinkToWa = function(cardCode, businessName, ownerPhone) {
+    window.sendLinkToWa = function(cardCode, businessName, ownerPhone, pin) {
       const pageUrl = window.location.href;
       const targetWa = ownerPhone ? sanitizePhoneNumber(ownerPhone) : RENDER_SUPPORT_WHATSAPP;
       
       const waMessage = encodeURIComponent(
-        `📌 *LINK HALAMAN KARTU REVIEW (${businessName || cardCode})*\n\n` +
-        `Simpan pesan ini untuk membuka/mengelola kartu Anda kapan saja:\n` +
-        `🔗 ${pageUrl}\n\n` +
-        `_Simpan link ini baik-baik agar mudah diakses kembali._`
+        `📌 *INFORMASI KARTU REVIEW GOOGLE*\n\n` +
+        `🏢 *Bisnis:* ${businessName || '-'}\n` +
+        `🔑 *Kode Kartu:* ${cardCode || '-'}\n` +
+        `🔐 *PIN Akses:* ${pin || '-'}\n\n` +
+        `Simpan pesan ini untuk mengelola & membuka kartu Anda kapan saja:\n` +
+        `🔗 *Link Kelola:* ${pageUrl}\n\n` +
+        `_Harap simpan Kode, PIN, dan Link ini dengan aman._`
       );
 
       const waUrl = `https://wa.me/${targetWa}?text=${waMessage}`;
@@ -915,7 +918,7 @@
         <div class="bg-slate-50/80 p-4 rounded-2xl text-center border border-slate-200/60 flex flex-col gap-3">
           <p class="text-[11px] text-slate-500 leading-normal">${t.saveInfoText}</p>
           
-          <button onclick="window.sendLinkToWa('${card.card_code}', '${card.business_name || ''}', '${card.owner_phone || RENDER_SUPPORT_WHATSAPP}')" class="w-full bg-white hover:bg-slate-50 active:scale-[0.99] text-blue-600 border border-blue-200 text-xs font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm">
+          <button onclick="window.sendLinkToWa('${card.card_code}', '${card.business_name || ''}', '${card.owner_phone || RENDER_SUPPORT_WHATSAPP}', '${card.pin || ''}')" class="w-full bg-white hover:bg-slate-50 active:scale-[0.99] text-blue-600 border border-blue-200 text-xs font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm">
             ${t.copyLinkBtn}
           </button>
         </div>
