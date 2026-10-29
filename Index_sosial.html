@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aktivasi Kartu Smart Social</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Html5Qrcode Scanner CDN -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-modal {
+      animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-slate-100 to-indigo-50/40 min-h-full flex flex-col items-center justify-between p-4 sm:p-6 text-slate-800 antialiased selection:bg-indigo-600 selection:text-white">
+
+  <!-- Header Website -->
+  <header class="w-full max-w-md flex justify-between items-center py-3 px-1">
+    <div class="flex items-center gap-3">
+      <div class="bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-bold rounded-2xl w-10 h-10 flex items-center justify-center shadow-md shadow-indigo-500/20 text-base tracking-wider">S</div>
+      <div>
+        <h2 class="font-bold text-slate-900 text-base leading-tight">Render Smart Social</h2>
+        <span class="text-[10px] font-semibold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md uppercase tracking-wider">v2.0 Social</span>
+      </div>
+    </div>
+    <!-- Tombol Bahasa -->
+    <div class="bg-white/80 backdrop-blur-md border border-slate-200/80 p-1 rounded-xl flex gap-1 shadow-sm cursor-pointer">
+      <button id="btn-id" onclick="setLanguage('id')" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-indigo-600 text-white shadow-sm">ID</button>
+      <button id="btn-en" onclick="setLanguage('en')" class="px-3 py-1 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">EN</button>
+    </div>
+  </header>
+
+  <!-- Konten Utama -->
+  <main id="app-content" class="w-full max-w-md bg-white/90 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-200/60 my-auto transition-all">
+    <!-- Diisi otomatis oleh JS -->
+  </main>
+
+  <footer class="w-full max-w-md py-4 text-center text-xs text-slate-400 font-medium">
+    © 2026 Create Render Smart Card - Social Edition.
+  </footer>
+
+  <!-- MODAL SCANNER QR -->
+  <div id="qr-reader-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-xl mb-3 shadow-inner">📷</div>
+      <h3 class="font-bold text-slate-900 text-lg mb-1">Scan QR Kartu</h3>
+      <p class="text-xs text-slate-500 mb-5 leading-relaxed">Arahkan kamera ke QR Code pada kartu fisik Anda.</p>
+      <div id="reader" class="w-full rounded-2xl overflow-hidden mb-5 bg-slate-900 border border-slate-200 shadow-inner"></div>
+      <button onclick="closeQrScanner()" class="w-full bg-slate-100 text-slate-700 font-semibold py-3 rounded-2xl text-sm hover:bg-slate-200 transition-all">
+        Tutup Kamera
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL NOTIFIKASI -->
+  <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <div id="modal-icon" class="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 shadow-sm"></div>
+      <h3 id="modal-title" class="font-bold text-slate-900 text-lg mb-1.5">Pemberitahuan</h3>
+      <p id="modal-message" class="text-sm text-slate-600 mb-6 leading-relaxed"></p>
+      <button id="modal-btn" onclick="closeCustomModal()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-indigo-700 shadow-lg shadow-indigo-500/25 transition-all">
+        Mengerti
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const RENDER_SUPPORT_WHATSAPP = "6283150929548";
+    let currentLang = localStorage.getItem('social_app_lang') || 'id';
+    let isAuthenticated = false;
+    let html5QrCode = null;
+
+    const SUPABASE_URL = 'https://lzudrzpcahjyeqdvkyto.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6dWRyenBjYWhqeWVxZHZreXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDYyODcsImV4cCI6MjEwNzgyMjI4N30.nI_84CyPRp-sv6_VJvpUB1bk7XWN0NCtSotwztl_lEY';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const cardCodeParam = urlParams.get('code');
+
+    function sanitizePhoneNumber(phone) {
+      if (!phone) return '';
+      let clean = phone.replace(/[^0-9]/g, '');
+      if (clean.startsWith('0')) clean = '62' + clean.slice(1);
+      else if (clean.startsWith('8')) clean = '628' + clean.slice(1);
+      return clean;
+    }
+
+    function formatSocialUrl(platform, input) {
+      if (!input) return '';
+      let clean = input.trim();
+      clean = clean.replace(/^@/, '');
+
+      switch (platform) {
+        case 'instagram':
+          return clean.startsWith('http') ? clean : `https://instagram.com/${clean}`;
+        case 'tiktok':
+          return clean.startsWith('http') ? clean : `https://tiktok.com/@${clean}`;
+        case 'whatsapp':
+          const phone = sanitizePhoneNumber(clean);
+          return `https://wa.me/${phone}`;
+        case 'facebook':
+          return clean.startsWith('http') ? clean : `https://facebook.com/${clean}`;
+        case 'youtube':
+          return clean.startsWith('http') ? clean : `https://youtube.com/@${clean}`;
+        default:
+          if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+            return 'https://' + clean;
+          }
+          return clean;
+      }
+    }
+
+    function showNotification(title, message, type = 'info', onConfirm = null) {
+      const modal = document.getElementById('custom-modal');
+      const iconEl = document.getElementById('modal-icon');
+      document.getElementById('modal-title').innerText = title;
+      document.getElementById('modal-message').innerText = message;
+      window.modalCallback = onConfirm;
+
+      if (type === 'success') {
+        iconEl.className = 'w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 bg-emerald-50 text-emerald-600 shadow-inner';
+        iconEl.innerText = '✓';
+      } else if (type === 'error') {
+        iconEl.className = 'w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 bg-rose-50 text-rose-600 shadow-inner';
+        iconEl.innerText = '✕';
+      } else {
+        iconEl.className = 'w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 bg-indigo-50 text-indigo-600 shadow-inner';
+        iconEl.innerText = 'ℹ';
+      }
+      modal.classList.remove('hidden');
+    }
+
+    window.closeCustomModal = function() {
+      document.getElementById('custom-modal').classList.add('hidden');
+      if (window.modalCallback) {
+        window.modalCallback();
+        window.modalCallback = null;
+      }
+    }
+
+    async function initApp() {
+      if (cardCodeParam) {
+        const cleanCode = cardCodeParam.trim().toUpperCase();
+
+        const { data: card, error } = await supabaseClient
+          .from('social_cards')
+          .select('*')
+          .eq('card_code', cleanCode)
+          .maybeSingle();
+
+        if (card) {
+          if (card.is_activated) {
+            // Jika sudah aktif dan di-tap pelanggan, langsung buka link medsos
+            if (card.target_url) {
+              window.location.href = card.target_url;
+              return;
+            }
+            renderActiveStatus(card);
+          } else {
+            renderActivationForm(cleanCode);
+          }
+        } else {
+          renderActivationForm(cleanCode);
+        }
+      } else {
+        renderHome();
+      }
+    }
+
+    function renderHome() {
+      isAuthenticated = false;
+      document.getElementById('app-content').innerHTML = `
+        <div class="mb-6">
+          <h1 class="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">Kartu Smart Social</h1>
+          <p class="text-slate-500 text-sm leading-relaxed">Hubungkan 1 kartu pintar langsung ke Instagram, TikTok, WhatsApp, Facebook, atau Media Sosial pilihan Anda.</p>
+        </div>
+
+        <div class="pt-2 space-y-3">
+          <p class="text-xs font-semibold text-slate-500">Sudah punya kartu?</p>
+          <button onclick="renderManage()" class="w-full bg-slate-100 hover:bg-slate-200/80 text-slate-700 py-3.5 px-4 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2">
+            🔓 Kelola Kartu Anda di Sini
+          </button>
+        </div>
+      `;
+    }
+
+    function renderActivationForm(code) {
+      document.getElementById('app-content').innerHTML = `
+        <div class="mb-6">
+          <h1 class="text-2xl font-extrabold text-slate-900 mb-1 tracking-tight">Aktivasi Kartu Social</h1>
+          <p class="text-slate-500 text-xs">Menyiapkan kartu: <span class="font-bold text-slate-900">${code}</span></p>
+        </div>
+
+        <div class="space-y-4 mb-6">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Pemilik / Brand</label>
+            <input id="ownerName" type="text" placeholder="Contoh: Samsul Ramdani / RenderCard" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Pilih Platform Tujuan</label>
+            <select id="platformType" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all font-semibold">
+              <option value="instagram">📸 Instagram</option>
+              <option value="tiktok">🎵 TikTok</option>
+              <option value="whatsapp">💬 WhatsApp Direct</option>
+              <option value="facebook">📘 Facebook</option>
+              <option value="youtube">▶️ YouTube Channel</option>
+              <option value="custom">🌐 Website / Link Custom</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Username / Link / No. HP</label>
+            <input id="targetInput" type="text" placeholder="Masukkan Username / Nomor WA / Link" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all font-mono text-xs">
+            <span class="text-[10px] text-slate-400 mt-1 block">*Untuk WA masukkan nomor (08xx), untuk IG/TikTok masukkan username.</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">No. WhatsApp Owner</label>
+            <input id="ownerPhone" type="tel" placeholder="Contoh: 0831xxxx (Untuk simpan info)" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Buat PIN Akses (4 Digit)</label>
+            <input id="cardPin" type="password" maxlength="4" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
+          </div>
+        </div>
+
+        <div class="space-y-2.5">
+          <button id="btnActivate" onclick="submitActivation('${code}')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-indigo-500/25 transition-all text-sm flex items-center justify-center">
+            🚀 Aktifkan Kartu Social
+          </button>
+          <button onclick="renderHome()" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-2.5 transition-all">Kembali</button>
+        </div>
+      `;
+    }
+
+    async function submitActivation(code) {
+      const name = document.getElementById('ownerName').value.trim();
+      const platform = document.getElementById('platformType').value;
+      const targetInput = document.getElementById('targetInput').value.trim();
+      const rawPhone = document.getElementById('ownerPhone').value.trim();
+      const pin = document.getElementById('cardPin').value.trim();
+
+      if (!name || !targetInput || !rawPhone || pin.length !== 4) {
+        showNotification('Data Belum Lengkap', 'Mohon lengkapi seluruh kolom dan pastikan PIN 4 digit.', 'info');
+        return;
+      }
+
+      const finalTargetUrl = formatSocialUrl(platform, targetInput);
+      const sanitizedPhone = sanitizePhoneNumber(rawPhone);
+
+      const { error } = await supabaseClient
+        .from('social_cards')
+        .upsert({
+          card_code: code,
+          platform_type: platform,
+          owner_name: name,
+          target_url: finalTargetUrl,
+          owner_phone: sanitizedPhone,
+          pin: pin,
+          is_activated: true
+        }, { onConflict: 'card_code' });
+
+      if (!error) {
+        isAuthenticated = true;
+        showNotification('Aktivasi Berhasil!', 'Kartu pintar medsos Anda siap digunakan.', 'success', () => {
+          renderActiveStatusByCode(code);
+        });
+      } else {
+        showNotification('Gagal Aktivasi', error.message, 'error');
+      }
+    }
+
+    function renderActiveStatus(card) {
+      document.getElementById('app-content').innerHTML = `
+        <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 shadow-sm">✓</div>
+        <h1 class="text-2xl font-extrabold text-slate-900 mb-1 text-center">Kartu Medsos Aktif!</h1>
+        <p class="text-slate-500 text-xs text-center mb-6">Kartu <span class="font-bold text-slate-800">${card.card_code}</span> terhubung ke <span class="font-bold text-indigo-600 uppercase">${card.platform_type}</span> (${card.owner_name}).</p>
+
+        <div class="space-y-3 mb-6">
+          <a href="${card.target_url}" target="_blank" class="block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-4 rounded-2xl text-center shadow-lg shadow-indigo-500/25 text-sm transition-all">
+            🔗 Tes Buka Link Medsos
+          </a>
+          <button onclick="renderEditFormByCode('${card.card_code}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3.5 px-4 rounded-2xl text-sm transition-all">
+            ✏️ Edit Platform / Link
+          </button>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-center space-y-3">
+          <p class="text-[11px] text-slate-500">Simpan info akses kartu ini ke WhatsApp agar tidak lupa PIN.</p>
+          <button onclick="sendInfoToWa('${card.card_code}', '${card.owner_name}', '${card.platform_type}', '${card.target_url}', '${card.owner_phone}', '${card.pin}')" class="w-full bg-white border border-slate-200 hover:bg-slate-50 text-indigo-600 font-semibold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition-all">
+            📲 Simpan Info Kartu & PIN ke WA
+          </button>
+        </div>
+      `;
+    }
+
+    function sendInfoToWa(code, name, platform, url, phone, pin) {
+      const pageUrl = window.location.href;
+      const targetWa = phone ? sanitizePhoneNumber(phone) : RENDER_SUPPORT_WHATSAPP;
+      
+      const waMessage = encodeURIComponent(
+        `📌 *INFORMASI KARTU SMART SOCIAL*\n\n` +
+        `👤 *Pemilik/Brand:* ${name}\n` +
+        `🔑 *Kode Kartu:* ${code}\n` +
+        `🌐 *Platform:* ${platform.toUpperCase()}\n` +
+        `🔗 *Link Target:* ${url}\n` +
+        `🔐 *PIN Akses:* ${pin}\n\n` +
+        `Link Kelola Kartu:\n🔗 ${pageUrl}\n\n` +
+        `_Simpan pesan ini untuk mengedit tujuan link kartu Anda kapan saja._`
+      );
+
+      window.open(`https://wa.me/${targetWa}?text=${waMessage}`, '_blank');
+    }
+
+    function renderManage(defaultCode = '') {
+      document.getElementById('app-content').innerHTML = `
+        <div class="mb-6">
+          <h1 class="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">Kelola Kartu Medsos</h1>
+          <p class="text-slate-500 text-sm leading-relaxed">Masukkan Kode Kartu & PIN 4 digit untuk mengubah tujuan link medsos.</p>
+        </div>
+
+        <div class="space-y-4 mb-6">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kode Kartu</label>
+            <input id="manageCode" type="text" value="${defaultCode}" placeholder="Contoh: SOC-001" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm uppercase font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN (4 Digit)</label>
+            <input id="managePin" type="password" maxlength="4" placeholder="••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl px-4 py-3 text-sm tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
+          </div>
+        </div>
+
+        <div class="space-y-2.5">
+          <button onclick="handleLoginManage()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-indigo-500/25 transition-all text-sm">
+            🔓 Buka Kartu
+          </button>
+          <button onclick="renderHome()" class="w-full text-slate-500 hover:text-slate-800 text-xs font-semibold py-2.5 transition-all">Kembali</button>
+        </div>
+      `;
+    }
+
+    async function handleLoginManage() {
+      const code = document.getElementById('manageCode').value.trim().toUpperCase();
+      const pin = document.getElementById('managePin').value.trim();
+
+      if (!code || !pin) {
+        showNotification('Informasi', 'Masukkan Kode Kartu dan PIN.', 'info');
+        return;
+      }
+
+      const { data: card } = await supabaseClient
+        .from('social_cards')
+        .select('*')
+        .eq('card_code', code)
+        .eq('pin', pin)
+        .maybeSingle();
+
+      if (card) {
+        isAuthenticated = true;
+        renderActiveStatus(card);
+      } else {
+        showNotification('Akses Ditolak', 'Kode Kartu atau PIN salah!', 'error');
+      }
+    }
+
+    async function renderActiveStatusByCode(code) {
+      const { data: card } = await supabaseClient.from('social_cards').select('*').eq('card_code', code).maybeSingle();
+      if (card) renderActiveStatus(card);
+      else renderHome();
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
