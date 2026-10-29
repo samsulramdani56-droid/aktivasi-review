@@ -3,288 +3,569 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Render Smart Social</title>
+  <title>System Management Core - Social Edition</title>
+  <!-- Proteksi Agar Tidak Terindeks Mesin Pencari -->
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- QRCode.js CDN untuk Preview QR Instant -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- JSZip untuk Download Massal ZIP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <!-- FileSaver.js untuk Menyimpan File ZIP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <!-- jsPDF CDN untuk Export File PDF Siap Cetak -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
     @keyframes modalFadeIn {
       from { opacity: 0; transform: scale(0.95) translateY(10px); }
       to { opacity: 1; transform: scale(1) translateY(0); }
     }
     .animate-modal {
-      animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
   </style>
 </head>
-<body class="bg-slate-50 min-h-full text-slate-800 antialiased pb-12">
+<body class="bg-gradient-to-br from-slate-50 via-slate-100 to-indigo-50/40 min-h-full font-sans text-slate-800 antialiased selection:bg-indigo-600 selection:text-white">
 
-  <!-- MODAL LOGIN ADMIN -->
-  <div id="login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 sm:p-8 shadow-2xl text-center animate-modal border border-slate-100">
-      <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 shadow-inner">🔒</div>
-      <h3 class="font-extrabold text-slate-900 text-xl mb-1">Admin Dashboard</h3>
-      <p class="text-xs text-slate-500 mb-6">Masukkan PIN Master Admin untuk mengakses data Smart Social.</p>
+  <!-- LOGIN CONTAINER (SUPABASE AUTH: EMAIL & PASSWORD) -->
+  <div id="login-section" class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white/90 backdrop-blur-xl w-full max-w-sm rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-200/60 animate-modal text-center">
+      <div class="bg-gradient-to-tr from-indigo-700 to-purple-800 text-white font-bold rounded-2xl w-14 h-14 mx-auto flex items-center justify-center shadow-md text-xl tracking-wider mb-4">🔐</div>
+      <h2 class="font-extrabold text-slate-900 text-xl tracking-tight mb-1">Social Node Gateway</h2>
+      <p class="text-xs text-slate-500 mb-6 leading-relaxed">Masukkan akun email dan password admin untuk mengelola Kartu Social.</p>
       
-      <form onsubmit="handleAdminLogin(event)" class="space-y-4">
-        <input id="adminPinInput" type="password" maxlength="6" placeholder="Masukkan PIN Admin" class="w-full text-center text-lg font-bold tracking-widest bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
-        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-500/25 transition-all text-sm">
-          Masuk Dashboard
-        </button>
-      </form>
+      <div class="text-left mb-3">
+        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Email Administrator</label>
+        <input id="adminEmailInput" type="email" autocomplete="email" placeholder="admin@domain.com" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl p-3 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-700 transition-all">
+      </div>
+
+      <div class="text-left mb-6">
+        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
+        <input id="adminPasswordInput" type="password" autocomplete="current-password" placeholder="••••••••" class="w-full bg-slate-50/80 border border-slate-200 rounded-2xl p-3 text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-700 transition-all" onkeypress="if(event.key === 'Enter') handleAdminLogin()">
+      </div>
+      
+      <button id="loginBtn" onclick="handleAdminLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-lg shadow-indigo-500/25 transition-all text-sm">
+        Sign In to Social Node
+      </button>
     </div>
   </div>
 
-  <!-- DASHBOARD ADMIN UTAMA -->
-  <div id="admin-dashboard" class="hidden">
-    
-    <!-- Navbar -->
-    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+  <!-- DASHBOARD CONTAINER -->
+  <div id="dashboard-section" class="hidden min-h-screen p-4 sm:p-6 md:p-8 max-w-7xl mx-auto flex flex-col justify-between">
+    <div>
+      <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-white/80 backdrop-blur-md p-4 sm:p-6 rounded-3xl border border-slate-200/60 shadow-sm">
         <div class="flex items-center gap-3">
-          <div class="bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-bold rounded-2xl w-10 h-10 flex items-center justify-center shadow-md shadow-indigo-500/20 text-base tracking-wider">S</div>
+          <div class="bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-bold rounded-2xl w-11 h-11 flex items-center justify-center shadow-md shadow-indigo-500/20 text-lg">S</div>
           <div>
-            <h1 class="font-extrabold text-slate-900 text-base sm:text-lg leading-tight">Admin Smart Social</h1>
-            <span class="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md uppercase tracking-wider">Control Panel</span>
+            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Render Smart Social Node</h1>
+            <p class="text-xs text-slate-500">Manajemen database kartu social, cetak QR massal, NFC Tool, & monitoring sistem.</p>
           </div>
         </div>
-        
         <div class="flex items-center gap-2">
-          <button onclick="loadCardData()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold p-2.5 sm:px-4 sm:py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all">
-            🔄 <span class="hidden sm:inline">Refresh Data</span>
+          <button onclick="openNfcScannerModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
+            📡 Scan Tag NFC
           </button>
-          <button onclick="handleLogout()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 font-semibold p-2.5 sm:px-4 sm:py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all">
-            🚪 <span class="hidden sm:inline">Keluar</span>
+          <button onclick="logoutAdmin()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all">
+            Sign Out
           </button>
         </div>
-      </div>
-    </header>
+      </header>
 
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 mt-6 space-y-6">
-      
-      <!-- STATISTIK -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Kartu</p>
-          <h2 id="statTotal" class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">0</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div class="bg-white/90 backdrop-blur-xl p-5 rounded-3xl border border-slate-200/60 shadow-sm">
+          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Kartu Social</p>
+          <h2 id="statTotal" class="text-3xl font-extrabold text-slate-900 tracking-tight">0</h2>
         </div>
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <p class="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider">Kartu Aktif</p>
-          <h2 id="statActive" class="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">0</h2>
+        <div class="bg-white/90 backdrop-blur-xl p-5 rounded-3xl border border-slate-200/60 shadow-sm">
+          <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Kartu Aktif</p>
+          <h2 id="statActive" class="text-3xl font-extrabold text-emerald-600 tracking-tight">0</h2>
         </div>
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <p class="text-[11px] font-semibold text-amber-600 uppercase tracking-wider">Belum Aktif</p>
-          <h2 id="statInactive" class="text-2xl sm:text-3xl font-black text-amber-600 mt-1">0</h2>
-        </div>
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <p class="text-[11px] font-semibold text-indigo-600 uppercase tracking-wider">Platform Terbanyak</p>
-          <h2 id="statTopPlatform" class="text-base sm:text-lg font-bold text-indigo-600 truncate mt-2">-</h2>
+        <div class="bg-white/90 backdrop-blur-xl p-5 rounded-3xl border border-slate-200/60 shadow-sm">
+          <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider mb-1">Belum Aktif (Blank)</p>
+          <h2 id="statInactive" class="text-3xl font-extrabold text-amber-600 tracking-tight">0</h2>
         </div>
       </div>
 
-      <!-- KONTROL & PENCARIAN -->
-      <div class="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
-        
-        <!-- Filter & Search -->
-        <div class="flex flex-col sm:flex-row gap-2.5 flex-1">
-          <div class="relative flex-1">
-            <input id="searchInput" type="text" oninput="filterCards()" placeholder="Cari Kode Kartu / Nama Pemilik..." class="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
-            <span class="absolute left-3.5 top-3 text-slate-400 text-xs">🔍</span>
+      <div class="flex border-b border-slate-200/80 mb-6 gap-2 overflow-x-auto pb-1">
+        <button id="tab-cards-btn" onclick="switchTab('cards')" class="px-4 py-2 text-xs sm:text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-all whitespace-nowrap">
+          🎴 Kelola Kartu Social (<span id="count-cards">0</span>)
+        </button>
+        <button id="tab-logs-btn" onclick="switchTab('logs')" class="px-4 py-2 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all whitespace-nowrap">
+          🛡️ Audit Log Aktivitas
+        </button>
+      </div>
+
+      <!-- TAB 1: KELOLA KARTU SOCIAL -->
+      <section id="section-cards">
+        <div class="bg-white/90 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-200/50 border border-slate-200/60 mb-8">
+          <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 mb-6">
+            <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+              <input id="searchInput" type="text" oninput="filterCards()" placeholder="Cari Kode / Brand / Platform / Link..." autocomplete="off" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
+              
+              <select id="categoryFilter" onchange="filterCards()" class="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all">
+                <option value="all">📁 Semua Kategori</option>
+                <option value="Retail Local">🏪 Retail Local</option>
+                <option value="Reseller Lynk.id">🔗 Reseller Lynk.id</option>
+                <option value="TikTok Shop">🎵 TikTok Shop</option>
+                <option value="Shopee">🟠 Shopee</option>
+                <option value="Demo Sample">🧪 Demo Sample</option>
+              </select>
+
+              <select id="platformFilter" onchange="filterCards()" class="bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all">
+                <option value="all">🌐 Semua Platform</option>
+                <option value="instagram">📸 Instagram</option>
+                <option value="tiktok">🎵 TikTok</option>
+                <option value="whatsapp">💬 WhatsApp</option>
+                <option value="facebook">📘 Facebook</option>
+                <option value="youtube">▶️ YouTube</option>
+                <option value="custom">🌐 Custom Link</option>
+              </select>
+
+              <div class="bg-slate-100 p-1 rounded-2xl flex gap-1 text-xs font-semibold">
+                <button id="filter-all" onclick="setFilterStatus('all')" class="flex-1 px-3 py-1.5 rounded-xl bg-white text-slate-800 shadow-sm transition-all font-bold">Semua</button>
+                <button id="filter-active" onclick="setFilterStatus('active')" class="flex-1 px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all font-semibold">Aktif</button>
+                <button id="filter-inactive" onclick="setFilterStatus('inactive')" class="flex-1 px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all font-semibold">Blank</button>
+              </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2">
+              <button onclick="openCsvFilterModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                📥 Export CSV
+              </button>
+              <button onclick="openZipFilterModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/20">
+                📦 QR Mentahan (ZIP)
+              </button>
+              <button onclick="openCardDesignZipModal()" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/20">
+                🖼️ Desain Kartu (ZIP)
+              </button>
+              <button onclick="openBatchModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20">
+                ⚡ Generate Massal
+              </button>
+              <button onclick="openAddModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/20">
+                + Tambah Single
+              </button>
+            </div>
           </div>
 
-          <select id="platformFilter" onchange="filterCards()" class="bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
-            <option value="ALL">Semua Platform</option>
-            <option value="instagram">📸 Instagram</option>
-            <option value="tiktok">🎵 TikTok</option>
-            <option value="whatsapp">💬 WhatsApp Direct</option>
-            <option value="facebook">📘 Facebook</option>
-            <option value="youtube">▶️ YouTube</option>
-            <option value="custom">🌐 Custom Link</option>
-          </select>
+          <!-- TOOLBAR MASSAL PERSISTEN MULTI-HALAMAN -->
+          <div id="bulkToolbar" class="hidden bg-indigo-50 border border-indigo-200 rounded-2xl p-3 mb-4 flex flex-wrap items-center justify-between gap-3 animate-modal">
+            <div class="flex items-center gap-2 text-xs font-bold text-indigo-900">
+              <span id="selectedCount" class="bg-indigo-600 text-white px-2.5 py-0.5 rounded-lg font-mono">0</span> kartu terpilih (Multi-Halaman)
+              <button onclick="selectAllFilteredCards()" class="text-[11px] underline text-indigo-700 hover:text-indigo-900 ml-2 font-medium">Pilih Semua Result Filter</button>
+              <button onclick="clearCardSelection()" class="text-[11px] text-rose-600 hover:underline ml-1 font-medium">Kosongkan Seleksi</button>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="bulkDownloadQrSelectedZip()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">📦 ZIP QR Terpilih</button>
+              <button onclick="bulkDownloadDesignSelectedZip()" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🖼️ ZIP Desain Terpilih</button>
+              <button onclick="openPrintLayoutModal()" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🖨️ Print / Cetak Layout</button>
+              <button onclick="bulkDeleteSelected()" class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-3 py-1.5 rounded-xl text-xs transition-all shadow-sm">🗑️ Hapus Terpilih</button>
+            </div>
+          </div>
 
-          <select id="statusFilter" onchange="filterCards()" class="bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
-            <option value="ALL">Semua Status</option>
-            <option value="ACTIVE">Aktif</option>
-            <option value="INACTIVE">Belum Aktif</option>
-          </select>
+          <div class="overflow-x-auto rounded-2xl border border-slate-100">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-400 font-bold uppercase tracking-wider select-none">
+                  <th class="py-3.5 px-4 w-10 text-center"><input type="checkbox" id="selectAllCardsPage" onclick="toggleSelectCurrentPageCards(this)" class="w-4 h-4 text-indigo-600 rounded cursor-pointer" title="Centang Semua di Halaman Ini"></th>
+                  <th class="py-3.5 px-4 cursor-pointer hover:text-slate-700" onclick="handleSortTable('card_code')">Kode Kartu <span id="sort-icon-card_code">↕</span></th>
+                  <th class="py-3.5 px-4 cursor-pointer hover:text-slate-700" onclick="handleSortTable('category')">Kategori & Reseller <span id="sort-icon-category">↕</span></th>
+                  <th class="py-3.5 px-4 cursor-pointer hover:text-slate-700" onclick="handleSortTable('owner_name')">Pemilik / Brand <span id="sort-icon-owner_name">↕</span></th>
+                  <th class="py-3.5 px-4 cursor-pointer hover:text-slate-700" onclick="handleSortTable('platform_type')">Platform & Link Target <span id="sort-icon-platform_type">↕</span></th>
+                  <th class="py-3.5 px-4 cursor-pointer hover:text-slate-700" onclick="handleSortTable('is_activated')">Status <span id="sort-icon-is_activated">↕</span></th>
+                  <th class="py-3.5 px-4">PIN</th>
+                  <th class="py-3.5 px-4 text-right">Aksi, NFC & Print</th>
+                </tr>
+              </thead>
+              <tbody id="cardsTableBody" class="divide-y divide-slate-100 bg-white"></tbody>
+            </table>
+          </div>
+
+          <!-- KONTROL PAGINASI TABEL KARTU -->
+          <div id="paginationControls" class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 pt-4 border-t border-slate-100"></div>
         </div>
+      </section>
 
-        <!-- Action Buttons -->
-        <div class="flex gap-2">
-          <button onclick="openBatchModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-center gap-1.5 flex-1 md:flex-none">
-            ⚡ Generate Batch
-          </button>
-          <button onclick="openAddModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2.5 rounded-2xl text-xs shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-1.5 flex-1 md:flex-none">
-            ➕ Kartu Baru
-          </button>
+      <!-- TAB 2: AUDIT LOGS -->
+      <section id="section-logs" class="hidden">
+        <div class="bg-white/90 backdrop-blur-xl rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-200/50 border border-slate-200/60 mb-8">
+          <div class="mb-4">
+            <h2 class="text-base font-bold text-slate-900">Audit Trail & Security Logs</h2>
+            <p class="text-xs text-slate-500">Riwayat percobaan PIN salah, login sukses, dan pengeditan data kartu social.</p>
+          </div>
+
+          <div class="overflow-x-auto rounded-2xl border border-slate-100">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-100 text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                  <th class="py-3.5 px-4">Waktu Log</th>
+                  <th class="py-3.5 px-4">Kode Kartu</th>
+                  <th class="py-3.5 px-4">Tindakan</th>
+                  <th class="py-3.5 px-4">Rincian Aktivitas</th>
+                </tr>
+              </thead>
+              <tbody id="logsTableBody" class="divide-y divide-slate-100 bg-white"></tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <!-- TABEL DATA KARTU -->
-      <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-                <th class="p-4 pl-6">Kode Kartu</th>
-                <th class="p-4">Pemilik / Brand</th>
-                <th class="p-4">Platform & Target</th>
-                <th class="p-4 text-center">PIN</th>
-                <th class="p-4 text-center">Status</th>
-                <th class="p-4 pr-6 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="cardTableBody" class="divide-y divide-slate-100 text-xs text-slate-700">
-              <!-- Loading State -->
-              <tr>
-                <td colspan="6" class="p-8 text-center text-slate-400">Memuat data kartu...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+    </div>
 
-    </main>
+    <footer class="py-4 text-center text-xs text-slate-400 font-medium">
+      © 2026 Create Render Project. System Management Node - Social Edition.
+    </footer>
   </div>
 
-  <!-- MODAL TAMBAH / EDIT KARTU -->
-  <div id="card-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl animate-modal border border-slate-100">
-      <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
-        <h3 id="modalCardTitle" class="font-extrabold text-slate-900 text-base">Tambah Kartu Baru</h3>
-        <button onclick="closeCardModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg px-2">✕</button>
+  <!-- MODAL PENGATURAN CETAK & LAYOUT (A4/A3/A3+ & PDF/ZIP) -->
+  <div id="print-layout-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
+      <h3 class="font-extrabold text-slate-900 text-lg mb-1">🖨️ Pengaturan Cetak & Layout</h3>
+      <p class="text-xs text-slate-500 mb-6">Pilih ukuran kertas cetak dan format file output yang diinginkan.</p>
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Ukuran Kertas (Media Cetak)</label>
+      <select id="printPaperSize" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+        <option value="27.5x46">📐 Area Maksimal Cetak Vendor (27.5 x 46 cm) - 8 Kartu / Lembar (2x4)</option>
+        <option value="A3+">📄 A3+ Standard (32.9 x 48.3 cm) - 12 Kartu / Lembar (3x4)</option>
+        <option value="A3">📄 A3 (29.7 x 42.0 cm) - 9 Kartu / Lembar (3x3)</option>
+        <option value="A4">📄 A4 (21.0 x 29.7 cm) - 4 Kartu / Lembar (2x2)</option>
+      </select>
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Format File Output</label>
+      <select id="printOutputFormat" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-6 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+        <option value="PDF">📕 File PDF Siap Cetak (Multi-Halaman)</option>
+        <option value="ZIP">📦 File ZIP Gambar PNG (Per Lembar)</option>
+      </select>
+
+      <div class="flex gap-2">
+        <button onclick="closePrintLayoutModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
+        <button onclick="processPrintLayoutDownload()" class="w-1/2 bg-amber-600 hover:bg-amber-700 text-white font-semibold py-3 rounded-2xl text-sm shadow-md transition-all">Generate & Cetak</button>
       </div>
-
-      <form onsubmit="handleSaveCard(event)" class="space-y-4">
-        <input type="hidden" id="editCardId">
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Kode Kartu <span class="text-rose-500">*</span></label>
-          <input id="formCardCode" type="text" placeholder="Contoh: SOC-001" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold uppercase text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Pemilik / Brand</label>
-          <input id="formOwnerName" type="text" placeholder="Contoh: Render / RenderCard" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Platform Tujuan</label>
-          <select id="formPlatformType" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
-            <option value="instagram">📸 Instagram</option>
-            <option value="tiktok">🎵 TikTok</option>
-            <option value="whatsapp">💬 WhatsApp Direct</option>
-            <option value="facebook">📘 Facebook</option>
-            <option value="youtube">▶️ YouTube Channel</option>
-            <option value="custom">🌐 Website / Link Custom</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Username / Link / No. HP</label>
-          <input id="formTargetInput" type="text" placeholder="Masukkan Username / Link / Nomor WA" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">PIN Akses (4 Digit) <span class="text-rose-500">*</span></label>
-          <input id="formPin" type="password" maxlength="4" placeholder="••••" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs tracking-widest font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all">
-        </div>
-
-        <div class="flex items-center gap-2 pt-1">
-          <input id="formIsActivated" type="checkbox" class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500">
-          <label for="formIsActivated" class="text-xs font-semibold text-slate-700 cursor-pointer">Tandai Kartu Langsung Aktif</label>
-        </div>
-
-        <div class="pt-3 flex gap-2">
-          <button type="button" onclick="closeCardModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-2xl text-xs transition-all">Batal</button>
-          <button type="submit" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-2xl text-xs shadow-md shadow-indigo-500/20 transition-all">Simpan Data</button>
-        </div>
-      </form>
     </div>
   </div>
 
-  <!-- MODAL BATCH GENERATE -->
+  <!-- MODAL EXPORT CSV -->
+  <div id="csv-filter-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
+      <h3 class="font-extrabold text-slate-900 text-lg mb-1">📥 Export CSV Data Kartu Social</h3>
+      <p class="text-xs text-slate-500 mb-6">Pilih export berdasarkan Kategori khusus atau Rentang Kode Kartu.</p>
+      
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Berdasarkan Kategori</label>
+      <select id="csvCategorySelect" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+        <option value="all">📁 Semua Kategori</option>
+        <option value="Reseller Lynk.id">🔗 Reseller Lynk.id</option>
+        <option value="Retail Local">🏪 Retail Local</option>
+        <option value="TikTok Shop">🎵 TikTok Shop</option>
+        <option value="Shopee">🟠 Shopee</option>
+        <option value="Demo Sample">🧪 Demo Sample</option>
+      </select>
+
+      <div class="relative flex py-2 items-center mb-3">
+        <div class="flex-grow border-t border-slate-200"></div>
+        <span class="flex-shrink mx-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atau Range Kode (Opsional)</span>
+        <div class="flex-grow border-t border-slate-200"></div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label><input id="csvStartCode" type="text" placeholder="SOC-001" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label><input id="csvEndCode" type="text" placeholder="SOC-050" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closeCsvFilterModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
+        <button onclick="processFilteredCsvExport()" class="w-1/2 bg-slate-800 text-white font-semibold py-3 rounded-2xl text-sm shadow-md">Download CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DOWNLOAD QR MENTAHAN ZIP -->
+  <div id="zip-filter-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
+      <h3 class="font-extrabold text-slate-900 text-lg mb-1">📦 Download QR Mentahan (ZIP)</h3>
+      <p class="text-xs text-slate-500 mb-6">Unduh file mentahan QR code saja berdasarkan kategori atau range.</p>
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Berdasarkan Kategori</label>
+      <select id="zipCategorySelect" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+        <option value="all">📁 Semua Kategori</option>
+        <option value="Reseller Lynk.id">🔗 Reseller Lynk.id</option>
+        <option value="Retail Local">🏪 Retail Local</option>
+        <option value="TikTok Shop">🎵 TikTok Shop</option>
+        <option value="Shopee">🟠 Shopee</option>
+        <option value="Demo Sample">🧪 Demo Sample</option>
+      </select>
+
+      <div class="relative flex py-2 items-center mb-3">
+        <div class="flex-grow border-t border-slate-200"></div>
+        <span class="flex-shrink mx-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atau Range Kode (Opsional)</span>
+        <div class="flex-grow border-t border-slate-200"></div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label><input id="zipStartCode" type="text" placeholder="SOC-001" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label><input id="zipEndCode" type="text" placeholder="SOC-050" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closeZipFilterModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
+        <button onclick="processFilteredZipDownload()" class="w-1/2 bg-indigo-600 text-white font-semibold py-3 rounded-2xl text-sm shadow-md">Download ZIP QR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DOWNLOAD ZIP DESAIN KARTU LENGKAP -->
+  <div id="design-zip-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100">
+      <h3 class="font-extrabold text-slate-900 text-lg mb-1">🖼️ Download ZIP Desain Kartu Lengkap</h3>
+      <p class="text-xs text-slate-500 mb-6">Menggabungkan template background <code class="bg-slate-100 px-1 py-0.5 rounded font-mono text-purple-600">card-template.png</code> dengan QR code secara otomatis.</p>
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Berdasarkan Kategori</label>
+      <select id="designZipCategorySelect" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500/20">
+        <option value="all">📁 Semua Kategori</option>
+        <option value="Reseller Lynk.id">🔗 Reseller Lynk.id</option>
+        <option value="Retail Local">🏪 Retail Local</option>
+        <option value="TikTok Shop">🎵 TikTok Shop</option>
+        <option value="Shopee">🟠 Shopee</option>
+        <option value="Demo Sample">🧪 Demo Sample</option>
+      </select>
+
+      <div class="relative flex py-2 items-center mb-3">
+        <div class="flex-grow border-t border-slate-200"></div>
+        <span class="flex-shrink mx-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atau Range Kode (Opsional)</span>
+        <div class="flex-grow border-t border-slate-200"></div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Dari Kode</label><input id="designZipStartCode" type="text" placeholder="SOC-001" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1.5">Sampai Kode</label><input id="designZipEndCode" type="text" placeholder="SOC-050" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold uppercase"></div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closeCardDesignZipModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
+        <button onclick="processCardDesignZipDownload()" class="w-1/2 bg-purple-600 text-white font-semibold py-3 rounded-2xl text-sm shadow-md">Download ZIP Desain</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL GENERATE KARTU MASSAL -->
   <div id="batch-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-modal border border-slate-100">
-      <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
-        <h3 class="font-extrabold text-slate-900 text-base">Generate Kartu Massal</h3>
-        <button onclick="closeBatchModal()" class="text-slate-400 hover:text-slate-600 font-bold text-lg px-2">✕</button>
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100 max-h-[90vh] overflow-y-auto">
+      <h3 class="font-extrabold text-slate-900 text-lg mb-1">⚡ Generate Kartu Social Massal</h3>
+      <p class="text-xs text-slate-500 mb-6">Buat puluhan kode kartu social sekaligus untuk dicetak.</p>
+      
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kategori Stok</label>
+      <select id="batchCategory" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+        <option value="Retail Local">🏪 Retail Local (Door-to-Door)</option>
+        <option value="Reseller Lynk.id">🔗 Reseller (Lynk.id)</option>
+        <option value="TikTok Shop">🎵 TikTok Shop</option>
+        <option value="Shopee">🟠 Shopee</option>
+        <option value="Demo Sample">🧪 Demo / Sampel</option>
+      </select>
+
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Reseller ID (Opsional)</label>
+          <input id="batchResellerId" type="text" placeholder="Contoh: RSL-01" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Default (Opsional)</label>
+          <input id="batchPin" type="password" maxlength="4" placeholder="••••" autocomplete="new-password" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm tracking-widest">
+        </div>
       </div>
 
-      <form onsubmit="handleBatchGenerate(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Awalan Kode (Prefix)</label>
-          <input id="batchPrefix" type="text" value="SOC-" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold uppercase text-slate-900">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor Awal</label>
-          <input id="batchStart" type="number" value="1" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Jumlah Kartu Ditambahkan</label>
-          <input id="batchCount" type="number" value="10" min="1" max="100" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-900">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Default PIN untuk Semua Kartu</label>
-          <input id="batchPin" type="text" maxlength="4" value="1234" required class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs tracking-widest font-bold text-slate-900">
-        </div>
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Catatan Reseller / Batch (Opsional)</label>
+      <input id="batchResellerNotes" type="text" placeholder="Contoh: Paket 50 Pcs Social Lunas" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
 
-        <div class="pt-3 flex gap-2">
-          <button type="button" onclick="closeBatchModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-2xl text-xs">Batal</button>
-          <button type="submit" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-2xl text-xs shadow-md shadow-indigo-500/20">Generate Now</button>
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Prefix Kode Kartu</label>
+      <input id="batchPrefix" type="text" placeholder="Contoh: SOC- atau RSL-" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
+      
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Angka Awal</label>
+          <input id="batchStart" type="number" placeholder="1" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm">
         </div>
-      </form>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Jumlah</label>
+          <input id="batchCount" type="number" placeholder="10" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm">
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closeBatchModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
+        <button id="batchSubmitBtn" onclick="submitBatchGenerate()" class="w-1/2 bg-emerald-600 text-white font-semibold py-3 rounded-2xl text-sm shadow-md">Proses Massal</button>
+      </div>
     </div>
   </div>
 
-  <!-- NOTIFIKASI TOAST -->
-  <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl hidden transition-all z-50">
-    Notification message
+  <!-- MODAL TAMBAH/EDIT SINGLE -->
+  <div id="card-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl animate-modal border border-slate-100 max-h-[90vh] overflow-y-auto">
+      <h3 id="modalFormTitle" class="font-extrabold text-slate-900 text-lg mb-1">Tambah Kartu Social Baru</h3>
+      <p id="modalFormSub" class="text-xs text-slate-500 mb-4"></p>
+      
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kategori Stok</label>
+      <select id="formCategory" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+        <option value="Retail Local">🏪 Retail Local (Door-to-Door)</option>
+        <option value="Reseller Lynk.id">🔗 Reseller (Lynk.id)</option>
+        <option value="TikTok Shop">🎵 TikTok Shop</option>
+        <option value="Shopee">🟠 Shopee</option>
+        <option value="Demo Sample">🧪 Demo / Sampel</option>
+      </select>
+
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Reseller ID (Opsional)</label>
+          <input id="formResellerId" type="text" placeholder="RSL-BDG-01" autocomplete="off" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm font-semibold">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">PIN Klien (Opsional)</label>
+          <input id="formPin" type="password" maxlength="4" autocomplete="new-password" placeholder="••••" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-sm tracking-widest">
+        </div>
+      </div>
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Catatan Reseller / Batch (Opsional)</label>
+      <input id="formResellerNotes" type="text" autocomplete="off" placeholder="Contoh: Pembayaran Lunas" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kode Kartu</label>
+      <input id="formCardCode" type="text" autocomplete="off" placeholder="Contoh: SOC-001" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold uppercase">
+      
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Pemilik / Brand</label>
+      <input id="formOwnerName" type="text" autocomplete="off" placeholder="Contoh: Samsul Ramdani / RenderCard" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm">
+      
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Pilih Platform Tujuan</label>
+      <select id="formPlatformType" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+        <option value="instagram">📸 Instagram</option>
+        <option value="tiktok">🎵 TikTok</option>
+        <option value="whatsapp">💬 WhatsApp Direct</option>
+        <option value="facebook">📘 Facebook</option>
+        <option value="youtube">▶️ YouTube Channel</option>
+        <option value="custom">🌐 Website / Link Custom</option>
+      </select>
+
+      <label class="block text-xs font-semibold text-slate-700 mb-1.5">Username / Link / No. HP Target</label>
+      <input id="formTargetInput" type="text" autocomplete="off" placeholder="Masukkan Username / No WA / Link" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-6 text-sm font-mono text-xs">
+
+      <div class="flex gap-2">
+        <button onclick="closeModal()" class="w-1/2 bg-slate-100 text-slate-600 font-semibold py-3 rounded-2xl text-sm">Batal</button>
+        <button id="saveCardBtn" onclick="saveCardData()" class="w-1/2 bg-indigo-600 text-white font-semibold py-3 rounded-2xl text-sm shadow-md">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL QR & NFC WRITER -->
+  <div id="qr-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <h3 id="qrModalTitle" class="font-extrabold text-slate-900 text-lg mb-1">QR Code Kartu Social</h3>
+      <p id="qrModalSub" class="text-xs text-slate-500 mb-4 font-mono"></p>
+      <div id="qrcode-container" class="bg-white p-4 rounded-2xl border border-slate-200 inline-block mb-4 shadow-sm flex justify-center"></div>
+      <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4">
+        <p class="text-[10px] text-slate-400 font-semibold uppercase mb-1">Link URL NFC & QR</p>
+        <p id="qrModalUrl" class="text-xs font-mono text-indigo-600 break-all select-all"></p>
+      </div>
+      <div class="space-y-2">
+        <button onclick="writeCurrentCardToNfc()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl text-xs shadow-md flex items-center justify-center gap-1.5">
+          📡 Tulis URL ke Chip NFC Fisik
+        </button>
+        <button onclick="downloadCompleteCardDesignModal()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-xl text-xs shadow-md">🖼️ Download Desain Kartu (Template + QR)</button>
+        <button onclick="downloadQrImage()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl text-xs shadow-md">📥 Download QR Mentahan Saja</button>
+        <div class="flex gap-2">
+          <button onclick="copyQrUrl()" class="w-1/2 bg-indigo-50 text-indigo-600 font-semibold py-2.5 rounded-xl text-xs">📋 Copy Link</button>
+          <button onclick="closeQrModal()" class="w-1/2 bg-slate-100 text-slate-700 font-semibold py-2.5 rounded-xl text-xs">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NFC SCANNER & WRITER -->
+  <div id="nfc-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <div id="nfcModalIcon" class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-3 animate-pulse">📡</div>
+      <h3 id="nfcModalTitle" class="font-extrabold text-slate-900 text-lg mb-1">NFC Reader & Writer</h3>
+      <p id="nfcModalStatus" class="text-xs text-slate-500 mb-4 leading-relaxed">Dekatkan chip NFC fisik ke bagian belakang HP/perangkat Anda...</p>
+      
+      <div id="nfcDetailsBox" class="bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4 hidden text-left text-xs font-mono">
+        <p class="font-bold text-slate-700 mb-1">Hasil Scan NFC:</p>
+        <p id="nfcScannedText" class="text-indigo-600 break-all"></p>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="stopNfcSession()" class="w-full bg-slate-100 text-slate-700 font-semibold py-3 rounded-2xl text-sm">Tutup / Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PROGRESS BAR REAL-TIME (0-100%) -->
+  <div id="zip-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <div id="zipSpinner" class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-xl mb-3 animate-spin">⏳</div>
+      <h3 id="zipProgressTitle" class="font-bold text-slate-900 text-base mb-1">Memproses File...</h3>
+      <p id="zipProgressText" class="text-xs text-slate-500 mb-4">Menyiapkan gambar kartu.</p>
+
+      <!-- BAR DYNAMIC 100% -->
+      <div class="w-full bg-slate-100 rounded-full h-3 mb-2 overflow-hidden border border-slate-200/80">
+        <div id="zipProgressBar" class="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 h-3 rounded-full transition-all duration-200" style="width: 0%"></div>
+      </div>
+      <p id="zipProgressPercent" class="text-xs font-mono font-bold text-slate-700">0%</p>
+    </div>
+  </div>
+
+  <!-- MODAL NOTIFIKASI KUSTOM -->
+  <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl text-center animate-modal border border-slate-100">
+      <div id="modal-icon" class="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 shadow-sm"></div>
+      <h3 id="modal-title" class="font-bold text-slate-900 text-lg mb-1.5">Pemberitahuan</h3>
+      <p id="modal-message" class="text-sm text-slate-600 mb-6 leading-relaxed"></p>
+      <button id="modal-btn" onclick="closeCustomModal()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-2xl text-sm hover:bg-indigo-700 shadow-lg shadow-indigo-500/25 transition-all">
+        Mengerti
+      </button>
+    </div>
   </div>
 
   <script>
-    const MASTER_ADMIN_PIN = "8888"; // Ganti PIN admin ini sesuai keinginan Anda
+    const DOMAIN_BASE = window.location.origin;
+
     const SUPABASE_URL = 'https://lzudrzpcahjyeqdvkyto.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6dWRyenBjYWhqeWVxZHZreXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDYyODcsImV4cCI6MjEwNzgyMjI4N30.nI_84CyPRp-sv6_VJvpUB1bk7XWN0NCtSotwztl_lEY';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let allCardsData = [];
+    let currentFilteredCards = [];
+    let currentFilter = 'all';
+    let currentQrUrl = '';
+    let activeCardCodeForDownload = '';
+    let editingOriginalCode = null;
+    let modalCallback = null;
 
-    // Cek Login Saat Muat Halaman
-    if (sessionStorage.getItem('social_admin_auth') === 'true') {
-      document.getElementById('login-modal').classList.add('hidden');
-      document.getElementById('admin-dashboard').classList.remove('hidden');
-      loadCardData();
-    }
+    // KONTROL SORTING TABEL
+    let currentSortField = 'card_code';
+    let currentSortDirection = 'asc';
 
-    function handleAdminLogin(e) {
-      e.preventDefault();
-      const pin = document.getElementById('adminPinInput').value.trim();
-      if (pin === MASTER_ADMIN_PIN) {
-        sessionStorage.setItem('social_admin_auth', 'true');
-        document.getElementById('login-modal').classList.add('hidden');
-        document.getElementById('admin-dashboard').classList.remove('hidden');
-        loadCardData();
-      } else {
-        showToast('PIN Admin salah!');
+    // SELEKSI CHECKBOX GLOBAL MULTI-HALAMAN
+    let selectedCardCodesSet = new Set();
+
+    // VARIABLE PAGINASI
+    let currentPage = 1;
+    const ITEMS_PER_PAGE = 12;
+
+    // NFC READER / WRITER SESSION
+    let ndefController = null;
+
+    // CEK SESI SUPABASE AUTH SAAT HALAMAN DIMUAT
+    window.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('dashboard-section').classList.remove('hidden');
+        fetchCards();
+        fetchLogs();
       }
-    }
-
-    function handleLogout() {
-      sessionStorage.removeItem('social_admin_auth');
-      window.location.reload();
-    }
-
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.innerText = msg;
-      toast.classList.remove('hidden');
-      setTimeout(() => toast.classList.add('hidden'), 3000);
-    }
+    });
 
     function sanitizePhoneNumber(phone) {
       if (!phone) return '';
@@ -296,274 +577,1147 @@
 
     function formatSocialUrl(platform, input) {
       if (!input) return '';
-      let clean = input.trim().replace(/^@/, '');
+      let clean = input.trim();
+      clean = clean.replace(/^@/, '');
+
       switch (platform) {
-        case 'instagram': return clean.startsWith('http') ? clean : `https://instagram.com/${clean}`;
-        case 'tiktok': return clean.startsWith('http') ? clean : `https://tiktok.com/@${clean}`;
-        case 'whatsapp': return `https://wa.me/${sanitizePhoneNumber(clean)}`;
-        case 'facebook': return clean.startsWith('http') ? clean : `https://facebook.com/${clean}`;
-        case 'youtube': return clean.startsWith('http') ? clean : `https://youtube.com/@${clean}`;
-        default: return (!clean.startsWith('http://') && !clean.startsWith('https://')) ? 'https://' + clean : clean;
+        case 'instagram':
+          return clean.startsWith('http') ? clean : `https://instagram.com/${clean}`;
+        case 'tiktok':
+          return clean.startsWith('http') ? clean : `https://tiktok.com/@${clean}`;
+        case 'whatsapp':
+          const phone = sanitizePhoneNumber(clean);
+          return `https://wa.me/${phone}`;
+        case 'facebook':
+          return clean.startsWith('http') ? clean : `https://facebook.com/${clean}`;
+        case 'youtube':
+          return clean.startsWith('http') ? clean : `https://youtube.com/@${clean}`;
+        default:
+          if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+            return 'https://' + clean;
+          }
+          return clean;
       }
     }
 
-    async function loadCardData() {
-      const tbody = document.getElementById('cardTableBody');
-      tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Memuat data...</td></tr>`;
+    function showNotification(title, message, type = 'info', onConfirm = null) {
+      const modal = document.getElementById('custom-modal');
+      const iconEl = document.getElementById('modal-icon');
+      const titleEl = document.getElementById('modal-title');
+      const msgEl = document.getElementById('modal-message');
 
-      const { data, error } = await supabaseClient
-        .from('social_cards')
-        .select('*')
-        .order('id', { ascending: false });
+      titleEl.innerText = title;
+      msgEl.innerText = message;
+      modalCallback = onConfirm;
 
-      if (error) {
-        showToast('Gagal memuat data!');
+      if (type === 'success') {
+        iconEl.className = 'w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 bg-emerald-50 text-emerald-600 shadow-inner';
+        iconEl.innerText = '✓';
+      } else if (type === 'error') {
+        iconEl.className = 'w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 bg-rose-50 text-rose-600 shadow-inner';
+        iconEl.innerText = '✕';
+      } else {
+        iconEl.className = 'w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-4 bg-indigo-50 text-indigo-600 shadow-inner';
+        iconEl.innerText = 'ℹ';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    window.closeCustomModal = function() {
+      document.getElementById('custom-modal').classList.add('hidden');
+      if (modalCallback) {
+        modalCallback();
+        modalCallback = null;
+      }
+    }
+
+    // HELPER PROGRESS BAR REAL-TIME
+    function updateProgressBar(current, total, title = 'Memproses File...', statusText = '') {
+      const modal = document.getElementById('zip-modal');
+      const progressBar = document.getElementById('zipProgressBar');
+      const percentText = document.getElementById('zipProgressPercent');
+      const titleEl = document.getElementById('zipProgressTitle');
+      const textEl = document.getElementById('zipProgressText');
+
+      if (modal.classList.contains('hidden')) modal.classList.remove('hidden');
+
+      const pct = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : 0;
+      progressBar.style.width = `${pct}%`;
+      percentText.innerText = `${pct}% (${current}/${total})`;
+      titleEl.innerText = title;
+      textEl.innerText = statusText || `Memproses item ke-${current} dari ${total}...`;
+    }
+
+    function closeProgressBar() {
+      document.getElementById('zip-modal').classList.add('hidden');
+      document.getElementById('zipProgressBar').style.width = '0%';
+      document.getElementById('zipProgressPercent').innerText = '0%';
+    }
+
+    function setButtonLoading(btnId, isLoading, originalHtml) {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      if (isLoading) {
+        btn.disabled = true;
+        btn.dataset.originalContent = originalHtml || btn.innerHTML;
+        btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-current inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Memproses...`;
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = btn.dataset.originalContent || originalHtml;
+      }
+    }
+
+    // SUPABASE AUTHENTICATION: LOGIN DENGAN EMAIL & PASSWORD
+    async function handleAdminLogin() {
+      const email = document.getElementById('adminEmailInput').value.trim();
+      const password = document.getElementById('adminPasswordInput').value.trim();
+
+      if (!email || !password) {
+        showNotification('Perhatian', 'Email dan Password wajib diisi!', 'info');
         return;
       }
 
-      allCardsData = data || [];
-      renderStats();
+      setButtonLoading('loginBtn', true, 'Sign In to Social Node');
+      
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      setButtonLoading('loginBtn', false, 'Sign In to Social Node');
+
+      if (error) {
+        showNotification('Login Gagal', error.message, 'error');
+      } else if (data.session) {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('dashboard-section').classList.remove('hidden');
+        fetchCards();
+        fetchLogs();
+      }
+    }
+
+    async function logoutAdmin() {
+      await supabaseClient.auth.signOut();
+      document.getElementById('adminEmailInput').value = '';
+      document.getElementById('adminPasswordInput').value = '';
+      document.getElementById('dashboard-section').classList.add('hidden');
+      document.getElementById('login-section').classList.remove('hidden');
+    }
+
+    function switchTab(tabName) {
+      ['cards', 'logs'].forEach(t => {
+        const el = document.getElementById(`section-${t}`);
+        if (el) el.classList.add('hidden');
+        const btn = document.getElementById(`tab-${t}-btn`);
+        if (btn) btn.className = "px-4 py-2 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all whitespace-nowrap";
+      });
+      const targetEl = document.getElementById(`section-${tabName}`);
+      if (targetEl) targetEl.classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-${tabName}-btn`);
+      if (activeBtn) activeBtn.className = "px-4 py-2 text-xs sm:text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-all whitespace-nowrap";
+    }
+
+    async function fetchCards() {
+      const { data: cards, error } = await supabaseClient.from('social_cards').select('*').order('card_code', { ascending: true });
+      if (!error && cards) {
+        allCardsData = cards;
+        document.getElementById('count-cards').innerText = allCardsData.length;
+        updateStats();
+        filterCards();
+      }
+    }
+
+    async function fetchLogs() {
+      const { data: logs, error } = await supabaseClient.from('card_logs').select('*').order('created_at', { ascending: false }).limit(50);
+      if (!error && logs) renderLogsTable(logs);
+    }
+
+    function updateStats() {
+      document.getElementById('statTotal').innerText = allCardsData.length;
+      const activeCount = allCardsData.filter(c => c.is_activated).length;
+      document.getElementById('statActive').innerText = activeCount;
+      document.getElementById('statInactive').innerText = allCardsData.length - activeCount;
+    }
+
+    function setFilterStatus(status) {
+      currentFilter = status;
+      ['all', 'active', 'inactive'].forEach(s => {
+        const btn = document.getElementById(`filter-${s}`);
+        btn.className = s === status ? "flex-1 px-3 py-1.5 rounded-xl bg-white text-slate-800 shadow-sm transition-all font-bold" : "flex-1 px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all font-semibold";
+      });
       filterCards();
     }
 
-    function renderStats() {
-      const total = allCardsData.length;
-      const active = allCardsData.filter(c => c.is_activated).length;
-      const inactive = total - active;
+    function handleSortTable(field) {
+      if (currentSortField === field) {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSortField = field;
+        currentSortDirection = 'asc';
+      }
 
-      // Platform terbanyak
-      const platformCounts = {};
-      allCardsData.forEach(c => {
-        if (c.platform_type) {
-          platformCounts[c.platform_type] = (platformCounts[c.platform_type] || 0) + 1;
-        }
+      ['card_code', 'category', 'owner_name', 'platform_type', 'is_activated'].forEach(f => {
+        const icon = document.getElementById(`sort-icon-${f}`);
+        if (icon) icon.innerText = f === currentSortField ? (currentSortDirection === 'asc' ? '▲' : '▼') : '↕';
       });
 
-      let topPlatform = '-';
-      let maxCount = 0;
-      for (const [p, count] of Object.entries(platformCounts)) {
-        if (count > maxCount) {
-          maxCount = count;
-          topPlatform = p.toUpperCase();
+      filterCards(false);
+    }
+
+    function filterCards(resetPage = true) {
+      if (resetPage) currentPage = 1;
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      const catFilter = document.getElementById('categoryFilter').value;
+      const pFilter = document.getElementById('platformFilter').value;
+
+      let filtered = allCardsData.filter(c => {
+        const matchQuery = c.card_code.toLowerCase().includes(q) || 
+                          (c.owner_name && c.owner_name.toLowerCase().includes(q)) || 
+                          (c.target_url && c.target_url.toLowerCase().includes(q)) ||
+                          (c.reseller_id && c.reseller_id.toLowerCase().includes(q));
+        
+        const matchCat = (catFilter === 'all') || ((c.category || 'Retail Local') === catFilter);
+        const matchPlatform = (pFilter === 'all') || (c.platform_type === pFilter);
+        
+        return matchQuery && matchCat && matchPlatform;
+      });
+
+      if (currentFilter === 'active') filtered = filtered.filter(c => c.is_activated);
+      else if (currentFilter === 'inactive') filtered = filtered.filter(c => !c.is_activated);
+      
+      // LOGIKA SORTING DATA
+      filtered.sort((a, b) => {
+        let valA = a[currentSortField] || '';
+        let valB = b[currentSortField] || '';
+        if (typeof valA === 'boolean') valA = valA ? 1 : 0;
+        if (typeof valB === 'boolean') valB = valB ? 1 : 0;
+        if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      currentFilteredCards = filtered;
+      renderCardsTable(currentFilteredCards);
+    }
+
+    // MANAGEMEN SELEKSI MULTI-HALAMAN (PERSISTEN)
+    function handleCardCheckboxChange(cardCode, isChecked) {
+      if (isChecked) {
+        selectedCardCodesSet.add(cardCode);
+      } else {
+        selectedCardCodesSet.delete(cardCode);
+      }
+      updateBulkToolbar();
+    }
+
+    function toggleSelectCurrentPageCards(source) {
+      const checkboxes = document.querySelectorAll('.card-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = source.checked;
+        if (source.checked) selectedCardCodesSet.add(cb.value);
+        else selectedCardCodesSet.delete(cb.value);
+      });
+      updateBulkToolbar();
+    }
+
+    function selectAllFilteredCards() {
+      currentFilteredCards.forEach(c => selectedCardCodesSet.add(c.card_code));
+      renderCardsTable(currentFilteredCards);
+    }
+
+    function clearCardSelection() {
+      selectedCardCodesSet.clear();
+      renderCardsTable(currentFilteredCards);
+    }
+
+    function updateBulkToolbar() {
+      const toolbar = document.getElementById('bulkToolbar');
+      const countEl = document.getElementById('selectedCount');
+      
+      const count = selectedCardCodesSet.size;
+      countEl.innerText = count;
+      if (count > 0) {
+        toolbar.classList.remove('hidden');
+      } else {
+        toolbar.classList.add('hidden');
+      }
+    }
+
+    function getSelectedCardCodes() {
+      return Array.from(selectedCardCodesSet);
+    }
+
+    async function bulkDeleteSelected() {
+      const codes = getSelectedCardCodes();
+      if (codes.length === 0) return;
+
+      if (!confirm(`PERINGATAN: Yakin ingin menghapus ${codes.length} kartu social terpilih secara permanen?`)) return;
+
+      for (let code of codes) {
+        await supabaseClient.from('social_cards').delete().eq('card_code', code);
+      }
+      selectedCardCodesSet.clear();
+      showNotification('Berhasil', `${codes.length} kartu berhasil dihapus!`, 'success');
+      fetchCards();
+    }
+
+    async function bulkDownloadQrSelectedZip() {
+      const codes = getSelectedCardCodes();
+      if (codes.length === 0) return;
+
+      const zip = new JSZip();
+      const folder = zip.folder("QR_Social_Mentahan_Terpilih");
+
+      for (let i = 0; i < codes.length; i++) {
+        const code = codes[i];
+        updateProgressBar(i + 1, codes.length, "Generasi QR Code (ZIP)", `Memproses QR (${i + 1}/${codes.length}): ${code}`);
+        
+        const dataUrl = await renderPipeline.generateQrDataUrl(`${DOMAIN_BASE}/index_social.html?code=${code}`);
+        if (dataUrl) folder.file(`QR_${code}.png`, dataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+        await new Promise(r => setTimeout(r, 20));
+      }
+
+      updateProgressBar(codes.length, codes.length, "Mengompres ke ZIP...", "Menyusun arsip ZIP mentahan QR...");
+      const content = await zip.generateAsync({ type: "blob" });
+      closeProgressBar();
+      
+      saveAs(content, `QR_Social_Terpilih_${codes.length}_Kartu.zip`);
+      showNotification('Berhasil', 'ZIP QR Mentahan terpilih berhasil diunduh!', 'success');
+    }
+
+    async function bulkDownloadDesignSelectedZip() {
+      const codes = getSelectedCardCodes();
+      if (codes.length === 0) return;
+
+      try {
+        const zip = new JSZip();
+        const folder = zip.folder("Desain_Kartu_Social_Terpilih");
+
+        for (let i = 0; i < codes.length; i++) {
+          const code = codes[i];
+          updateProgressBar(i + 1, codes.length, "Generasi Desain Kartu (ZIP)", `Merender Desain Kartu (${i + 1}/${codes.length}): ${code}`);
+          
+          const cardDataUrl = await renderPipeline.renderSingleCard(code);
+          if (cardDataUrl) {
+            folder.file(`Desain_${code}.png`, cardDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+          }
+          await new Promise(r => setTimeout(r, 30));
+        }
+
+        updateProgressBar(codes.length, codes.length, "Mengompres ke ZIP...", "Menyusun arsip file PNG...");
+        const content = await zip.generateAsync({ type: "blob" });
+        closeProgressBar();
+
+        saveAs(content, `Desain_Social_Terpilih_${codes.length}_Kartu.zip`);
+        showNotification('Berhasil', 'ZIP Desain Kartu Terpilih berhasil diunduh!', 'success');
+      } catch (err) {
+        closeProgressBar();
+        showNotification('Gagal', err.message, 'error');
+      }
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    // ==========================================
+    // MODUL TERPISAH: CARD RENDER PIPELINE
+    // ==========================================
+    class CardRenderPipeline {
+      constructor() {
+        this.templateImg = null;
+      }
+
+      async init() {
+        if (this.templateImg && this.templateImg.complete && this.templateImg.naturalWidth > 0) {
+          return;
+        }
+        this.templateImg = new Image();
+        this.templateImg.crossOrigin = 'anonymous';
+        await new Promise((resolve, reject) => {
+          this.templateImg.onload = resolve;
+          this.templateImg.onerror = () => reject(new Error("File 'card-template.png' tidak dapat dimuat. Pastikan file ada di folder utama."));
+          this.templateImg.src = 'card-template.png';
+        });
+        if ('decode' in this.templateImg) {
+          try { await this.templateImg.decode(); } catch (e) {}
         }
       }
 
-      document.getElementById('statTotal').innerText = total;
-      document.getElementById('statActive').innerText = active;
-      document.getElementById('statInactive').innerText = inactive;
-      document.getElementById('statTopPlatform').innerText = topPlatform;
-    }
+      generateQrElement(text) {
+        return new Promise((resolve, reject) => {
+          const tempDiv = document.createElement('div');
+          tempDiv.style.position = 'absolute';
+          tempDiv.style.left = '-9999px';
+          tempDiv.style.top = '-9999px';
+          document.body.appendChild(tempDiv);
 
-    function filterCards() {
-      const search = document.getElementById('searchInput').value.toLowerCase().trim();
-      const platform = document.getElementById('platformFilter').value;
-      const status = document.getElementById('statusFilter').value;
+          new QRCode(tempDiv, {
+            text: text,
+            width: 500,
+            height: 500,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+          });
 
-      const filtered = allCardsData.filter(card => {
-        const matchSearch = (card.card_code || '').toLowerCase().includes(search) || (card.owner_name || '').toLowerCase().includes(search);
-        const matchPlatform = (platform === 'ALL') || (card.platform_type === platform);
-        const matchStatus = (status === 'ALL') || (status === 'ACTIVE' && card.is_activated) || (status === 'INACTIVE' && !card.is_activated);
-        return matchSearch && matchPlatform && matchStatus;
-      });
+          let attempts = 0;
+          const interval = setInterval(() => {
+            attempts++;
+            const canvasEl = tempDiv.querySelector('canvas');
+            const imgEl = tempDiv.querySelector('img');
 
-      renderTable(filtered);
-    }
-
-    function renderTable(cards) {
-      const tbody = document.getElementById('cardTableBody');
-      if (cards.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Tidak ada data kartu yang cocok.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = cards.map(card => {
-        const activeBadge = card.is_activated
-          ? `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full font-bold text-[10px]">Aktif</span>`
-          : `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full font-bold text-[10px]">Belum Aktif</span>`;
-
-        return `
-          <tr class="hover:bg-slate-50/80 transition-all border-b border-slate-100">
-            <td class="p-4 pl-6 font-bold text-slate-900">${card.card_code}</td>
-            <td class="p-4 font-semibold text-slate-800">${card.owner_name || '-'}</td>
-            <td class="p-4">
-              <span class="font-bold text-indigo-600 uppercase text-[11px] block">${card.platform_type || 'custom'}</span>
-              <a href="${card.target_url || '#'}" target="_blank" class="text-slate-400 hover:text-slate-600 font-mono text-[11px] truncate max-w-[180px] block">
-                ${card.target_url || 'Belum diset'}
-              </a>
-            </td>
-            <td class="p-4 text-center font-mono font-bold text-slate-700">${card.pin || '1234'}</td>
-            <td class="p-4 text-center">${activeBadge}</td>
-            <td class="p-4 pr-6 text-right space-x-1">
-              <button onclick="toggleCardStatus(${card.id}, ${card.is_activated})" title="Toggle Status" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold">
-                ${card.is_activated ? '⏸️' : '▶️'}
-              </button>
-              <button onclick="shareWaDetails('${card.card_code}', '${card.owner_name || ''}', '${card.platform_type || ''}', '${card.target_url || ''}', '${card.pin || ''}')" title="Kirim ke WA" class="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl font-bold">
-                📲
-              </button>
-              <button onclick="openEditModal(${card.id})" title="Edit" class="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl font-bold">
-                ✏️
-              </button>
-              <button onclick="deleteCard(${card.id}, '${card.card_code}')" title="Hapus" class="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold">
-                🗑️
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    // TOGGLE STATUS AKTIF / INAKTIF
-    async function toggleCardStatus(id, currentStatus) {
-      const { error } = await supabaseClient
-        .from('social_cards')
-        .update({ is_activated: !currentStatus })
-        .eq('id', id);
-
-      if (!error) {
-        showToast('Status kartu diperbarui!');
-        loadCardData();
-      } else {
-        showToast('Gagal mengubah status!');
-      }
-    }
-
-    // MODAL TAMBAH / EDIT
-    function openAddModal() {
-      document.getElementById('editCardId').value = '';
-      document.getElementById('modalCardTitle').innerText = 'Tambah Kartu Baru';
-      document.getElementById('formCardCode').value = 'SOC-';
-      document.getElementById('formOwnerName').value = '';
-      document.getElementById('formPlatformType').value = 'instagram';
-      document.getElementById('formTargetInput').value = '';
-      document.getElementById('formPin').value = '1234';
-      document.getElementById('formIsActivated').checked = false;
-      document.getElementById('card-modal').classList.remove('hidden');
-    }
-
-    function openEditModal(id) {
-      const card = allCardsData.find(c => c.id === id);
-      if (!card) return;
-
-      document.getElementById('editCardId').value = card.id;
-      document.getElementById('modalCardTitle').innerText = 'Edit Kartu: ' + card.card_code;
-      document.getElementById('formCardCode').value = card.card_code;
-      document.getElementById('formOwnerName').value = card.owner_name || '';
-      document.getElementById('formPlatformType').value = card.platform_type || 'custom';
-      document.getElementById('formTargetInput').value = card.target_url || '';
-      document.getElementById('formPin').value = card.pin || '1234';
-      document.getElementById('formIsActivated').checked = card.is_activated;
-      document.getElementById('card-modal').classList.remove('hidden');
-    }
-
-    function closeCardModal() {
-      document.getElementById('card-modal').classList.add('hidden');
-    }
-
-    async function handleSaveCard(e) {
-      e.preventDefault();
-      const id = document.getElementById('editCardId').value;
-      const code = document.getElementById('formCardCode').value.trim().toUpperCase();
-      const ownerName = document.getElementById('formOwnerName').value.trim();
-      const platform = document.getElementById('formPlatformType').value;
-      const targetInput = document.getElementById('formTargetInput').value.trim();
-      const pin = document.getElementById('formPin').value.trim();
-      const isActivated = document.getElementById('formIsActivated').checked;
-
-      const finalTargetUrl = targetInput ? formatSocialUrl(platform, targetInput) : '';
-
-      const payload = {
-        card_code: code,
-        owner_name: ownerName,
-        platform_type: platform,
-        target_url: finalTargetUrl,
-        pin: pin,
-        is_activated: isActivated
-      };
-
-      let error;
-      if (id) {
-        const res = await supabaseClient.from('social_cards').update(payload).eq('id', id);
-        error = res.error;
-      } else {
-        const res = await supabaseClient.from('social_cards').insert([payload]);
-        error = res.error;
-      }
-
-      if (!error) {
-        showToast('Kartu berhasil disimpan!');
-        closeCardModal();
-        loadCardData();
-      } else {
-        showToast('Error: ' + error.message);
-      }
-    }
-
-    // BATCH GENERATE
-    function openBatchModal() {
-      document.getElementById('batch-modal').classList.remove('hidden');
-    }
-    function closeBatchModal() {
-      document.getElementById('batch-modal').classList.add('hidden');
-    }
-
-    async function handleBatchGenerate(e) {
-      e.preventDefault();
-      const prefix = document.getElementById('batchPrefix').value.trim().toUpperCase();
-      const start = parseInt(document.getElementById('batchStart').value);
-      const count = parseInt(document.getElementById('batchCount').value);
-      const pin = document.getElementById('batchPin').value.trim();
-
-      const newCards = [];
-      for (let i = 0; i < count; i++) {
-        const numStr = String(start + i).padStart(3, '0');
-        newCards.push({
-          card_code: `${prefix}${numStr}`,
-          pin: pin,
-          is_activated: false
+            if (canvasEl && canvasEl.width > 0) {
+              clearInterval(interval);
+              if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+              resolve(canvasEl);
+            } else if (imgEl && imgEl.complete && imgEl.naturalWidth > 0) {
+              clearInterval(interval);
+              if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+              resolve(imgEl);
+            } else if (attempts > 50) {
+              clearInterval(interval);
+              if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+              reject(new Error(`Timeout saat membuat QR code untuk ${text}`));
+            }
+          }, 20);
         });
       }
 
-      const { error } = await supabaseClient.from('social_cards').insert(newCards);
+      async generateQrDataUrl(text) {
+        const elem = await this.generateQrElement(text);
+        if (elem instanceof HTMLCanvasElement) {
+          return elem.toDataURL('image/png');
+        } else if (elem instanceof HTMLImageElement) {
+          return elem.src;
+        }
+        return '';
+      }
 
-      if (!error) {
-        showToast(`${count} kartu baru berhasil di-generate!`);
-        closeBatchModal();
-        loadCardData();
-      } else {
-        showToast('Error Batch: ' + error.message);
+      async renderSingleCard(cardCode) {
+        await this.init();
+        const qrSource = await this.generateQrElement(`${DOMAIN_BASE}/index_social.html?code=${cardCode}`);
+
+        const canvas = document.createElement('canvas');
+        const w = this.templateImg.naturalWidth || 1200;
+        const h = this.templateImg.naturalHeight || 1200;
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        ctx.drawImage(this.templateImg, 0, 0, w, h);
+
+        const qrSize = w * 0.262;
+        const qrX = w * 0.602;
+        const qrY = h * 0.468;
+        ctx.drawImage(qrSource, qrX, qrY, qrSize, qrSize);
+
+        const resultDataUrl = canvas.toDataURL('image/png');
+        canvas.width = 0;
+        canvas.height = 0;
+        return resultDataUrl;
+      }
+
+      async renderCardDirectToContext(ctx, x, y, cardSize, cornerRadius, cardCode) {
+        await this.init();
+        const qrSource = await this.generateQrElement(`${DOMAIN_BASE}/index_social.html?code=${cardCode}`);
+
+        const qrSize = cardSize * 0.262;
+        const qrX = x + cardSize * 0.602;
+        const qrY = y + cardSize * 0.468;
+
+        ctx.save();
+        roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+        ctx.clip();
+        ctx.drawImage(this.templateImg, x, y, cardSize, cardSize);
+        ctx.drawImage(qrSource, qrX, qrY, qrSize, qrSize);
+        ctx.restore();
+
+        ctx.save();
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 4;
+        roundRect(ctx, x, y, cardSize, cardSize, cornerRadius);
+        ctx.stroke();
+        ctx.restore();
       }
     }
 
-    // HAPUS KARTU
-    async function deleteCard(id, code) {
-      if (!confirm(`Apakah Anda yakin ingin menghapus kartu ${code}?`)) return;
+    const renderPipeline = new CardRenderPipeline();
 
-      const { error } = await supabaseClient.from('social_cards').delete().eq('id', id);
-      if (!error) {
-        showToast(`Kartu ${code} terhapus.`);
-        loadCardData();
-      } else {
-        showToast('Gagal menghapus!');
+    // ============================================================
+    // MODAL & HANDLER PENGATURAN CETAK (A4 / A3 / A3+ & PDF / ZIP)
+    // ============================================================
+    function openPrintLayoutModal() {
+      const codes = getSelectedCardCodes();
+      if (codes.length === 0) {
+        showNotification('Informasi', 'Pilih minimal satu kartu untuk dicetak.', 'info');
+        return;
+      }
+      document.getElementById('print-layout-modal').classList.remove('hidden');
+    }
+
+    function closePrintLayoutModal() {
+      document.getElementById('print-layout-modal').classList.add('hidden');
+    }
+
+    async function processPrintLayoutDownload() {
+      const codes = getSelectedCardCodes();
+      if (codes.length === 0) return;
+
+      const paperSize = document.getElementById('printPaperSize').value;
+      const outputFormat = document.getElementById('printOutputFormat').value;
+
+      closePrintLayoutModal();
+
+      try {
+        await renderPipeline.init();
+
+        let sheetWidth, sheetHeight, cols, rows, cardSize, gapX, gapY, marginLeft, marginTop, cornerRadius, pdfUnitWidth, pdfUnitHeight;
+
+        if (paperSize === 'A4') {
+          sheetWidth = 2480; sheetHeight = 3508; cols = 2; rows = 2; cardSize = 1000; gapX = 120; gapY = 120; marginLeft = 180; marginTop = 400; cornerRadius = 120; pdfUnitWidth = 210; pdfUnitHeight = 297;
+        } else if (paperSize === 'A3') {
+          sheetWidth = 3508; sheetHeight = 4960; cols = 3; rows = 3; cardSize = 1000; gapX = 120; gapY = 120; marginLeft = 124; marginTop = 350; cornerRadius = 120; pdfUnitWidth = 297; pdfUnitHeight = 420;
+        } else if (paperSize === '27.5x46') {
+          sheetWidth = 3300; sheetHeight = 5520; cols = 2; rows = 4; cardSize = 1200; gapX = 200; gapY = 100; marginLeft = 350; marginTop = 260; cornerRadius = 144; pdfUnitWidth = 275; pdfUnitHeight = 460;
+        } else { // A3+ Standard
+          sheetWidth = 3948; sheetHeight = 5796; cols = 3; rows = 4; cardSize = 1200; gapX = 150; gapY = 150; marginLeft = 24; marginTop = 273; cornerRadius = 144; pdfUnitWidth = 329; pdfUnitHeight = 483;
+        }
+
+        const itemsPerSheet = cols * rows;
+        const totalSheets = Math.ceil(codes.length / itemsPerSheet);
+
+        let zip = null;
+        let folder = null;
+        let pdfDoc = null;
+
+        if (outputFormat === 'ZIP') {
+          zip = new JSZip();
+          folder = zip.folder(`Print_Layout_Social_${paperSize}`);
+        } else {
+          const { jsPDF } = window.jspdf;
+          let pdfFormat;
+          if (paperSize === 'A4') pdfFormat = 'a4';
+          else if (paperSize === 'A3') pdfFormat = 'a3';
+          else if (paperSize === '27.5x46') pdfFormat = [275, 460];
+          else pdfFormat = [329, 483];
+
+          pdfDoc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: pdfFormat
+          });
+        }
+
+        const sheetCanvas = document.createElement('canvas');
+        sheetCanvas.width = sheetWidth;
+        sheetCanvas.height = sheetHeight;
+        const ctx = sheetCanvas.getContext('2d');
+
+        for (let sheetIdx = 0; sheetIdx < totalSheets; sheetIdx++) {
+          ctx.clearRect(0, 0, sheetWidth, sheetHeight);
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, sheetWidth, sheetHeight);
+
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+
+          ctx.fillStyle = '#1e293b';
+          ctx.font = 'bold 44px sans-serif';
+          ctx.fillText(`LAYOUT CETAK KARTU SOCIAL ${paperSize} (${cols}x${rows}) - LEMBAR ${sheetIdx + 1} dari ${totalSheets}`, 100, 160);
+
+          const sheetCardCodes = codes.slice(sheetIdx * itemsPerSheet, (sheetIdx + 1) * itemsPerSheet);
+
+          for (let i = 0; i < sheetCardCodes.length; i++) {
+            const code = sheetCardCodes[i];
+            const globalIndex = sheetIdx * itemsPerSheet + i + 1;
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+
+            const x = marginLeft + col * (cardSize + gapX);
+            const y = marginTop + row * (cardSize + gapY);
+
+            updateProgressBar(globalIndex, codes.length, `Layout Cetak ${paperSize} (${outputFormat})`, `[Sheet ${sheetIdx + 1}/${totalSheets}] Memproses kartu (${globalIndex}/${codes.length}): ${code}`);
+
+            await renderPipeline.renderCardDirectToContext(ctx, x, y, cardSize, cornerRadius, code);
+          }
+
+          if (outputFormat === 'ZIP') {
+            const sheetPngUrl = sheetCanvas.toDataURL("image/png");
+            folder.file(`Layout_Social_${paperSize}_Sheet_${sheetIdx + 1}.png`, sheetPngUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+          } else {
+            const sheetJpegUrl = sheetCanvas.toDataURL("image/jpeg", 0.92);
+            if (sheetIdx > 0) pdfDoc.addPage();
+            pdfDoc.addImage(sheetJpegUrl, 'JPEG', 0, 0, pdfUnitWidth, pdfUnitHeight);
+          }
+
+          await new Promise(r => setTimeout(r, 40));
+        }
+
+        sheetCanvas.width = 0;
+        sheetCanvas.height = 0;
+
+        if (outputFormat === 'ZIP') {
+          updateProgressBar(codes.length, codes.length, "Mengompresi ZIP...", "Menyimpan seluruh lembar gambar...");
+          const content = await zip.generateAsync({ type: "blob" });
+          closeProgressBar();
+          saveAs(content, `Print_Layout_Social_${paperSize}_${codes.length}_Kartu.zip`);
+          showNotification('Berhasil', `File Layout Cetak ${paperSize} (ZIP) berhasil diunduh!`, 'success');
+        } else {
+          updateProgressBar(codes.length, codes.length, "Menyimpan Document PDF...", "Menyusun PDF Multi-Halaman...");
+          pdfDoc.save(`Print_Layout_Social_${paperSize}_${codes.length}_Kartu.pdf`);
+          closeProgressBar();
+          showNotification('Berhasil', `File Document PDF Cetak ${paperSize} berhasil diunduh!`, 'success');
+        }
+
+      } catch (err) {
+        closeProgressBar();
+        showNotification('Gagal', err.message, 'error');
       }
     }
 
-    // KIRIM DETAIL KE WHATSAPP
-    function shareWaDetails(code, name, platform, url, pin) {
-      const baseUrl = window.location.origin + window.location.pathname.replace('admin_social.html', 'index_social.html');
-      const cardUrl = `${baseUrl}?code=${code}`;
+    // ==========================================
+    // INTEGRASI WEB NFC READER & WRITER
+    // ==========================================
+    function openNfcScannerModal() {
+      if (!('NDEFReader' in window)) {
+        showNotification('Web NFC Tidak Didukung', 'Browser ini belum mendukung Web NFC API. Gunakan Google Chrome pada perangkat Android.', 'error');
+        return;
+      }
 
-      const waMsg = encodeURIComponent(
-        `📌 *INFORMASI KARTU SMART SOCIAL*\n\n` +
-        `👤 *Pemilik/Brand:* ${name || '-'}\n` +
-        `🔑 *Kode Kartu:* ${code}\n` +
-        `🌐 *Platform:* ${platform.toUpperCase()}\n` +
-        `🔗 *Link Target:* ${url || '-'}\n` +
-        `🔐 *PIN Akses:* ${pin}\n\n` +
-        `Link Kelola Kartu Anda:\n🔗 ${cardUrl}\n\n` +
-        `_Simpan pesan ini untuk mengelola tujuan link kartu Anda kapan saja._`
-      );
+      document.getElementById('nfcModalTitle').innerText = "📡 NFC Scanner Mode";
+      document.getElementById('nfcModalStatus').innerText = "Dekatkan chip NFC ke bagian belakang ponsel Anda untuk membaca isi kartu...";
+      document.getElementById('nfcDetailsBox').classList.add('hidden');
+      document.getElementById('nfc-modal').classList.remove('hidden');
 
-      window.open(`https://api.whatsapp.com/send?text=${waMsg}`, '_blank');
+      startNfcReadSession();
+    }
+
+    async function startNfcReadSession() {
+      try {
+        const ndef = new NDEFReader();
+        await ndef.scan();
+
+        ndef.addEventListener("reading", ({ message, serialNumber }) => {
+          let textResult = '';
+          for (const record of message.records) {
+            if (record.recordType === "url" || record.recordType === "text") {
+              const textDecoder = new TextDecoder(record.encoding || 'utf-8');
+              textResult += textDecoder.decode(record.data) + ' ';
+            }
+          }
+
+          document.getElementById('nfcModalStatus').innerText = `✅ Tag Terbaca! Serial: ${serialNumber || 'N/A'}`;
+          document.getElementById('nfcScannedText').innerText = textResult || "Format data tidak teridentifikasi.";
+          document.getElementById('nfcDetailsBox').classList.remove('hidden');
+
+          if (textResult.includes('code=')) {
+            const codeExtracted = textResult.split('code=')[1].split('&')[0];
+            document.getElementById('searchInput').value = codeExtracted;
+            filterCards();
+          }
+        });
+      } catch (error) {
+        document.getElementById('nfcModalStatus').innerText = "⚠️ Gagal memulai NFC Reader: " + error.message;
+      }
+    }
+
+    async function writeCurrentCardToNfc() {
+      if (!activeCardCodeForDownload) return;
+      closeQrModal();
+
+      if (!('NDEFReader' in window)) {
+        showNotification('Web NFC Tidak Didukung', 'Browser ini tidak mendukung penulisan NFC. Gunakan Chrome Android.', 'error');
+        return;
+      }
+
+      const targetUrl = `${DOMAIN_BASE}/index_social.html?code=${activeCardCodeForDownload}`;
+      document.getElementById('nfcModalTitle').innerText = `📡 Writing NFC (${activeCardCodeForDownload})`;
+      document.getElementById('nfcModalStatus').innerText = `Tempelkan kartu/chip NFC kosong untuk menuliskan URL:\n${targetUrl}`;
+      document.getElementById('nfcDetailsBox').classList.add('hidden');
+      document.getElementById('nfc-modal').classList.remove('hidden');
+
+      try {
+        const ndef = new NDEFReader();
+        await ndef.write({
+          records: [{ recordType: "url", data: targetUrl }]
+        });
+        document.getElementById('nfcModalStatus').innerText = "🎉 BERHASIL! URL Kartu Social telah dituliskan ke Chip NFC.";
+      } catch (error) {
+        document.getElementById('nfcModalStatus').innerText = "✕ Gagal Menulis ke NFC: " + error.message;
+      }
+    }
+
+    function stopNfcSession() {
+      document.getElementById('nfc-modal').classList.add('hidden');
+    }
+
+    // HELPER PLATFORM BADGE & ICON
+    function getPlatformBadge(type) {
+      switch (type) {
+        case 'instagram':
+          return `<span class="bg-pink-50 text-pink-700 border border-pink-200 px-2 py-0.5 rounded-md text-[10px] font-bold">📸 Instagram</span>`;
+        case 'tiktok':
+          return `<span class="bg-slate-900 text-white px-2 py-0.5 rounded-md text-[10px] font-bold">🎵 TikTok</span>`;
+        case 'whatsapp':
+          return `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md text-[10px] font-bold">💬 WhatsApp</span>`;
+        case 'facebook':
+          return `<span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md text-[10px] font-bold">📘 Facebook</span>`;
+        case 'youtube':
+          return `<span class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-md text-[10px] font-bold">▶️ YouTube</span>`;
+        default:
+          return `<span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-md text-[10px] font-bold">🌐 Custom Link</span>`;
+      }
+    }
+
+    // RENDER TABEL DENGAN PAGINASI & SELEKSI CHECKBOX PERSISTEN
+    function renderCardsTable(data) {
+      const tbody = document.getElementById('cardsTableBody');
+      tbody.innerHTML = '';
+
+      const currentPageCheck = document.getElementById('selectAllCardsPage');
+      if (currentPageCheck) currentPageCheck.checked = false;
+      
+      updateBulkToolbar();
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada data kartu social yang cocok dengan filter.</td></tr>`;
+        renderPaginationControls(0, 0, 0, 1);
+        return;
+      }
+
+      const totalItems = data.length;
+      const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, totalItems);
+      const pageData = data.slice(startIndex, endIndex);
+
+      pageData.forEach(card => {
+        const isChecked = selectedCardCodesSet.has(card.card_code);
+        const badge = card.is_activated ? `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">🟢 Aktif</span>` : `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">🟡 Blank</span>`;
+        const resellerBadge = card.reseller_id ? `<br><span class="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded">ID: ${card.reseller_id}</span>` : '';
+        const platformBadge = getPlatformBadge(card.platform_type);
+        const targetDisplay = card.target_url ? `<a href="${card.target_url}" target="_blank" class="text-xs font-mono text-indigo-600 hover:underline break-all block max-w-xs">${card.target_url}</a>` : '-';
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80 transition-all ${isChecked ? 'bg-indigo-50/40' : ''}">
+            <td class="py-3.5 px-4 text-center">
+              <input type="checkbox" class="card-checkbox w-4 h-4 text-indigo-600 rounded cursor-pointer" value="${card.card_code}" ${isChecked ? 'checked' : ''} onchange="handleCardCheckboxChange('${card.card_code}', this.checked)">
+            </td>
+            <td class="py-3.5 px-4 font-bold text-slate-900 font-mono">${card.card_code}</td>
+            <td class="py-3.5 px-4 text-xs font-medium text-slate-600"><span class="bg-slate-100 px-2 py-1 rounded-lg">${card.category || 'Retail Local'}</span>${resellerBadge}</td>
+            <td class="py-3.5 px-4 font-semibold text-slate-700">${card.owner_name || '-'}</td>
+            <td class="py-3.5 px-4">${platformBadge}<div class="mt-1">${targetDisplay}</div></td>
+            <td class="py-3.5 px-4">${badge}</td>
+            <td class="py-3.5 px-4 font-mono text-xs text-slate-600">${card.pin || '-'}</td>
+            <td class="py-3.5 px-4 text-right whitespace-nowrap">
+              <button onclick="showQrModal('${card.card_code}')" class="text-xs bg-slate-100 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-slate-200 transition-all mr-1">🔲 QR / NFC</button>
+              <button onclick="openEditModal('${card.card_code}')" class="text-xs bg-indigo-50 text-indigo-600 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-indigo-100 transition-all mr-1">Edit</button>
+              <button onclick="deleteCard('${card.card_code}')" class="text-xs bg-rose-50 text-rose-600 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-rose-100 transition-all">Hapus</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      renderPaginationControls(totalItems, startIndex + 1, endIndex, totalPages);
+    }
+
+    function renderPaginationControls(totalItems, start, end, totalPages) {
+      const container = document.getElementById('paginationControls');
+      if (!container) return;
+
+      if (totalItems === 0) {
+        container.innerHTML = `<span class="text-xs text-slate-400 font-medium">Menampilkan 0 kartu</span>`;
+        return;
+      }
+
+      let pageButtonsHtml = '';
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+          pageButtonsHtml += `<button class="w-8 h-8 rounded-xl bg-indigo-600 text-white font-bold text-xs shadow-sm">${i}</button>`;
+        } else if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1) {
+          pageButtonsHtml += `<button onclick="changePage(${i})" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all">${i}</button>`;
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+          pageButtonsHtml += `<span class="px-1 text-slate-400 text-xs">...</span>`;
+        }
+      }
+
+      container.innerHTML = `
+        <div class="text-xs text-slate-500 font-medium">
+          Menampilkan <span class="font-bold text-slate-800">${start}-${end}</span> dari <span class="font-bold text-slate-800">${totalItems}</span> kartu
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-300 font-semibold text-xs cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all"'}>
+            ← Prev
+          </button>
+          <div class="flex items-center gap-1">${pageButtonsHtml}</div>
+          <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-300 font-semibold text-xs cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all"'}>
+            Next →
+          </button>
+        </div>
+      `;
+    }
+
+    function changePage(page) {
+      const totalPages = Math.ceil(currentFilteredCards.length / ITEMS_PER_PAGE) || 1;
+      if (page < 1 || page > totalPages) return;
+      currentPage = page;
+      renderCardsTable(currentFilteredCards);
+    }
+
+    function renderLogsTable(data) {
+      const tbody = document.getElementById('logsTableBody');
+      tbody.innerHTML = '';
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400 font-medium text-xs">Belum ada catatan aktivitas.</td></tr>`;
+        return;
+      }
+      data.forEach(l => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80 transition-all text-xs">
+            <td class="py-3.5 px-4 text-slate-400 whitespace-nowrap">${new Date(l.created_at).toLocaleString('id-ID')}</td>
+            <td class="py-3.5 px-4 font-mono font-bold text-slate-800 uppercase">${l.card_code}</td>
+            <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${l.action.includes('SUCCESS') || l.action.includes('ACTIVATION') ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}">${l.action}</span></td>
+            <td class="py-3.5 px-4 text-slate-600">${l.details || '-'}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function openCsvFilterModal() {
+      document.getElementById('csvCategorySelect').value = 'all';
+      document.getElementById('csvStartCode').value = '';
+      document.getElementById('csvEndCode').value = '';
+      document.getElementById('csv-filter-modal').classList.remove('hidden');
+    }
+    function closeCsvFilterModal() { document.getElementById('csv-filter-modal').classList.add('hidden'); }
+
+    function processFilteredCsvExport() {
+      const selectedCat = document.getElementById('csvCategorySelect').value;
+      const startCode = document.getElementById('csvStartCode').value.trim().toUpperCase();
+      const endCode = document.getElementById('csvEndCode').value.trim().toUpperCase();
+
+      let filteredCards = allCardsData;
+      if (selectedCat !== 'all') filteredCards = filteredCards.filter(c => (c.category || 'Retail Local') === selectedCat);
+      if (startCode && endCode) filteredCards = filteredCards.filter(c => c.card_code >= startCode && c.card_code <= endCode);
+
+      if (filteredCards.length === 0) { showNotification('Informasi', 'Tidak ada data kartu.', 'info'); return; }
+      closeCsvFilterModal();
+
+      let csvContent = "data:text/csv;charset=utf-8,Kode Kartu,Kategori,Reseller ID,Catatan Reseller,URL NFC dan QR,Nama Pemilik,Platform,Link Target,Status,PIN\n";
+      filteredCards.forEach(card => {
+        csvContent += `${card.card_code},"${card.category || 'Retail Local'}","${card.reseller_id || ''}","${card.reseller_notes || ''}",${DOMAIN_BASE}/index_social.html?code=${card.card_code},"${card.owner_name || '-'}",${card.platform_type || 'custom'},"${card.target_url || '-'}",${card.is_activated ? 'AKTIF' : 'BLANK'},${card.pin || ''}\n`;
+      });
+
+      const fileName = selectedCat !== 'all' ? `Data_Kartu_Social_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}.csv` : `Data_Kartu_Social_${startCode || 'ALL'}_to_${endCode || 'ALL'}.csv`;
+      const link = document.createElement("a");
+      link.setAttribute("href", encodeURI(csvContent));
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function openZipFilterModal() {
+      document.getElementById('zipCategorySelect').value = 'all';
+      document.getElementById('zipStartCode').value = '';
+      document.getElementById('zipEndCode').value = '';
+      document.getElementById('zip-filter-modal').classList.remove('hidden');
+    }
+    function closeZipFilterModal() { document.getElementById('zip-filter-modal').classList.add('hidden'); }
+
+    async function processFilteredZipDownload() {
+      const selectedCat = document.getElementById('zipCategorySelect').value;
+      const startCode = document.getElementById('zipStartCode').value.trim().toUpperCase();
+      const endCode = document.getElementById('zipEndCode').value.trim().toUpperCase();
+
+      let filteredCards = allCardsData;
+      if (selectedCat !== 'all') filteredCards = filteredCards.filter(c => (c.category || 'Retail Local') === selectedCat);
+      if (startCode && endCode) filteredCards = filteredCards.filter(c => c.card_code >= startCode && c.card_code <= endCode);
+
+      if (filteredCards.length === 0) { showNotification('Informasi', 'Tidak ada data kartu ditemukan.', 'info'); return; }
+      closeZipFilterModal();
+
+      const zip = new JSZip();
+      const folderName = selectedCat !== 'all' ? `QR_Social_Mentahan_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}` : "QR_Social_Mentahan_RenderProject";
+      const folder = zip.folder(folderName);
+
+      for (let i = 0; i < filteredCards.length; i++) {
+        const card = filteredCards[i];
+        updateProgressBar(i + 1, filteredCards.length, "Generasi QR Mentahan", `Memproses QR (${i + 1}/${filteredCards.length}): ${card.card_code}`);
+        const dataUrl = await renderPipeline.generateQrDataUrl(`${DOMAIN_BASE}/index_social.html?code=${card.card_code}`);
+        if (dataUrl) folder.file(`QR_${card.card_code}.png`, dataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+        await new Promise(r => setTimeout(r, 20));
+      }
+
+      updateProgressBar(filteredCards.length, filteredCards.length, "Mengompresi ZIP...", "Menyusun file...");
+      const content = await zip.generateAsync({ type: "blob" });
+      closeProgressBar();
+      saveAs(content, `QR_Social_Mentahan_${selectedCat !== 'all' ? selectedCat.replace(/[^a-zA-Z0-9]/g, '_') : 'Range'}.zip`);
+    }
+
+    async function downloadCompleteCardDesignModal() {
+      try {
+        const cardDataUrl = await renderPipeline.renderSingleCard(activeCardCodeForDownload);
+        const link = document.createElement('a');
+        link.href = cardDataUrl;
+        link.download = `Desain_Kartu_Social_${activeCardCodeForDownload}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showNotification('Berhasil', 'Desain kartu lengkap berhasil diunduh!', 'success');
+      } catch (err) {
+        showNotification('Perhatian', err.message, 'error');
+      }
+    }
+
+    function openCardDesignZipModal() {
+      document.getElementById('designZipCategorySelect').value = 'all';
+      document.getElementById('designZipStartCode').value = '';
+      document.getElementById('designZipEndCode').value = '';
+      document.getElementById('design-zip-modal').classList.remove('hidden');
+    }
+    function closeCardDesignZipModal() { document.getElementById('design-zip-modal').classList.add('hidden'); }
+
+    async function processCardDesignZipDownload() {
+      const selectedCat = document.getElementById('designZipCategorySelect').value;
+      const startCode = document.getElementById('designZipStartCode').value.trim().toUpperCase();
+      const endCode = document.getElementById('designZipEndCode').value.trim().toUpperCase();
+
+      let filteredCards = allCardsData;
+      if (selectedCat !== 'all') filteredCards = filteredCards.filter(c => (c.category || 'Retail Local') === selectedCat);
+      if (startCode && endCode) filteredCards = filteredCards.filter(c => c.card_code >= startCode && c.card_code <= endCode);
+
+      if (filteredCards.length === 0) { 
+        showNotification('Informasi', 'Tidak ada data kartu yang cocok untuk dibuatkan ZIP Desain.', 'info'); 
+        return; 
+      }
+
+      closeCardDesignZipModal();
+
+      try {
+        const zip = new JSZip();
+        const folderName = selectedCat !== 'all' ? `Desain_Kartu_Social_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}` : "Desain_Kartu_Social_RenderProject";
+        const folder = zip.folder(folderName);
+
+        for (let i = 0; i < filteredCards.length; i++) {
+          const card = filteredCards[i];
+          updateProgressBar(i + 1, filteredCards.length, "Generasi Desain Kartu (ZIP)", `Membuat Desain (${i + 1}/${filteredCards.length}): ${card.card_code}`);
+          
+          const cardDataUrl = await renderPipeline.renderSingleCard(card.card_code);
+          if (cardDataUrl) {
+            folder.file(`Desain_${card.card_code}.png`, cardDataUrl.replace(/^data:image\/png;base64,/, ""), { base64: true });
+          }
+          await new Promise(r => setTimeout(r, 30));
+        }
+
+        updateProgressBar(filteredCards.length, filteredCards.length, "Mengompresi ke ZIP...", "Menyusun file...");
+        const content = await zip.generateAsync({ type: "blob" });
+        closeProgressBar();
+
+        const zipFileName = selectedCat !== 'all' ? `Desain_Social_Kategori_${selectedCat.replace(/[^a-zA-Z0-9]/g, '_')}.zip` : `Desain_Social_Range_${startCode || 'ALL'}_to_${endCode || 'ALL'}.zip`;
+        saveAs(content, zipFileName);
+        showNotification('Berhasil', 'ZIP Desain Kartu Social Lengkap berhasil diunduh!', 'success');
+      } catch (err) {
+        closeProgressBar();
+        showNotification('Gagal', err.message, 'error');
+      }
+    }
+
+    function showQrModal(code) {
+      activeCardCodeForDownload = code;
+      currentQrUrl = `${DOMAIN_BASE}/index_social.html?code=${code}`;
+      document.getElementById('qrModalTitle').innerText = `QR Code (${code})`;
+      document.getElementById('qrModalSub').innerText = code;
+      document.getElementById('qrModalUrl').innerText = currentQrUrl;
+      const container = document.getElementById('qrcode-container');
+      container.innerHTML = '';
+      new QRCode(container, { text: currentQrUrl, width: 160, height: 160, colorDark : "#0f172a", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
+      document.getElementById('qr-modal').classList.remove('hidden');
+    }
+    function closeQrModal() { document.getElementById('qr-modal').classList.add('hidden'); }
+    function copyQrUrl() { navigator.clipboard.writeText(currentQrUrl).then(() => showNotification('Berhasil', 'Link berhasil disalin!', 'success')); }
+
+    function downloadQrImage() {
+      const container = document.getElementById('qrcode-container');
+      const img = container.querySelector('img');
+      const canvas = container.querySelector('canvas');
+      const imageUrl = img && img.src ? img.src : (canvas ? canvas.toDataURL("image/png") : '');
+      if (!imageUrl) { showNotification('Informasi', 'QR belum siap.', 'info'); return; }
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = `QR_Social_Mentahan_${activeCardCodeForDownload}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function openBatchModal() {
+      document.getElementById('batchCategory').value = 'Reseller Lynk.id';
+      document.getElementById('batchResellerId').value = '';
+      document.getElementById('batchResellerNotes').value = '';
+      document.getElementById('batchPrefix').value = 'SOC-';
+      document.getElementById('batchStart').value = '';
+      document.getElementById('batchCount').value = '';
+      document.getElementById('batchPin').value = '';
+      document.getElementById('batch-modal').classList.remove('hidden');
+    }
+    function closeBatchModal() { document.getElementById('batch-modal').classList.add('hidden'); }
+
+    async function submitBatchGenerate() {
+      const category = document.getElementById('batchCategory').value;
+      const resellerId = document.getElementById('batchResellerId').value.trim() || null;
+      const resellerNotes = document.getElementById('batchResellerNotes').value.trim() || null;
+      const prefix = document.getElementById('batchPrefix').value.trim().toUpperCase();
+      const startNum = parseInt(document.getElementById('batchStart').value);
+      const count = parseInt(document.getElementById('batchCount').value);
+      const defaultPin = document.getElementById('batchPin').value.trim() || null;
+
+      if (!prefix || isNaN(startNum) || isNaN(count) || count <= 0) {
+        showNotification('Perhatian', 'Mohon isi Prefix, Angka Awal, dan Jumlah kartu dengan benar.', 'info');
+        return;
+      }
+      if (count > 200) { showNotification('Batas Maksimal', 'Maksimal 200 kartu sekali generate!', 'info'); return; }
+      
+      setButtonLoading('batchSubmitBtn', true, 'Proses Massal');
+      const batchPayload = [];
+      for (let i = 0; i < count; i++) {
+        batchPayload.push({ 
+          card_code: `${prefix}${String(startNum + i).padStart(3, '0')}`, 
+          category: category,
+          reseller_id: resellerId,
+          reseller_notes: resellerNotes,
+          pin: defaultPin, 
+          is_activated: false,
+          platform_type: 'custom'
+        });
+      }
+      const { error } = await supabaseClient.from('social_cards').upsert(batchPayload, { onConflict: 'card_code' });
+      setButtonLoading('batchSubmitBtn', false, 'Proses Massal');
+      if (!error) { 
+        showNotification('Berhasil', `Berhasil membuat ${count} kartu social!`, 'success', () => {
+          closeBatchModal(); 
+          fetchCards();
+        });
+      } else {
+        showNotification('Gagal', error.message, 'error');
+      }
+    }
+
+    function openAddModal() {
+      editingOriginalCode = null;
+      document.getElementById('modalFormTitle').innerText = "Tambah Kartu Social Baru";
+      document.getElementById('modalFormSub').innerText = "Masukkan kode kartu unik baru.";
+      document.getElementById('formCategory').value = 'Retail Local';
+      document.getElementById('formResellerId').value = '';
+      document.getElementById('formResellerNotes').value = '';
+      const codeInput = document.getElementById('formCardCode');
+      codeInput.value = '';
+      codeInput.disabled = false;
+      document.getElementById('formOwnerName').value = '';
+      document.getElementById('formPlatformType').value = 'instagram';
+      document.getElementById('formTargetInput').value = '';
+      document.getElementById('formPin').value = '';
+      document.getElementById('card-modal').classList.remove('hidden');
+    }
+
+    function openEditModal(code) {
+      const card = allCardsData.find(c => c.card_code === code);
+      if (!card) return;
+      editingOriginalCode = card.card_code;
+      document.getElementById('formCategory').value = card.category || 'Retail Local';
+      document.getElementById('formResellerId').value = card.reseller_id || '';
+      document.getElementById('formResellerNotes').value = card.reseller_notes || '';
+      const codeInput = document.getElementById('formCardCode');
+      codeInput.value = card.card_code;
+      if (card.is_activated) {
+        codeInput.disabled = true;
+        document.getElementById('modalFormTitle').innerText = `Edit Kartu Social Aktif (${code})`;
+        document.getElementById('modalFormSub').innerText = "🔒 Kode dikunci karena sudah aktif.";
+      } else {
+        codeInput.disabled = false;
+        document.getElementById('modalFormTitle').innerText = `Edit Kartu Social Blank (${code})`;
+        document.getElementById('modalFormSub').innerText = "✏️ Ubah kode kartu blank.";
+      }
+      document.getElementById('formOwnerName').value = card.owner_name || '';
+      document.getElementById('formPlatformType').value = card.platform_type || 'instagram';
+      document.getElementById('formTargetInput').value = card.target_url || '';
+      document.getElementById('formPin').value = card.pin || '';
+      document.getElementById('card-modal').classList.remove('hidden');
+    }
+
+    function closeModal() { document.getElementById('card-modal').classList.add('hidden'); }
+
+    async function saveCardData() {
+      const category = document.getElementById('formCategory').value;
+      const resellerId = document.getElementById('formResellerId').value.trim() || null;
+      const resellerNotes = document.getElementById('formResellerNotes').value.trim() || null;
+      const newCode = document.getElementById('formCardCode').value.trim().toUpperCase();
+      const ownerName = document.getElementById('formOwnerName').value.trim();
+      const platformType = document.getElementById('formPlatformType').value;
+      const targetInput = document.getElementById('formTargetInput').value.trim();
+      const pin = document.getElementById('formPin').value.trim();
+      
+      if (!newCode) { showNotification('Perhatian', 'Kode kartu wajib diisi!', 'info'); return; }
+      
+      setButtonLoading('saveCardBtn', true, 'Simpan');
+      if (editingOriginalCode && editingOriginalCode !== newCode) {
+        await supabaseClient.from('social_cards').delete().eq('card_code', editingOriginalCode);
+      }
+
+      const finalTargetUrl = targetInput ? formatSocialUrl(platformType, targetInput) : null;
+
+      const payload = {
+        card_code: newCode,
+        category: category,
+        reseller_id: resellerId,
+        reseller_notes: resellerNotes,
+        owner_name: ownerName || null,
+        platform_type: platformType,
+        target_url: finalTargetUrl,
+        pin: pin || null,
+        is_activated: ownerName.length > 0 || (finalTargetUrl && finalTargetUrl.length > 0)
+      };
+
+      const { error } = await supabaseClient.from('social_cards').upsert(payload, { onConflict: 'card_code' });
+      setButtonLoading('saveCardBtn', false, 'Simpan');
+      if (!error) { 
+        showNotification('Berhasil', 'Data kartu social berhasil disimpan.', 'success', () => {
+          closeModal(); 
+          fetchCards();
+        });
+      } else {
+        showNotification('Gagal', error.message, 'error');
+      }
+    }
+
+    async function deleteCard(code) {
+      if (confirm(`Yakin ingin menghapus kartu social ${code}?`)) {
+        const { error } = await supabaseClient.from('social_cards').delete().eq('card_code', code);
+        if (!error) {
+          selectedCardCodesSet.delete(code);
+          fetchCards();
+        } else {
+          showNotification('Gagal', error.message, 'error');
+        }
+      }
     }
   </script>
 </body>
